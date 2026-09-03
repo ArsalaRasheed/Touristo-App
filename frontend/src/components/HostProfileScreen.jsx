@@ -34,7 +34,7 @@ const HostProfileScreen = () => {
     const fetchHostData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:3000/api/hosts/${id}`);
+        const response = await fetch(`/api/hosts/${id}`);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

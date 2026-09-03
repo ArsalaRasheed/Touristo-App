@@ -464,7 +464,7 @@ Vercel — deployment target for the frontend.
 
 Supabase — hosted PostgreSQL database.
 
-The current repository contains a standard Express Node.js backend and a Vite frontend. The frontend currently contains several development-time http://localhost:3000 API URLs, so these must be replaced with the deployed backend URL (or centralized into a Vite environment variable) before the production Vercel build can communicate with a remotely hosted backend.
+The current repository contains a standard Express Node.js backend and a Vite frontend. The frontend currently contains several development-time  API URLs, so these must be replaced with the deployed backend URL (or centralized into a Vite environment variable) before the production Vercel build can communicate with a remotely hosted backend.
 
 📁 Project Structure
 
@@ -760,7 +760,7 @@ npm run dev
 
 Backend default:
 
-http://localhost:3000
+
 
 6. Start the frontend
 
@@ -823,7 +823,7 @@ Important production task
 
 The current frontend source contains development URLs such as:
 
-http://localhost:3000/api/...
+/api/...
 
 For Vercel production, these should be centralized into an environment variable, for example:
 

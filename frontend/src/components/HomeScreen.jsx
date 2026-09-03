@@ -27,7 +27,7 @@ const HomeScreen = () => {
       try {
         // In a real app, we would get the user ID from authentication context
         // For now, we'll call without user ID to get trending packages
-        const response = await fetch('http://localhost:3000/api/homepage-data');
+        const response = await fetch('/api/homepage-data');
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

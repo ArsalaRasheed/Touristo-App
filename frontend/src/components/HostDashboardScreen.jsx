@@ -20,7 +20,7 @@ const HostDashboardScreen = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const hostResponse = await fetch(`http://localhost:3000/api/hosts/user/${user.id}`, { headers: getAuthHeader() });
+        const hostResponse = await fetch(`/api/hosts/user/${user.id}`, { headers: getAuthHeader() });
         if (!hostResponse.ok) throw new Error('Could not load your company profile');
         const hostDataRes = await hostResponse.json();
         const hostId = hostDataRes.data?.host?.id;
@@ -30,14 +30,14 @@ const HostDashboardScreen = () => {
         setHostData(hostDataRes.data?.host || null);
         
         // Fetch packages for this host
-        const packagesResponse = await fetch(`http://localhost:3000/api/packages/host/${hostId}`, { headers: getAuthHeader() });
+        const packagesResponse = await fetch(`/api/packages/host/${hostId}`, { headers: getAuthHeader() });
         if (packagesResponse.ok) {
           const packagesData = await packagesResponse.json();
           setPackages(packagesData.data?.packages || []);
         }
         
         // Fetch bookings related to this host's packages
-        const bookingsResponse = await fetch(`http://localhost:3000/api/bookings/host/${hostId}`, { headers: getAuthHeader() });
+        const bookingsResponse = await fetch(`/api/bookings/host/${hostId}`, { headers: getAuthHeader() });
         if (bookingsResponse.ok) {
           const bookingsData = await bookingsResponse.json();
           setBookings(bookingsData.data?.bookings || []);

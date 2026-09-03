@@ -75,7 +75,7 @@ const MyTripsScreen = () => {
         // In a real app, user_id would come from authentication context
         // Using the logged-in user's ID to fetch bookings
         const userId = user?.id || 1;
-        const response = await fetch(`http://localhost:3000/api/bookings/user/${userId}`, {
+        const response = await fetch(`/api/bookings/user/${userId}`, {
           headers: {
             ...getAuthHeader() // Include the authorization header
           }
@@ -106,7 +106,7 @@ const MyTripsScreen = () => {
     if (itineraries[tripId]) return; // Already fetched
     
     try {
-      const response = await fetch(`http://localhost:3000/api/itineraries/trip/${tripId}`, {
+      const response = await fetch(`/api/itineraries/trip/${tripId}`, {
         headers: {
           ...getAuthHeader() // Include the authorization header
         }
@@ -156,7 +156,7 @@ const MyTripsScreen = () => {
       }
 
       // Use the correct API endpoint with coordinates
-      const response = await fetch(`http://localhost:3000/api/weather/coordinates?lat=${coords.lat}&lon=${coords.lon}`);
+      const response = await fetch(`/api/weather/coordinates?lat=${coords.lat}&lon=${coords.lon}`);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

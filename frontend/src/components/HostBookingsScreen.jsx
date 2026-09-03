@@ -12,7 +12,7 @@ const HostBookingsScreen = () => {
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const hostResponse = await fetch(`http://localhost:3000/api/hosts/user/${user.id}`, {
+        const hostResponse = await fetch(`/api/hosts/user/${user.id}`, {
           headers: getAuthHeader()
         });
         if (!hostResponse.ok) throw new Error('Could not load your company profile');
@@ -20,7 +20,7 @@ const HostBookingsScreen = () => {
         const hostId = hostData.data?.host?.id;
         if (!hostId) throw new Error('No company profile is linked to this account');
 
-        const response = await fetch(`http://localhost:3000/api/bookings/host/${hostId}`, {
+        const response = await fetch(`/api/bookings/host/${hostId}`, {
           headers: getAuthHeader()
         });
         

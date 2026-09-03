@@ -54,7 +54,7 @@ const DestinationsScreen = () => {
   useEffect(() => {
     const fetchDestinations = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/destinations');
+        const response = await fetch('/api/destinations');
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

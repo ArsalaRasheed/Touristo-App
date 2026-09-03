@@ -19,7 +19,7 @@ const MyPackagesScreen = () => {
 
         // First, get the host/company record for the logged-in user
         const hostResponse = await fetch(
-          `http://localhost:3000/api/hosts/user/${user.id}`,
+          `/api/hosts/user/${user.id}`,
           {
             headers: getAuthHeader()
           }
@@ -49,7 +49,7 @@ const MyPackagesScreen = () => {
 
         // Now fetch packages for this host
         const response = await fetch(
-          `http://localhost:3000/api/packages/host/${hostId}`,
+          `/api/packages/host/${hostId}`,
           {
             headers: getAuthHeader()
           }

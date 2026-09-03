@@ -322,7 +322,7 @@ const WeatherScreen = () => {
     
     try {
       const coords = cityCoordinates[location];
-      const response = await fetch(`http://localhost:3000/api/weather/coordinates?lat=${coords.lat}&lon=${coords.lon}`);
+      const response = await fetch(`/api/weather/coordinates?lat=${coords.lat}&lon=${coords.lon}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -336,7 +336,7 @@ const WeatherScreen = () => {
       // Fallback to Islamabad
       const fallbackCoords = cityCoordinates["Islamabad"];
       try {
-        const response = await fetch(`http://localhost:3000/api/weather/coordinates?lat=${fallbackCoords.lat}&lon=${fallbackCoords.lon}`);
+        const response = await fetch(`/api/weather/coordinates?lat=${fallbackCoords.lat}&lon=${fallbackCoords.lon}`);
         if (response.ok) {
           const result = await response.json();
           setWeatherData(result.data.weather);

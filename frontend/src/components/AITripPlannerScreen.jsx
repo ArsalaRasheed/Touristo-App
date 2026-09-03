@@ -55,7 +55,7 @@ const AITripPlannerScreen = () => {
         // Determine the correct API URL based on environment
         const apiUrl = process.env.NODE_ENV === 'production' 
           ? '/api/trip-planner' 
-          : 'http://localhost:3000/api/trip-planner';
+          : '/api/trip-planner';
         
         // Call the backend API
         const response = await fetch(apiUrl, {

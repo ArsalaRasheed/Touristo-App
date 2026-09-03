@@ -25,7 +25,7 @@ const TourGuideChat = ({ tourGuideId, tourGuideName }) => {
         setLoading(true);
         // In a real app, we'd have the tour guide's user ID, but for now we'll simulate
         // For this implementation, we'll assume tour guide IDs correspond to user IDs
-        const response = await fetch(`http://localhost:3000/api/messages/conversation/${userIdFromContext}/${tourGuideId}`, {
+        const response = await fetch(`/api/messages/conversation/${userIdFromContext}/${tourGuideId}`, {
           headers: authToken ? { Authorization: `Bearer ${authToken}` } : {}
         });
         
@@ -64,7 +64,7 @@ const TourGuideChat = ({ tourGuideId, tourGuideName }) => {
       };
 
       // Send the message to the backend
-      const response = await fetch('http://localhost:3000/api/messages', {
+      const response = await fetch('/api/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

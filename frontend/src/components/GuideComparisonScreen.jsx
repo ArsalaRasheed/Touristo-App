@@ -9,7 +9,7 @@ const GuideComparisonScreen = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/tour-guides')
+    fetch('/api/tour-guides')
       .then(response => response.ok ? response.json() : Promise.reject(new Error('Could not load guides')))
       .then(result => setGuides(result.data || []))
       .catch(err => setError(err.message))

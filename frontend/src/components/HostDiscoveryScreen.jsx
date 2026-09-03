@@ -74,7 +74,7 @@ const HostDiscoveryScreen = () => {
   useEffect(() => {
     const fetchHosts = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/hosts');
+        const response = await fetch('/api/hosts');
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

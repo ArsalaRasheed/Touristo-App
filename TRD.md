@@ -46,7 +46,7 @@ The application follows a **client-server** model with a **Node.js/Express** bac
 
 ## 4. API Specification
 ### 4.1 Base URL
-`http://localhost:3000/api` (Development), `[Production URL]/api` (Production)
+`/api` (Development), `[Production URL]/api` (Production)
 
 ### 4.2 Standard Response Format
 Successful Response:

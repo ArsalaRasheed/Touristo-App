@@ -37,7 +37,7 @@ const CreateEditPackageScreen = () => {
     }
 
     try {
-      const hostResponse = await fetch(`http://localhost:3000/api/hosts/user/${user.id}`, { headers: getAuthHeader() });
+      const hostResponse = await fetch(`/api/hosts/user/${user.id}`, { headers: getAuthHeader() });
       if (!hostResponse.ok) throw new Error('Could not load your company profile');
       const hostData = await hostResponse.json();
       const hostId = hostData.data?.host?.id;
@@ -57,7 +57,7 @@ const CreateEditPackageScreen = () => {
       };
 
       // Make API call to create package
-      const response = await fetch('http://localhost:3000/api/packages', {
+      const response = await fetch('/api/packages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

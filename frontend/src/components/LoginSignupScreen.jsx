@@ -52,7 +52,7 @@ const LoginSignupScreen = () => {
         }
 
         const response = await fetch(
-          'http://localhost:3000/api/users/login',
+          '/api/users/login',
           {
             method: 'POST',
             headers: {
@@ -139,7 +139,7 @@ const LoginSignupScreen = () => {
        * Create user account
        */
       const response = await fetch(
-        'http://localhost:3000/api/users',
+        '/api/users',
         {
           method: 'POST',
           headers: {
@@ -202,7 +202,7 @@ const LoginSignupScreen = () => {
        */
       if (!isTraveler) {
         const hostResponse = await fetch(
-          'http://localhost:3000/api/hosts',
+          '/api/hosts',
           {
             method: 'POST',
             headers: {

@@ -13,7 +13,7 @@ const DestinationExploreScreen = () => {
     const fetchData = async () => {
       try {
         // Get destination details by name
-        const response = await fetch(`http://localhost:3000/api/destinations/name/${destination}`);
+        const response = await fetch(`/api/destinations/name/${destination}`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }

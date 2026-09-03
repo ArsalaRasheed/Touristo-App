@@ -9,14 +9,14 @@ const ManageTourGuidesScreen = () => {
   const [error, setError] = useState('');
 
   const loadGuides = async id => {
-    const response = await fetch(`http://localhost:3000/api/tour-guides/host/${id}`);
+    const response = await fetch(`/api/tour-guides/host/${id}`);
     const result = await response.json();
     setGuides(result.data || []);
   };
 
   useEffect(() => {
     if (!user) return;
-    fetch(`http://localhost:3000/api/hosts/user/${user.id}`, { headers: getAuthHeader() })
+    fetch(`/api/hosts/user/${user.id}`, { headers: getAuthHeader() })
       .then(response => response.ok ? response.json() : Promise.reject(new Error('Could not load company profile')))
       .then(result => { setHostId(result.data.host.id); return loadGuides(result.data.host.id); })
       .catch(err => setError(err.message));
@@ -26,7 +26,7 @@ const ManageTourGuidesScreen = () => {
     event.preventDefault();
     setError('');
     try {
-      const response = await fetch('http://localhost:3000/api/tour-guides', {
+      const response = await fetch('/api/tour-guides', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
         body: JSON.stringify({ ...form, host_id: hostId })
@@ -38,7 +38,7 @@ const ManageTourGuidesScreen = () => {
   };
 
   const removeGuide = async id => {
-    const response = await fetch(`http://localhost:3000/api/tour-guides/${id}`, { method: 'DELETE', headers: getAuthHeader() });
+    const response = await fetch(`/api/tour-guides/${id}`, { method: 'DELETE', headers: getAuthHeader() });
     if (response.ok) setGuides(current => current.filter(guide => guide.id !== id));
   };
 

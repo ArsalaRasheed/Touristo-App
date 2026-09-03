@@ -19,7 +19,7 @@ const ProfileScreen = () => {
         }
         
         // Fetch user data
-        const userResponse = await fetch(`http://localhost:3000/api/users/${user.id}`);
+        const userResponse = await fetch(`/api/users/${user.id}`);
         if (!userResponse.ok) {
           throw new Error(`HTTP error! status: ${userResponse.status}`);
         }
@@ -38,7 +38,7 @@ const ProfileScreen = () => {
         
         // If user is a host, fetch host-specific data
         if (user.role === 'host') {
-          const hostResponse = await fetch(`http://localhost:3000/api/hosts/user/${user.id}`);
+          const hostResponse = await fetch(`/api/hosts/user/${user.id}`);
           if (hostResponse.ok) {
             const hostDataResult = await hostResponse.json();
             setHostData(hostDataResult.data.host);

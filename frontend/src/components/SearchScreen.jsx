@@ -27,7 +27,7 @@ const SearchScreen = () => {
         setLoading(true);
         
         // Fetch packages
-        const packagesResponse = await fetch('http://localhost:3000/api/packages');
+        const packagesResponse = await fetch('/api/packages');
         if (!packagesResponse.ok) {
           throw new Error(`HTTP error! status: ${packagesResponse.status}`);
         }
@@ -35,7 +35,7 @@ const SearchScreen = () => {
         const fetchedPackages = packagesData.data?.packages || [];
         
         // Fetch hosts
-        const hostsResponse = await fetch('http://localhost:3000/api/hosts');
+        const hostsResponse = await fetch('/api/hosts');
         if (!hostsResponse.ok) {
           throw new Error(`HTTP error! status: ${hostsResponse.status}`);
         }
