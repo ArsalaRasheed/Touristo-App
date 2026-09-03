@@ -1,0 +1,83 @@
+# UI/UX Design Prompt: Touristo App
+
+## 1. Project Overview
+Design a mobile-first user interface and user experience for "Touristo," a marketplace connecting verified tour companies with travelers across Pakistan. The app aims to simplify discovering, booking, and experiencing local tours. Your design should be intuitive, visually appealing, reflect Pakistani cultural elements subtly, and prioritize trust and ease of use.
+
+## 2. Target Audience
+*   **Primary Users:** Individual travelers and small groups seeking domestic tours in Pakistan.
+*   **Secondary Users:** Verified tour companies managing their listings and bookings.
+
+## 3. Core User Flows & Screens
+Based on the app flow, design for these key journeys:
+
+### 3.1 User Onboarding
+*   **Splash Screen:** Logo, tagline, 1-2 second duration.
+*   **Onboarding Carousel:** 3-4 skippable screens highlighting key features (e.g., Discover, Book, Trust Verified Hosts). Cinematic and engaging.
+*   **Login/Signup:** Forms for new user registration and existing user login. Clear distinction and easy switching between the two.
+
+### 3.2 Discovery & Exploration
+*   **Home/Discover Screen:** The main feed/dashboard. Showcase featured packages, quick search bar, navigation tabs (e.g., Home, Search, Hosts, Profile). Should feel vibrant and inviting.
+*   **Search Results:** Filterable list/grid of tour packages based on destination, date, price, etc.
+*   **Destination Explore Page:** Dedicated page for a destination with photos, description, and a list of available packages.
+*   **AI Trip Planner:** Chat-like interface for users to ask for personalized trip suggestions.
+
+### 3.3 Package Interaction & Booking
+*   **Package Detail Screen:** Comprehensive view of a tour package. Include title, price, host info, detailed itinerary, photo gallery, reviews, and a prominent "Book Now" CTA.
+*   **Host Profile:** Information about the tour company, their rating, past reviews, and a list of their packages.
+*   **Booking & Payment:** Form to select dates, number of travelers, and a secure payment interface. Summary of the booking details.
+
+### 3.4 User Management & Trips
+*   **My Trips:** List of past, current, and upcoming bookings. Status indicators (Confirmed, Pending, Completed).
+*   **Active Trip View:** For ongoing trips, show package details, live weather/road status, live location, and SOS button.
+*   **User Profile:** Edit personal details, view booking history, and manage settings.
+*   **Post-Trip Review:** Interface for users to rate the host and package, and leave a written review.
+
+## 4. Design Guidelines & Constraints
+
+### 4.1 Visual Identity
+*   **Color Palette:**
+    *   Primary Blue: #007BFF (for primary buttons, key actions)
+    *   Primary Green: #28A745 (for success states, confirmations)
+    *   Primary Red: #DC3545 (for errors, destructive actions, SOS)
+    *   Accent Orange: #FD7E14 (for highlights, promotions)
+    *   Neutral Grays: For text, borders, and backgrounds (#6C757D, #F8F9FA, #343A40).
+    *   White: Main background color.
+*   **Typography:** Use a modern, clean sans-serif font (e.g., Inter). Adhere to the following hierarchy:
+    *   H1: 28px, Bold
+    *   H2: 24px, Semi-Bold
+    *   Body Large: 16px, Regular
+    *   Body Small: 14px, Regular
+    *   Button Text: 16px, Medium
+*   **Layout:** Mobile-first, single-column layouts. Use a card-based design for content blocks. Maintain 16px margins from screen edges. Touch targets must be at least 44x44 pixels.
+
+### 4.2 UI Components
+*   **Buttons:** Distinct styles for Primary (solid), Secondary (outline), and Danger (solid red). Minimum height 44px.
+*   **Input Fields:** Outlined with rounded corners. Clear focus state (e.g., blue border, subtle shadow).
+*   **Navigation:** Bottom tab bar for core app navigation (Home, Search, Bookings/Trips, Profile).
+*   **Loading States:** Use skeleton screens or spinners for any data fetching from the backend API.
+
+### 4.3 UX Principles
+*   **Clarity:** Information should be scannable and hierarchically structured.
+*   **Feedback:** Provide immediate visual feedback for all user actions (taps, submissions).
+*   **Accessibility:** Ensure sufficient color contrast and consider screen reader compatibility.
+*   **Trust Building:** Display host verification badges, clear pricing, and prominent review/rating systems.
+
+## 5. Technical Context (For Realism)
+*   The app communicates with a Node.js/Express REST API.
+*   Data is stored in a PostgreSQL database hosted on Supabase.
+*   Images and media will be served via a CDN from Supabase Storage.
+*   The final product will be a responsive web app built with React, but the design focus is on the mobile experience.
+
+## 6. Deliverables Expected for Competition
+Please provide high-fidelity mockups for the following key screens:
+1.  Splash Screen
+2.  Onboarding Carousel (Show 2-3 slides)
+3.  Home/Discover Screen
+4.  Search Results Screen
+5.  Package Detail Screen
+6.  Booking & Payment Screen
+7.  My Trips Screen
+8.  Active Trip View (Optional but impressive)
+9.  User Profile Screen
+
+Include annotations explaining key interactions and design decisions. Consider creating a short flow diagram showing the main user journey from discovering a package to completing a booking.

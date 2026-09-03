@@ -1,0 +1,100 @@
+{
+  "regions": {
+    "Islamabad": {
+      "hospital": {
+        "name": "Pakistan Institute of Medical Sciences",
+        "phone": "+92 51 9284444",
+        "address": "G-8/1, Islamabad"
+      },
+      "police": {
+        "name": "Islamabad Police Control Room",
+        "phone": "+92 51 2822222",
+        "address": "Police Headquarter, E-10, Islamabad"
+      }
+    },
+    "Lahore": {
+      "hospital": {
+        "name": "Shalamar Hospital",
+        "phone": "+92 42 35840000",
+        "address": "MM Alam Road, Lahore"
+      },
+      "police": {
+        "name": "Lahore Police Control Room",
+        "phone": "+92 42 1512222",
+        "address": "Police Lines, Lahore"
+      }
+    },
+    "Karachi": {
+      "hospital": {
+        "name": "Aga Khan University Hospital",
+        "phone": "+92 21 34862000",
+        "address": "St 5, Block 9, Clifton, Karachi"
+      },
+      "police": {
+        "name": "Karachi Police Control Room",
+        "phone": "+92 21 1512222",
+        "address": "Police Lines, Karachi"
+      }
+    },
+    "Peshawar": {
+      "hospital": {
+        "name": "Lady Reading Hospital",
+        "phone": "+92 91 9214011",
+        "address": "University Road, Peshawar"
+      },
+      "police": {
+        "name": "Peshawar Police Control Room",
+        "phone": "+92 91 9210241",
+        "address": "Old Shahi Bagh, Peshawar"
+      }
+    },
+    "Quetta": {
+      "hospital": {
+        "name": "Sandeman Provincial Hospital",
+        "phone": "+92 81 2820231",
+        "address": "Jinnah Town, Quetta"
+      },
+      "police": {
+        "name": "Quetta Police Control Room",
+        "phone": "+92 81 2820241",
+        "address": "Civil Secretariat, Quetta"
+      }
+    },
+    "Gilgit": {
+      "hospital": {
+        "name": "District Headquarter Hospital",
+        "phone": "+92 96 6220202",
+        "address": "Hospital Road, Gilgit"
+      },
+      "police": {
+        "name": "Gilgit Police Station",
+        "phone": "+92 96 6220201",
+        "address": "Main Bazar, Gilgit"
+      }
+    },
+    "Skardu": {
+      "hospital": {
+        "name": "District Headquarter Hospital",
+        "phone": "+92 58 4292020",
+        "address": "Skardu City"
+      },
+      "police": {
+        "name": "Skardu Police Station",
+        "phone": "+92 58 4292021",
+        "address": "Skardu City"
+      }
+    },
+    "default": {
+      "hospital": {
+        "name": "Emergency Medical Services",
+        "phone": "115",
+        "address": "Available nationwide"
+      },
+      "police": {
+        "name": "Emergency Police Services",
+        "phone": "15",
+        "address": "Available nationwide"
+      }
+    }
+  }
+}
