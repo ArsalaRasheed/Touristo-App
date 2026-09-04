@@ -6,12 +6,14 @@ const DestinationsScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ---------------------------------------------------------
-  // Destination image library
-  // Backend image will always have priority.
-  // These are fallback images for destinations that don't
-  // have an image saved in the database.
-  // ---------------------------------------------------------
+  // =========================================================
+  // DESTINATION IMAGES
+  // =========================================================
+  // If backend provides an image, backend image will be used.
+  // If not, the destination name will be used to select
+  // one of these fallback images.
+  // =========================================================
+
   const destinationImages = {
     'swat valley':
       'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=85',
@@ -38,19 +40,21 @@ const DestinationsScreen = () => {
       'https://images.unsplash.com/photo-1582650625119-3a31f8fa2699?auto=format&fit=crop&w=1200&q=85',
 
     'mohenjo-daro':
-      'https://images.unsplash.com/photo-1597149875290-0a6b8e6c4d7f?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=1200&q=85',
 
     'gwadar':
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85'
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
   };
 
-  // Generic fallback image
+  // Generic fallback in case a destination has no
+  // matching image.
   const fallbackImage =
     'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&q=85';
 
-  // ---------------------------------------------------------
-  // Seeded destination data
-  // ---------------------------------------------------------
+  // =========================================================
+  // SEEDED DESTINATION DATA
+  // =========================================================
+
   const seededDestinations = [
     {
       id: 1,
@@ -59,10 +63,7 @@ const DestinationsScreen = () => {
       category: 'mountains',
       description:
         'Scenic valley known for its natural beauty and historical sites.',
-      coordinates: {
-        lat: 35.8526,
-        lng: 72.1877
-      }
+      coordinates: { lat: 35.8526, lng: 72.1877 },
     },
 
     {
@@ -72,10 +73,7 @@ const DestinationsScreen = () => {
       category: 'valley',
       description:
         'A mountainous region offering stunning views and ancient culture.',
-      coordinates: {
-        lat: 36.3114,
-        lng: 74.5192
-      }
+      coordinates: { lat: 36.3114, lng: 74.5192 },
     },
 
     {
@@ -85,10 +83,7 @@ const DestinationsScreen = () => {
       category: 'river',
       description:
         'A beautiful valley along the Neelum River with lush greenery.',
-      coordinates: {
-        lat: 34.8167,
-        lng: 73.7667
-      }
+      coordinates: { lat: 34.8167, lng: 73.7667 },
     },
 
     {
@@ -98,10 +93,7 @@ const DestinationsScreen = () => {
       category: 'city',
       description:
         'Access point for K2 and other peaks in the Karakoram range.',
-      coordinates: {
-        lat: 35.2997,
-        lng: 75.6344
-      }
+      coordinates: { lat: 35.2997, lng: 75.6344 },
     },
 
     {
@@ -111,52 +103,46 @@ const DestinationsScreen = () => {
       category: 'meadow',
       description:
         'A picturesque meadow located near the base of Nanga Parbat.',
-      coordinates: {
-        lat: 35.25,
-        lng: 73.25
-      }
-    }
+      coordinates: { lat: 35.25, lng: 73.25 },
+    },
   ];
 
-  // ---------------------------------------------------------
-  // Get correct image for a destination
-  // ---------------------------------------------------------
+  // =========================================================
+  // GET DESTINATION IMAGE
+  // =========================================================
+
   const getDestinationImage = (destination) => {
-    // 1. If backend already has an image, use it
+    // 1. Use image coming from backend first
     if (destination?.image) {
       return destination.image;
     }
 
+    // 2. Support image_url if backend uses that field
     if (destination?.image_url) {
       return destination.image_url;
     }
 
+    // 3. Support cover_image if present
     if (destination?.cover_image) {
       return destination.cover_image;
     }
 
-    // 2. Otherwise use our destination image map
-    const name = String(
-      destination?.name || ''
-    )
+    // 4. Match destination name with fallback image library
+    const name = String(destination?.name || '')
       .trim()
       .toLowerCase();
 
     return destinationImages[name] || fallbackImage;
   };
 
-  // ---------------------------------------------------------
-  // Fetch destinations from backend
-  // ---------------------------------------------------------
+  // =========================================================
+  // FETCH DESTINATIONS FROM BACKEND
+  // =========================================================
+
   useEffect(() => {
     const fetchDestinations = async () => {
       try {
-        setLoading(true);
-        setError(null);
-
-        const response = await fetch(
-          '/api/destinations'
-        );
+        const response = await fetch('/api/destinations');
 
         if (!response.ok) {
           throw new Error(
@@ -169,26 +155,21 @@ const DestinationsScreen = () => {
         const fetchedDestinations =
           data?.data?.destinations || [];
 
-        // Use fetched destinations if available
-        // Otherwise use seeded destinations
+        // Use backend destinations if available.
+        // Otherwise use seeded destinations.
         setDestinations(
-          Array.isArray(fetchedDestinations) &&
-            fetchedDestinations.length > 0
+          fetchedDestinations.length > 0
             ? fetchedDestinations
             : seededDestinations
         );
-
       } catch (err) {
         console.error(
           'Error fetching destinations:',
           err
         );
 
-        // Use seeded data if API fails
+        // Keep original fallback behaviour
         setDestinations(seededDestinations);
-
-        setError(null);
-
       } finally {
         setLoading(false);
       }
@@ -197,34 +178,31 @@ const DestinationsScreen = () => {
     fetchDestinations();
   }, []);
 
-  // ---------------------------------------------------------
-  // Loading State
-  // ---------------------------------------------------------
+  // =========================================================
+  // LOADING SCREEN
+  // =========================================================
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] p-4 pb-24 flex items-center justify-center">
-
         <div className="text-center">
-
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[color:var(--accent-primary)] mx-auto"></div>
 
           <p className="mt-4 text-[color:var(--text-secondary)]">
             Loading destinations...
           </p>
-
         </div>
-
       </div>
     );
   }
 
-  // ---------------------------------------------------------
-  // Error State
-  // ---------------------------------------------------------
+  // =========================================================
+  // ERROR SCREEN
+  // =========================================================
+
   if (error) {
     return (
       <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] p-4 pb-24 flex items-center justify-center">
-
         <div className="text-center p-6 bg-[color:var(--surface-primary)] rounded-xl border border-[color:var(--border-primary)] max-w-md">
 
           <h2 className="text-xl font-bold mb-2 text-red-500">
@@ -236,33 +214,31 @@ const DestinationsScreen = () => {
           </p>
 
           <button
-            onClick={() =>
-              window.location.reload()
-            }
+            onClick={() => window.location.reload()}
             className="bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] py-2 px-4 rounded-lg"
           >
             Try Again
           </button>
 
         </div>
-
       </div>
     );
   }
 
-  // ---------------------------------------------------------
-  // Main Screen
-  // ---------------------------------------------------------
+  // =========================================================
+  // MAIN SCREEN
+  // =========================================================
+
   return (
     <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] p-4 pb-24">
 
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto">
 
-        {/* ---------------------------------------------------
-            Header
-        ---------------------------------------------------- */}
+        {/* =================================================
+            PAGE HEADER
+        ================================================= */}
+
         <div className="mb-8">
-
           <h1 className="text-3xl font-bold mb-2 text-[color:var(--text-primary)]">
             Discover Pakistan
           </h1>
@@ -270,14 +246,13 @@ const DestinationsScreen = () => {
           <p className="text-[color:var(--text-secondary)]">
             Explore the diverse landscapes and rich heritage of Pakistan
           </p>
-
         </div>
 
-        {/* ---------------------------------------------------
-            Empty State
-        ---------------------------------------------------- */}
-        {destinations.length === 0 ? (
+        {/* =================================================
+            EMPTY STATE
+        ================================================= */}
 
+        {destinations.length === 0 ? (
           <div className="text-center py-12">
 
             <div className="text-5xl mb-4">
@@ -293,44 +268,44 @@ const DestinationsScreen = () => {
             </p>
 
           </div>
-
         ) : (
 
-          /* -------------------------------------------------
-             Destination Grid
-          -------------------------------------------------- */
+          /* =================================================
+             DESTINATION GRID
+          ================================================= */
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
             {destinations.map((destination) => {
 
               const image =
-                getDestinationImage(
-                  destination
-                );
+                getDestinationImage(destination);
 
               const destinationName =
-                destination?.name ||
-                'Destination';
+                destination?.name || 'Destination';
 
               const destinationSlug =
                 destinationName
-                  .trim()
                   .replace(/\s+/g, '-')
                   .toLowerCase();
 
               return (
-
                 <Link
                   to={`/destination/${destinationSlug}`}
-                  key={destination?.id}
+                  key={destination.id}
                   className="block group"
                 >
 
+                  {/* =========================================
+                      DESTINATION CARD
+                  ========================================== */}
+
                   <div className="bg-[color:var(--surface-primary)] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-[color:var(--border-primary)] group-hover:border-[color:var(--accent-primary)]">
 
-                    {/* =====================================
-                        Destination Image
-                    ====================================== */}
+                    {/* =======================================
+                        IMAGE AREA
+                    ======================================== */}
+
                     <div className="relative h-52 overflow-hidden bg-[color:var(--surface-secondary)]">
 
                       <img
@@ -339,7 +314,6 @@ const DestinationsScreen = () => {
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                         loading="lazy"
                         onError={(event) => {
-                          // Prevent infinite image error loop
                           if (
                             event.currentTarget.src !==
                             fallbackImage
@@ -350,23 +324,13 @@ const DestinationsScreen = () => {
                         }}
                       />
 
-                      {/* Dark gradient for readability */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none"></div>
+                      {/* Dark gradient */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent pointer-events-none"></div>
 
-                      {/* Category Badge */}
-                      <div className="absolute top-3 left-3">
-
-                        <span className="bg-black/50 backdrop-blur-md text-white text-xs font-medium px-3 py-1.5 rounded-full capitalize">
-                          {destination?.category ||
-                            'destination'}
-                        </span>
-
-                      </div>
-
-                      {/* Destination name on image */}
+                      {/* Destination name over image */}
                       <div className="absolute bottom-4 left-4 right-4">
 
-                        <h3 className="text-xl font-bold text-white drop-shadow-md">
+                        <h3 className="text-2xl font-bold text-white drop-shadow-lg">
                           {destinationName}
                         </h3>
 
@@ -374,28 +338,32 @@ const DestinationsScreen = () => {
 
                     </div>
 
-                    {/* =====================================
-                        Destination Details
-                    ====================================== */}
-                    <div className="p-5">
+                    {/* =======================================
+                        CARD CONTENT
+                    ======================================== */}
+
+                    <div className="p-6">
 
                       {/* Tagline */}
-                      <p className="text-[color:var(--text-secondary)] text-sm mb-3">
+                      <p className="text-[color:var(--text-secondary)] text-sm">
                         {destination?.tagline ||
                           'Beautiful destination'}
                       </p>
 
-                      {/* Description if available */}
-                      {destination?.description && (
-                        <p className="text-[color:var(--text-secondary)] text-xs line-clamp-2 mb-4">
-                          {destination.description}
-                        </p>
-                      )}
+                      {/* Category */}
+                      <div className="mt-4">
+
+                        <span className="inline-block bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] text-xs px-3 py-1.5 rounded-full capitalize">
+                          {destination?.category ||
+                            'location'}
+                        </span>
+
+                      </div>
 
                       {/* Explore */}
-                      <div className="flex items-center justify-between">
+                      <div className="mt-5 flex items-center justify-between">
 
-                        <span className="text-sm font-semibold text-[color:var(--accent-primary)]">
+                        <span className="text-[color:var(--accent-primary)] font-semibold">
                           Explore
                         </span>
 
@@ -410,16 +378,13 @@ const DestinationsScreen = () => {
                   </div>
 
                 </Link>
-
               );
             })}
 
           </div>
-
         )}
 
       </div>
-
     </div>
   );
 };
