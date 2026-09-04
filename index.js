@@ -65,15 +65,20 @@ app.use(/(.*)/, (req, res) => {
   });
 });
 
-// Connect to database and start server
+// Export the Express app for Vercel/serverless use.
+module.exports = app;
+
+// Connect to database and start server locally only
 const { connectDB } = require('./touristo/config/database');
 const { seedDatabase } = require('./touristo/utils/seedData'); // Import seeding function
 const { setupSchema } = require('./touristo/utils/schemaSetup'); // Import schema setup function
 
 const PORT = process.env.PORT || 3000;
 
-// Start server immediately
-const server = app.listen(PORT, async () => {
+// Start server immediately when running `node index.js` locally.
+let server;
+if (require.main === module) {
+server = app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
   
   try {
@@ -88,9 +93,10 @@ const server = app.listen(PORT, async () => {
     console.error('Error during database setup or seeding:', setupErr);
   }
 });
+}
 
 // Handle any potential server errors
-server.on('error', (err) => {
+if (server) server.on('error', (err) => {
   console.error('Server error:', err);
 });
 
@@ -105,11 +111,13 @@ const attemptDbConnection = async () => {
   }
 };
 
-// Call the database connection function
-attemptDbConnection().catch(console.error);
+// Call the database connection function locally only
+if (require.main === module) {
+  attemptDbConnection().catch(console.error);
+}
 
-// Prevent process from exiting on unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
+// Prevent process from exiting on unhandled promise rejections locally
+if (require.main === module) process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
   console.log('Continuing execution...');
 });
