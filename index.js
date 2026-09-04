@@ -25,6 +25,7 @@ const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 300, standardHeade
 
 // Initialize Express app
 const app = express();
+app.set('trust proxy', 1);
 
 // Apply middleware
 app.use(helmet()); // Security headers
