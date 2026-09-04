@@ -1,5 +1,5 @@
 const { query } = require('../config/database');
-const Package = require('../models/package'); // Fix the path to match typical Node.js conventions
+const Package = require('../models/Package'); // Fix the path to match typical Node.js conventions
 
 /**
  * Get personalized recommendations for a user based on their history
