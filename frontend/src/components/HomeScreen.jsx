@@ -8,6 +8,7 @@ const HomeScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState(''); // State for search query
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate(); // Hook for navigation
 
   // Handle search submission
@@ -91,7 +92,7 @@ const HomeScreen = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/20 z-0"></div>
         
         {/* Navigation */}
-        <nav className="p-6 md:p-8 w-full relative z-10" style={{ backgroundColor: 'var(--nav-footer-bg)' }}>
+        <nav className="p-6 md:p-8 w-full relative z-20" style={{ backgroundColor: 'var(--nav-footer-bg)' }}>
           <div className="max-w-7xl mx-auto flex justify-between items-center">
             <div className="flex items-center space-x-2">
               <div className="w-10 h-10 rounded-full bg-[color:var(--accent-primary)] flex items-center justify-center">
@@ -105,7 +106,22 @@ const HomeScreen = () => {
               <Link to="/about" className="hover:text-[color:var(--accent-primary)] transition text-[color:var(--nav-text)]">About</Link>
               <Link to="/contact" className="hover:text-[color:var(--accent-primary)] transition text-[color:var(--nav-text)]">Contact</Link>
             </div>
-            <button className="md:hidden text-2xl text-[color:var(--nav-text)]">☰</button>
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden text-2xl text-[color:var(--nav-text)]"
+            >
+              {mobileMenuOpen ? '✕' : '☰'}
+            </button>
+            {mobileMenuOpen && (
+              <div className="md:hidden absolute top-full left-0 right-0 bg-[color:var(--nav-footer-bg)] border-t border-[color:var(--border-primary)] py-4 z-20">
+                <div className="flex flex-col space-y-4 px-6">
+                  <Link to="/destinations" onClick={() => setMobileMenuOpen(false)} className="text-[color:var(--nav-text)]">Destinations</Link>
+                  <Link to="/experiences" onClick={() => setMobileMenuOpen(false)} className="text-[color:var(--nav-text)]">Experiences</Link>
+                  <Link to="/about" onClick={() => setMobileMenuOpen(false)} className="text-[color:var(--nav-text)]">About</Link>
+                  <Link to="/contact" onClick={() => setMobileMenuOpen(false)} className="text-[color:var(--nav-text)]">Contact</Link>
+                </div>
+              </div>
+           )}
           </div>
         </nav>
 
@@ -236,9 +252,11 @@ const HomeScreen = () => {
                 className="card hover-lift"
               >
                 <div className="h-48 overflow-hidden rounded-t-lg">
-                  <div className="w-full h-full bg-[color:var(--accent-primary)] flex items-center justify-center">
-                    <span className="text-4xl text-[color:var(--nav-text)] font-bold">{destination.name?.charAt(0) || '?'}</span>
-                  </div>
+                  <img
+                    src={destination.packages?.[0]?.image || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80"}
+                    alt={destination.name}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div className="p-6">
                   <h3 className="text-xl font-bold mb-2 text-[color:var(--text-primary)]">{destination.name}</h3>

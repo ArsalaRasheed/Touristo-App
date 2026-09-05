@@ -1,55 +1,52 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // Import auth context
+import { useAuth } from '../context/AuthContext';
 
 const BottomNav = () => {
   const location = useLocation();
-  const { user } = useAuth(); // Get user from auth context
+  const { user } = useAuth();
 
-  // Define navigation items for travelers
+  // Traveler: exactly 5 items (locked spec)
   const travelerNavItems = [
     { to: '/home', label: 'Home', icon: '🏠' },
-    { to: '/destinations', label: 'Destinations', icon: '🌍' },
-    { to: '/host-discovery', label: 'Hosts', icon: '🏨' }, // Travelers see 'Hosts' instead of 'Host Dashboard'
+    { to: '/search', label: 'Search', icon: '🔍' },
     { to: '/trip-planner', label: 'AI Planner', icon: '🤖' },
-    { to: '/tour-guide-comparison', label: 'Compare Guides', icon: '🧭' },
     { to: '/my-trips', label: 'My Trips', icon: '🧳' },
-    { to: '/sos', label: 'SOS', icon: '🚨' },
     { to: '/profile', label: 'Profile', icon: '👤' },
   ];
 
-  // Define navigation items for hosts
+  // Host: exactly 4 items (locked spec)
   const hostNavItems = [
     { to: '/host-dashboard', label: 'Dashboard', icon: '📊' },
     { to: '/my-packages', label: 'My Packages', icon: '📦' },
-    { to: '/host/guides', label: 'Guides', icon: '🧑‍🏫' },
     { to: '/bookings', label: 'Bookings', icon: '📅' },
-    { to: '/sos', label: 'SOS', icon: '🚨' },
     { to: '/profile', label: 'Profile', icon: '👤' },
   ];
 
-  // Select navigation items based on user role
   const navItems = user?.role === 'host' ? hostNavItems : travelerNavItems;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 p-2" style={{ 
-      backgroundColor: 'var(--nav-footer-bg)',
-      borderTop: '1px solid var(--border-primary)'
-    }}>
-      <div className="flex justify-around">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 h-16"
+      style={{
+        backgroundColor: 'var(--nav-footer-bg)',
+        borderTop: '1px solid var(--border-primary)'
+      }}
+    >
+      <div className="flex justify-around items-center h-full">
         {navItems.map(item => (
           <Link
             key={item.to}
             to={item.to}
-            className={`flex flex-col items-center p-1 rounded-lg text-xs`}
+            className="flex flex-col items-center justify-center text-xs flex-1"
             style={{
               color: location.pathname === item.to
                 ? 'var(--accent-primary)'
                 : 'var(--nav-text)'
             }}
           >
-            <span className="text-lg">{item.icon}</span>
-            <span>{item.label}</span>
+            <span className="text-lg leading-none">{item.icon}</span>
+            <span className="mt-1 whitespace-nowrap">{item.label}</span>
           </Link>
         ))}
       </div>

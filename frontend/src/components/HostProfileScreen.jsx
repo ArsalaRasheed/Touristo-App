@@ -10,6 +10,31 @@ const HostProfileScreen = () => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview'); // Added tab state
   const [selectedGuide, setSelectedGuide] = useState(null);
+  const [guidePreference, setGuidePreference] = useState('');
+  const [guideRecommendation, setGuideRecommendation] = useState(null);
+  const [recommending, setRecommending] = useState(false);
+
+  const handleGetRecommendation = async () => {
+    if (!guidePreference.trim()) return;
+    setRecommending(true);
+    setGuideRecommendation(null);
+    try {
+      const response = await fetch('/api/tour-guides/recommend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guides: hostData.tourGuides,
+          preference: guidePreference
+        })
+      });
+      const data = await response.json();
+      setGuideRecommendation(data.data);
+    } catch (err) {
+      setGuideRecommendation({ error: 'Could not get a recommendation right now.' });
+    } finally {
+    setRecommending(false);
+    }
+  };
   const navigate = useNavigate(); // Added navigation hook
 
   // Function to get appropriate color for ranking badge
@@ -281,6 +306,37 @@ const HostProfileScreen = () => {
           {activeTab === 'guides' && (
             <div>
               <h2 className="text-xl font-bold mb-4 text-[color:var(--text-primary)]">Tour Guides</h2>
+              {hostData.tourGuides && hostData.tourGuides.length > 1 && (
+                <div className="bg-[color:var(--surface-secondary)] rounded-xl p-4 mb-6 border border-[color:var(--border-primary)]">
+                  <h3 className="font-bold text-[color:var(--text-primary)] mb-2">🤖 Which guide is best for me?</h3>
+                  <p className="text-sm text-[color:var(--text-secondary)] mb-3">e.g. "Urdu-speaking guide for a family trip"</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={guidePreference}
+                      onChange={(e) => setGuidePreference(e.target.value)}
+                      placeholder="Describe what you need..."
+                      className="flex-1 p-2 rounded-lg border border-[color:var(--border-primary)] bg-[color:var(--surface-primary)]"
+                    />
+                    <button
+                      onClick={handleGetRecommendation}
+                      disabled={recommending}
+                      className="bg-[color:var(--accent-primary)] text-[color:var(--nav-text)] px-4 py-2 rounded-lg font-medium disabled:opacity-50"
+                    >
+                      {recommending ? '...' : 'Ask AI'}
+                    </button>
+                  </div>
+                  {guideRecommendation && !guideRecommendation.error && (
+                    <div className="mt-3 p-3 bg-[color:var(--surface-primary)] rounded-lg">
+                      <p className="font-bold text-[color:var(--accent-primary)]">{guideRecommendation.recommendedGuideName}</p>
+                      <p className="text-sm text-[color:var(--text-secondary)]">{guideRecommendation.reason}</p>
+                    </div>
+                  )}
+                  {guideRecommendation?.error && (
+                    <p className="text-sm text-red-500 mt-2">{guideRecommendation.error}</p>
+                  )}
+                </div>
+              )}
               {hostData.tourGuides && hostData.tourGuides.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {hostData.tourGuides.map(guide => (
@@ -336,7 +392,7 @@ const HostProfileScreen = () => {
             </div>
             <div className="flex-grow overflow-auto p-4">
               <TourGuideChat
-                tourGuideId={hostData.user_id}
+                tourGuideId={selectedGuide.id}
                 tourGuideName={selectedGuide.name}
               />
             </div>

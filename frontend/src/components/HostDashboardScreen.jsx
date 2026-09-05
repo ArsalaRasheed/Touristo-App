@@ -140,6 +140,16 @@ const HostDashboardScreen = () => {
         </div>
       </div>
 
+      {/* Quick Actions */}
+      <div className="mb-6">
+        <Link 
+          to="/host/guides" 
+          className="inline-flex items-center bg-[color:var(--surface-primary)] hover:bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] px-4 py-3 rounded-xl border border-[color:var(--border-primary)] font-medium transition"
+        >
+          🧑‍🏫 Manage Tour Guides
+        </Link>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Bookings */}
         <div className="bg-[color:var(--surface-primary)] rounded-2xl p-6 shadow-md border border-[color:var(--border-primary)]">

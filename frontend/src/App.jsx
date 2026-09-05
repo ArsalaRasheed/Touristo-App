@@ -29,7 +29,6 @@ import HostDiscoveryScreen from './components/HostDiscoveryScreen';
 import HostBookingsScreen from './components/HostBookingsScreen'; // Import HostBookingsScreen
 import DestinationExploreScreen from './components/DestinationExploreScreen'; // Import DestinationExploreScreen
 import MyPackagesScreen from './components/MyPackagesScreen'; // Import MyPackagesScreen
-import GuideComparisonScreen from './components/GuideComparisonScreen';
 import ManageTourGuidesScreen from './components/ManageTourGuidesScreen';
 
 // Wrapper component to conditionally render BottomNav based on user role
@@ -204,10 +203,6 @@ const AppContent = () => {
                   <CreateEditPackageScreen />
                 </ProtectedRoute>
               } 
-            />
-            <Route
-              path="/tour-guide-comparison"
-              element={<ProtectedRoute allowedRoles={['traveler']}><GuideComparisonScreen /></ProtectedRoute>}
             />
             <Route
               path="/host/guides"
