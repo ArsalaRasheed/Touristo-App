@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import {
+  Settings as SettingsIcon,
+  Luggage,
+  Star,
+  Heart,
+  Shield,
+  CreditCard,
+  Bell,
+  LayoutDashboard,
+  ChevronRight,
+} from 'lucide-react';
 
 const ProfileScreen = () => {
   const [userData, setUserData] = useState(null);
@@ -78,12 +89,12 @@ const ProfileScreen = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] p-4 flex items-center justify-center">
-        <div className="text-center p-6 bg-[color:var(--surface-primary)] rounded-xl border border-[color:var(--border-primary)] max-w-md">
+        <div className="text-center p-6 bg-[color:var(--surface-primary)] rounded-xl border border-[color:var(--border-primary)] max-w-md shadow-sm">
           <h2 className="text-xl font-bold mb-2 text-red-500">Error Loading Profile</h2>
           <p className="text-[color:var(--text-secondary)] mb-4">Failed to load profile: {error}</p>
           <button 
             onClick={() => window.location.reload()}
-            className="bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] py-2 px-4 rounded-lg"
+            className="bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] py-2 px-4 rounded-lg transition"
           >
             Try Again
           </button>
@@ -92,53 +103,72 @@ const ProfileScreen = () => {
     );
   }
 
+  const isHost = user?.role === 'host';
+
   return (
     <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] p-4">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-6 text-center text-[color:var(--text-primary)]">My Profile</h1>
         
         {/* Profile Header */}
-        <div className="bg-[color:var(--surface-primary)] rounded-2xl p-6 mb-6 border border-[color:var(--border-primary)]">
+        <div className="bg-[color:var(--surface-primary)] rounded-2xl p-6 mb-6 border border-[color:var(--border-primary)] shadow-sm">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-            <div className="w-24 h-24 rounded-full overflow-hidden">
-              <div className="w-full h-full bg-[color:var(--accent-primary)] flex items-center justify-center text-[color:var(--nav-text)] font-bold text-2xl">
+            <div className="w-24 h-24 rounded-full overflow-hidden shadow-md ring-2 ring-[color:var(--border-primary)]">
+              <div className="w-full h-full bg-gradient-to-br from-[color:var(--accent-primary)] to-[color:var(--accent-primary-hover)] flex items-center justify-center text-[color:var(--nav-text)] font-bold text-2xl">
                 {(hostData?.company_name || userData.name)?.charAt(0) || 'U'}
               </div>
             </div>
             
             <div className="text-center md:text-left flex-grow">
               <h2 className="text-2xl font-bold mb-1 text-[color:var(--text-primary)]">
-                {user.role === 'host' ? hostData?.company_name || userData.name : userData.name}
+                {isHost ? hostData?.company_name || userData.name : userData.name}
               </h2>
               <p className="text-[color:var(--text-secondary)] mb-1">{userData.email}</p>
               <p className="text-sm text-[color:var(--text-secondary)] mb-1">Member since {new Date(userData.created_at || Date.now()).getFullYear()}</p>
               
               {/* Role-specific indicator */}
               <div className="mt-2 inline-block px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
-                {user.role === 'host' ? 'Tour Company Account' : 'Traveler Account'}
+                {isHost ? 'Tour Company Account' : 'Traveler Account'}
               </div>
             </div>
             
-            <div className="flex gap-3">
+            <div className="flex gap-3 shrink-0">
               <Link 
                 to="/settings" 
-                className="px-4 py-2 bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] rounded-lg hover:bg-[color:var(--border-primary)] transition"
+                className="px-4 py-2 bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] rounded-lg hover:bg-[color:var(--border-primary)] transition text-sm font-medium"
               >
                 Edit Profile
               </Link>
               <Link 
                 to="/settings" 
-                className="px-4 py-2 bg-[color:var(--accent-primary)] text-[color:var(--nav-text)] rounded-lg hover:bg-[color:var(--accent-primary-hover)] transition"
+                className="px-4 py-2 bg-[color:var(--accent-primary)] text-[color:var(--nav-text)] rounded-lg hover:bg-[color:var(--accent-primary-hover)] transition text-sm font-medium"
               >
                 Settings
               </Link>
             </div>
           </div>
         </div>
+
+        {/* Prominent quick-access: My Trips (moved from bottom nav) / Dashboard for hosts */}
+        <Link
+          to={isHost ? '/host-dashboard' : '/my-trips'}
+          className="flex items-center justify-between bg-[color:var(--accent-primary)] text-[color:var(--nav-text)] rounded-2xl p-5 mb-6 shadow-md hover:shadow-lg hover:bg-[color:var(--accent-primary-hover)] transition group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center">
+              {isHost ? <LayoutDashboard className="w-6 h-6" /> : <Luggage className="w-6 h-6" />}
+            </div>
+            <div>
+              <p className="font-bold text-lg leading-tight">{isHost ? 'Go to Dashboard' : 'My Trips'}</p>
+              <p className="text-sm opacity-90">{isHost ? 'Manage your bookings & packages' : 'View your bookings and travel plans'}</p>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 opacity-80 group-hover:translate-x-1 transition-transform" />
+        </Link>
         
         {/* Host-specific information if user is a host */}
-        {user.role === 'host' && hostData && (
-          <div className="bg-[color:var(--surface-primary)] rounded-2xl p-6 mb-6 border border-[color:var(--border-primary)]">
+        {isHost && hostData && (
+          <div className="bg-[color:var(--surface-primary)] rounded-2xl p-6 mb-6 border border-[color:var(--border-primary)] shadow-sm">
             <h2 className="text-xl font-bold mb-4 text-[color:var(--text-primary)]">Company Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -167,45 +197,45 @@ const ProfileScreen = () => {
         
         {/* Stats - Different for hosts vs travelers */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {user.role === 'host' ? (
+          {isHost ? (
             <>
-              <div className="bg-[color:var(--surface-primary)] rounded-xl p-4 text-center border border-[color:var(--border-primary)]">
+              <div className="bg-[color:var(--surface-primary)] rounded-xl p-4 text-center border border-[color:var(--border-primary)] shadow-sm">
                 <div className="text-2xl font-bold text-[color:var(--accent-primary)]">{hostData?.packages_count || 0}</div>
-                <div className="text-[color:var(--text-secondary)]">Packages</div>
+                <div className="text-[color:var(--text-secondary)] text-sm">Packages</div>
               </div>
-              <div className="bg-[color:var(--surface-primary)] rounded-xl p-4 text-center border border-[color:var(--border-primary)]">
+              <div className="bg-[color:var(--surface-primary)] rounded-xl p-4 text-center border border-[color:var(--border-primary)] shadow-sm">
                 <div className="text-2xl font-bold text-[color:var(--accent-primary)]">{hostData?.total_bookings || 0}</div>
-                <div className="text-[color:var(--text-secondary)]">Total Bookings</div>
+                <div className="text-[color:var(--text-secondary)] text-sm">Total Bookings</div>
               </div>
-              <div className="bg-[color:var(--surface-primary)] rounded-xl p-4 text-center border border-[color:var(--border-primary)]">
+              <div className="bg-[color:var(--surface-primary)] rounded-xl p-4 text-center border border-[color:var(--border-primary)] shadow-sm">
                 <div className="text-2xl font-bold text-[color:var(--accent-primary)]">{hostData?.revenue ? `PKR ${hostData.revenue.toLocaleString()}` : '0'}</div>
-                <div className="text-[color:var(--text-secondary)]">Revenue</div>
+                <div className="text-[color:var(--text-secondary)] text-sm">Revenue</div>
               </div>
             </>
           ) : (
             <>
-              <div className="bg-[color:var(--surface-primary)] rounded-xl p-4 text-center border border-[color:var(--border-primary)]">
+              <div className="bg-[color:var(--surface-primary)] rounded-xl p-4 text-center border border-[color:var(--border-primary)] shadow-sm">
                 <div className="text-2xl font-bold text-[color:var(--accent-primary)]">{userData.totalTrips}</div>
-                <div className="text-[color:var(--text-secondary)]">Trips Taken</div>
+                <div className="text-[color:var(--text-secondary)] text-sm">Trips Taken</div>
               </div>
-              <div className="bg-[color:var(--surface-primary)] rounded-xl p-4 text-center border border-[color:var(--border-primary)]">
+              <div className="bg-[color:var(--surface-primary)] rounded-xl p-4 text-center border border-[color:var(--border-primary)] shadow-sm">
                 <div className="text-2xl font-bold text-[color:var(--accent-primary)]">{userData.totalReviews}</div>
-                <div className="text-[color:var(--text-secondary)]">Reviews Written</div>
+                <div className="text-[color:var(--text-secondary)] text-sm">Reviews Written</div>
               </div>
-              <div className="bg-[color:var(--surface-primary)] rounded-xl p-4 text-center border border-[color:var(--border-primary)]">
+              <div className="bg-[color:var(--surface-primary)] rounded-xl p-4 text-center border border-[color:var(--border-primary)] shadow-sm">
                 <div className="text-2xl font-bold text-[color:var(--accent-primary)]">{userData.totalFavorites}</div>
-                <div className="text-[color:var(--text-secondary)]">Favorites</div>
+                <div className="text-[color:var(--text-secondary)] text-sm">Favorites</div>
               </div>
             </>
           )}
         </div>
         
         {/* Favorite Destinations for travelers, or packages for hosts */}
-        <div className="bg-[color:var(--surface-primary)] rounded-2xl p-6 border border-[color:var(--border-primary)]">
-          <h2 className="text-xl font-bold mb-4 text-[color:var(--text-primary)]">
-            {user.role === 'host' ? 'My Packages' : 'Favorite Destinations'}
+        <div className="bg-[color:var(--surface-primary)] rounded-2xl p-6 mb-6 border border-[color:var(--border-primary)] shadow-sm">
+          <h2 className="text-xl font-bold mb-4 text-[color:var(--text-primary)] flex items-center gap-2">
+            {isHost ? <><Star className="w-5 h-5 text-[color:var(--accent-primary)]" /> My Packages</> : <><Heart className="w-5 h-5 text-[color:var(--accent-primary)]" /> Favorite Destinations</>}
           </h2>
-          {user.role === 'host' ? (
+          {isHost ? (
             hostData?.packages && hostData.packages.length > 0 ? (
               <div className="space-y-3">
                 {hostData.packages.map((pkg, index) => (
@@ -242,27 +272,25 @@ const ProfileScreen = () => {
         </div>
         
         {/* Account Actions */}
-        <div className="mt-6 bg-[color:var(--surface-primary)] rounded-2xl p-6 border border-[color:var(--border-primary)]">
+        <div className="bg-[color:var(--surface-primary)] rounded-2xl p-6 border border-[color:var(--border-primary)] shadow-sm">
           <h2 className="text-xl font-bold mb-4 text-[color:var(--text-primary)]">Account Settings</h2>
-          <div className="space-y-3">
-            <Link to="/settings" className="block p-3 bg-[color:var(--surface-secondary)] hover:bg-[color:var(--border-primary)] rounded-lg transition text-[color:var(--text-primary)]">
-              Privacy & Security
+          <div className="space-y-2">
+            <Link to="/settings" className="flex items-center gap-3 p-3 bg-[color:var(--surface-secondary)] hover:bg-[color:var(--border-primary)] rounded-lg transition text-[color:var(--text-primary)]">
+              <Shield className="w-5 h-5 text-[color:var(--accent-primary)]" />
+              <span>Privacy &amp; Security</span>
             </Link>
-            <Link to="/settings" className="block p-3 bg-[color:var(--surface-secondary)] hover:bg-[color:var(--border-primary)] rounded-lg transition text-[color:var(--text-primary)]">
-              Payment Methods
+            <Link to="/settings" className="flex items-center gap-3 p-3 bg-[color:var(--surface-secondary)] hover:bg-[color:var(--border-primary)] rounded-lg transition text-[color:var(--text-primary)]">
+              <CreditCard className="w-5 h-5 text-[color:var(--accent-primary)]" />
+              <span>Payment Methods</span>
             </Link>
-            <Link to="/settings" className="block p-3 bg-[color:var(--surface-secondary)] hover:bg-[color:var(--border-primary)] rounded-lg transition text-[color:var(--text-primary)]">
-              Notification Preferences
+            <Link to="/notifications" className="flex items-center gap-3 p-3 bg-[color:var(--surface-secondary)] hover:bg-[color:var(--border-primary)] rounded-lg transition text-[color:var(--text-primary)]">
+              <Bell className="w-5 h-5 text-[color:var(--accent-primary)]" />
+              <span>Notification Preferences</span>
             </Link>
-            {user.role === 'host' ? (
-              <Link to="/host-dashboard" className="block p-3 bg-[color:var(--surface-secondary)] hover:bg-[color:var(--border-primary)] rounded-lg transition text-[color:var(--text-primary)]">
-                Go to Dashboard
-              </Link>
-            ) : (
-              <Link to="/my-trips" className="block p-3 bg-[color:var(--surface-secondary)] hover:bg-[color:var(--border-primary)] rounded-lg transition text-[color:var(--text-primary)]">
-                Manage Bookings
-              </Link>
-            )}
+            <Link to="/settings" className="flex items-center gap-3 p-3 bg-[color:var(--surface-secondary)] hover:bg-[color:var(--border-primary)] rounded-lg transition text-[color:var(--text-primary)]">
+              <SettingsIcon className="w-5 h-5 text-[color:var(--accent-primary)]" />
+              <span>All Settings</span>
+            </Link>
           </div>
         </div>
       </div>
