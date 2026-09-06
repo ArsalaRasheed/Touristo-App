@@ -1,134 +1,193 @@
-import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
   MapPin,
   Star,
   Clock,
-  Users,
-  CalendarDays,
   Package,
   ChevronRight,
-} from "lucide-react";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+  Utensils,
+  Landmark,
+  Mountain,
+  Heart,
+  ShieldCheck,
+  Compass,
+} from 'lucide-react';
 
 const FALLBACK_IMAGE =
-  "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1200&q=80";
+  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1400&q=85';
 
-/*
-|--------------------------------------------------------------------------
-| FRONTEND DESTINATION IMAGES
-|--------------------------------------------------------------------------
-| Images are controlled from frontend.
-| Backend/database image is NOT required.
-*/
+// =========================================================
+// ACTUAL DESTINATION IMAGE LIBRARY
+// =========================================================
 
 const destinationImages = {
-  hunza:
-    "https://images.unsplash.com/photo-1589308078059-be1415eab4c3?auto=format&fit=crop&w=1400&q=85",
+  'hunza valley':
+    'https://images.unsplash.com/photo-1589308078059-be1415eab4c3?auto=format&fit=crop&w=1600&q=90',
 
   skardu:
-    "https://images.unsplash.com/photo-1596402184320-417e7178b2cd?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?auto=format&fit=crop&w=1600&q=90',
 
-  murree:
-    "https://images.unsplash.com/photo-1597074866923-dc0589150358?auto=format&fit=crop&w=1400&q=85",
+  'swat valley':
+    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1600&q=90',
 
   naran:
-    "https://images.unsplash.com/photo-1589553416260-f586c8f1514f?auto=format&fit=crop&w=1400&q=85",
+    'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=90',
 
-  swat:
-    "https://images.unsplash.com/photo-1627894483216-2138af692e32?auto=format&fit=crop&w=1400&q=85",
+  'babusar top':
+    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1600&q=90',
 
-  "neelum valley":
-    "https://images.unsplash.com/photo-1627894483216-2138af692e32?auto=format&fit=crop&w=1400&q=85",
+  lahore:
+    'https://images.unsplash.com/photo-1584285417130-12d00386b4fa?auto=format&fit=crop&w=1600&q=90',
 
-  gilgit:
-    "https://images.unsplash.com/photo-1589308078059-be1415eab4c3?auto=format&fit=crop&w=1400&q=85",
+  'mohenjo-daro':
+    'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?auto=format&fit=crop&w=1600&q=90',
 
-  "fairy meadows":
-    "https://images.unsplash.com/photo-1596402184320-417e7178b2cd?auto=format&fit=crop&w=1400&q=85",
-
-  islamabad:
-    "https://images.unsplash.com/photo-1597074866923-dc0589150358?auto=format&fit=crop&w=1400&q=85",
-
-  "kaghan valley":
-    "https://images.unsplash.com/photo-1589553416260-f586c8f1514f?auto=format&fit=crop&w=1400&q=85",
+  gwadar:
+    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=90',
 };
 
+// =========================================================
+// IMAGE HELPER
+// =========================================================
+
 const getDestinationImage = (name) => {
-  const key = String(name || "")
+  const key = String(name || '')
     .trim()
     .toLowerCase();
 
-  return destinationImages[key] || FALLBACK_IMAGE;
-};
-
-const getPackageImage = (pkg, destinationName) => {
-  /*
-   * First priority:
-   * 1. Frontend destination image
-   * 2. Backend package image if available
-   * 3. Fallback
-   */
-
   return (
-    getDestinationImage(destinationName) ||
-    pkg?.image ||
-    pkg?.image_url ||
-    pkg?.photo ||
+    destinationImages[key] ||
     FALLBACK_IMAGE
   );
 };
+
+// =========================================================
+// PACKAGE IMAGE
+// IMPORTANT:
+// Package's own image comes FIRST.
+// Destination image is only fallback.
+// =========================================================
+
+const getPackageImage = (
+  pkg,
+  destinationName
+) => {
+  return (
+    pkg?.image ||
+    pkg?.image_url ||
+    pkg?.photo ||
+    getDestinationImage(destinationName)
+  );
+};
+
+// =========================================================
+// NORMALIZE POSTGRES ARRAYS / STRINGS
+// =========================================================
+
+const normalizeList = (value) => {
+  if (Array.isArray(value)) {
+    return value.filter(Boolean);
+  }
+
+  if (!value) {
+    return [];
+  }
+
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+
+      if (Array.isArray(parsed)) {
+        return parsed.filter(Boolean);
+      }
+    } catch {
+      // normal comma-separated text
+    }
+
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+};
+
+// =========================================================
+// COMPONENT
+// =========================================================
 
 const DestinationExploreScreen = () => {
   const { destination } = useParams();
   const navigate = useNavigate();
 
-  const [destinationData, setDestinationData] = useState(null);
+  const [destinationData, setDestinationData] =
+    useState(null);
+
   const [packages, setPackages] = useState([]);
+
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+
+  const [error, setError] = useState('');
+
+  // =========================================================
+  // FETCH DESTINATION BY DATABASE ID
+  // =========================================================
 
   useEffect(() => {
     const fetchDestination = async () => {
       try {
         setLoading(true);
-        setError("");
+        setError('');
 
         const response = await fetch(
-          `${API_BASE_URL}/api/destinations/name/${encodeURIComponent(
+          `/api/destinations/${encodeURIComponent(
             destination
           )}`
         );
 
-        if (!response.ok) {
-          throw new Error("Destination not found");
-        }
-
         const data = await response.json();
 
-        /*
-         * Different backend response structures are handled safely.
-         */
+        if (!response.ok) {
+          throw new Error(
+            data?.message ||
+              'Destination not found'
+          );
+        }
+
         const destinationInfo =
-          data?.destination ||
-          data?.data?.destination ||
-          data?.data ||
-          data;
+          data?.data?.destination;
 
         const packageList =
-          data?.packages ||
-          data?.data?.packages ||
-          destinationInfo?.packages ||
-          [];
+          data?.data?.packages || [];
 
-        setDestinationData(destinationInfo);
-        setPackages(Array.isArray(packageList) ? packageList : []);
+        if (!destinationInfo) {
+          throw new Error(
+            'Destination information is unavailable'
+          );
+        }
+
+        setDestinationData(
+          destinationInfo
+        );
+
+        setPackages(
+          Array.isArray(packageList)
+            ? packageList
+            : []
+        );
       } catch (err) {
-        console.error("Destination fetch error:", err);
-        setError("Unable to load destination details.");
+        console.error(
+          'Destination error:',
+          err
+        );
+
+        setError(
+          err.message ||
+            'Unable to load destination.'
+        );
       } finally {
         setLoading(false);
       }
@@ -139,330 +198,613 @@ const DestinationExploreScreen = () => {
     }
   }, [destination]);
 
-  /*
-   |--------------------------------------------------------------------------
-   | Loading
-   |--------------------------------------------------------------------------
-   */
+  // =========================================================
+  // LOADING
+  // =========================================================
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center pb-24">
+      <div className="min-h-screen bg-[color:var(--bg-primary)] flex items-center justify-center pb-24">
+
         <div className="text-center">
-          <div className="w-10 h-10 border-4 border-green-700 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading destination...</p>
+
+          <div className="w-11 h-11 border-4 border-[color:var(--accent-primary)] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+
+          <p className="text-[color:var(--text-secondary)]">
+            Loading destination...
+          </p>
+
         </div>
+
       </div>
     );
   }
 
-  /*
-   |--------------------------------------------------------------------------
-   | Error
-   |--------------------------------------------------------------------------
-   */
+  // =========================================================
+  // ERROR
+  // =========================================================
 
   if (error || !destinationData) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-5 pb-24">
-        <div className="text-center">
-          <MapPin className="w-14 h-14 text-gray-300 mx-auto mb-4" />
+      <div className="min-h-screen bg-[color:var(--bg-primary)] flex items-center justify-center px-5 pb-24">
 
-          <h2 className="text-xl font-bold text-gray-800 mb-2">
+        <div className="max-w-md w-full text-center bg-[color:var(--surface-primary)] rounded-2xl border border-[color:var(--border-primary)] p-8 shadow-sm">
+
+          <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
+            <MapPin className="w-7 h-7 text-red-500" />
+          </div>
+
+          <h2 className="text-xl font-bold mb-2">
             Destination Not Found
           </h2>
 
-          <p className="text-gray-500 mb-5">
-            We couldn't find this destination.
+          <p className="text-[color:var(--text-secondary)] mb-6">
+            {error ||
+              "We couldn't load this destination."}
           </p>
 
           <button
             onClick={() => navigate(-1)}
-            className="px-5 py-2.5 rounded-xl bg-green-700 text-white font-semibold hover:bg-green-800 transition"
+            className="px-5 py-2.5 rounded-xl bg-[color:var(--accent-primary)] text-white font-semibold hover:opacity-90 transition"
           >
             Go Back
           </button>
+
         </div>
+
       </div>
     );
   }
 
-  /*
-   |--------------------------------------------------------------------------
-   | Destination information
-   |--------------------------------------------------------------------------
-   */
+  // =========================================================
+  // DATA
+  // =========================================================
 
   const destinationName =
-    destinationData?.name ||
-    destinationData?.destination_name ||
-    destination ||
-    "Destination";
+    destinationData.name;
 
-  const heroImage = getDestinationImage(destinationName);
+  const heroImage =
+    getDestinationImage(
+      destinationName
+    );
 
-  const description =
-    destinationData?.description ||
-    destinationData?.about ||
-    destinationData?.details ||
-    `Explore the beauty of ${destinationName} with our carefully selected travel packages.`;
+  const famousSpots =
+    normalizeList(
+      destinationData.famous_spots
+    );
 
-  /*
-   |--------------------------------------------------------------------------
-   | Package price helper
-   |--------------------------------------------------------------------------
-   */
+  const famousFood =
+    normalizeList(
+      destinationData.famous_food
+    );
+
+  // =========================================================
+  // PACKAGE HELPERS
+  // =========================================================
+
+  const getPackageName = (pkg) =>
+    pkg?.title ||
+    pkg?.name ||
+    'Travel Package';
 
   const getPrice = (pkg) => {
-    const price =
-      pkg?.price ??
-      pkg?.package_price ??
-      pkg?.amount ??
-      pkg?.starting_price;
+    const price = Number(pkg?.price);
 
-    if (price === null || price === undefined || price === "") {
-      return "Contact for price";
+    if (Number.isNaN(price)) {
+      return 'Contact for price';
     }
 
-    const numericPrice = Number(price);
-
-    if (Number.isNaN(numericPrice)) {
-      return price;
-    }
-
-    return `PKR ${numericPrice.toLocaleString()}`;
+    return `PKR ${price.toLocaleString()}`;
   };
 
-  /*
-   |--------------------------------------------------------------------------
-   | Package title helper
-   |--------------------------------------------------------------------------
-   */
-
-  const getPackageName = (pkg) => {
-    return (
-      pkg?.name ||
-      pkg?.package_name ||
-      pkg?.title ||
-      "Travel Package"
+  const getRating = (pkg) => {
+    const rating = Number(
+      pkg?.host_rating
     );
+
+    return Number.isNaN(rating)
+      ? null
+      : rating.toFixed(1);
   };
+
+  // =========================================================
+  // MAIN
+  // =========================================================
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      {/* ================================================================
-          HEADER
-      ================================================================= */}
+    <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] pb-24">
 
-      <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100">
+      {/* =====================================================
+          TOP BAR
+      ====================================================== */}
+
+      <div className="sticky top-0 z-40 bg-[color:var(--surface-primary)]/95 backdrop-blur-md border-b border-[color:var(--border-primary)]">
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-gray-700 hover:text-green-700 transition font-medium"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--text-secondary)] hover:text-[color:var(--accent-primary)] transition"
           >
             <ArrowLeft className="w-5 h-5" />
-            Back
+            Back to Destinations
           </button>
+
         </div>
+
       </div>
 
-      {/* ================================================================
+      {/* =====================================================
           HERO
-      ================================================================= */}
+      ====================================================== */}
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-5">
-        <div className="relative h-[300px] sm:h-[380px] lg:h-[430px] rounded-3xl overflow-hidden shadow-xl">
+
+        <div className="relative h-[320px] sm:h-[400px] lg:h-[470px] rounded-3xl overflow-hidden shadow-xl">
+
           <img
             src={heroImage}
             alt={destinationName}
             className="absolute inset-0 w-full h-full object-cover"
-            onError={(e) => {
-              e.currentTarget.src = FALLBACK_IMAGE;
+            onError={(event) => {
+              event.currentTarget.src =
+                FALLBACK_IMAGE;
             }}
           />
 
-          {/* Dark gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
 
-          {/* Hero content */}
-          <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8 lg:p-10">
-            <div className="flex items-center gap-2 text-white/90 mb-2">
-              <MapPin className="w-5 h-5" />
-              <span className="text-sm font-medium">
-                Pakistan
-              </span>
+          {/* LOCATION */}
+
+          <div className="absolute top-5 left-5">
+
+            <span className="inline-flex items-center gap-2 bg-black/35 backdrop-blur-md text-white px-4 py-2 rounded-full text-sm">
+
+              <MapPin className="w-4 h-4" />
+
+              Pakistan
+
+            </span>
+
+          </div>
+
+          {/* HERO TEXT */}
+
+          <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10">
+
+            <div className="flex items-center gap-2 text-white/80 text-sm mb-2">
+              <Compass className="w-4 h-4" />
+              Explore Destination
             </div>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-3">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white drop-shadow-lg mb-3">
               {destinationName}
             </h1>
 
-            <p className="text-white/90 max-w-2xl text-sm sm:text-base leading-relaxed">
-              {description}
-            </p>
+            {destinationData.category && (
+              <span className="inline-block bg-white/15 backdrop-blur-md border border-white/20 text-white px-3 py-1.5 rounded-full text-sm capitalize">
+                {destinationData.category}
+              </span>
+            )}
+
           </div>
+
         </div>
+
       </section>
 
-      {/* ================================================================
-          CONTENT
-      ================================================================= */}
+      {/* =====================================================
+          DESTINATION CONTENT
+      ====================================================== */}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        {/* Package heading */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
 
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Package className="w-5 h-5 text-green-700" />
+        {/* ===================================================
+            INTRO / HISTORY
+        ==================================================== */}
 
-              <span className="text-green-700 font-semibold text-sm">
-                Travel Packages
-              </span>
+        <section className="mb-10 max-w-4xl">
+
+          <p className="text-sm font-semibold text-[color:var(--accent-primary)] uppercase tracking-wide mb-2">
+            About {destinationName}
+          </p>
+
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+            Discover {destinationName}
+          </h2>
+
+          <p className="text-[color:var(--text-secondary)] leading-7">
+            {destinationData.history ||
+              `Discover the beauty and heritage of ${destinationName}.`}
+          </p>
+
+        </section>
+
+        {/* ===================================================
+            HISTORY + CULTURE
+        ==================================================== */}
+
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-10">
+
+          {/* HISTORY */}
+
+          <div className="bg-[color:var(--surface-primary)] rounded-2xl border border-[color:var(--border-primary)] p-6 shadow-sm">
+
+            <div className="flex items-center gap-3 mb-4">
+
+              <div className="w-11 h-11 rounded-xl bg-[color:var(--surface-secondary)] flex items-center justify-center">
+                <Landmark className="w-5 h-5 text-[color:var(--accent-primary)]" />
+              </div>
+
+              <div>
+                <h3 className="font-bold text-lg">
+                  History
+                </h3>
+
+                <p className="text-xs text-[color:var(--text-secondary)]">
+                  Heritage & background
+                </p>
+              </div>
+
             </div>
 
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
-              Explore {destinationName}
-            </h2>
-          </div>
-
-          <span className="hidden sm:block text-sm text-gray-500">
-            {packages.length}{" "}
-            {packages.length === 1 ? "package" : "packages"}
-          </span>
-        </div>
-
-        {/* ================================================================
-            PACKAGES
-        ================================================================= */}
-
-        {packages.length === 0 ? (
-          <div className="bg-white rounded-2xl p-10 text-center border border-gray-100 shadow-sm">
-            <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-
-            <h3 className="text-lg font-semibold text-gray-800 mb-1">
-              No Packages Available
-            </h3>
-
-            <p className="text-gray-500 text-sm">
-              There are currently no packages available for{" "}
-              {destinationName}.
+            <p className="text-sm text-[color:var(--text-secondary)] leading-7">
+              {destinationData.history ||
+                'Historical information will be available soon.'}
             </p>
+
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {packages.map((pkg, index) => {
-              const packageImage = getPackageImage(
-                pkg,
-                destinationName
-              );
 
-              return (
-                <div
-                  key={pkg?.id || pkg?.package_id || index}
-                  className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 group"
-                >
-                  {/* ======================================================
-                      PACKAGE IMAGE
-                  ======================================================= */}
+          {/* CULTURE */}
 
-                  <div className="relative h-52 overflow-hidden">
-                    <img
-                      src={packageImage}
-                      alt={getPackageName(pkg)}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      onError={(e) => {
-                        e.currentTarget.src = FALLBACK_IMAGE;
-                      }}
-                    />
+          <div className="bg-[color:var(--surface-primary)] rounded-2xl border border-[color:var(--border-primary)] p-6 shadow-sm">
 
-                    {/* Image overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent" />
+            <div className="flex items-center gap-3 mb-4">
 
-                    {/* Destination badge */}
-                    <div className="absolute top-3 left-3">
-                      <span className="bg-white/95 backdrop-blur-sm text-green-700 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm">
-                        {destinationName}
-                      </span>
-                    </div>
-                  </div>
+              <div className="w-11 h-11 rounded-xl bg-[color:var(--surface-secondary)] flex items-center justify-center">
+                <Heart className="w-5 h-5 text-[color:var(--accent-primary)]" />
+              </div>
 
-                  {/* ======================================================
-                      PACKAGE INFO
-                  ======================================================= */}
+              <div>
+                <h3 className="font-bold text-lg">
+                  Culture & Traditions
+                </h3>
 
-                  <div className="p-5">
-                    <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2">
-                      {getPackageName(pkg)}
-                    </h3>
+                <p className="text-xs text-[color:var(--text-secondary)]">
+                  Local life & traditions
+                </p>
+              </div>
 
-                    {/* Duration */}
-                    {pkg?.duration && (
-                      <div className="flex items-center gap-2 text-gray-500 text-sm mb-2">
-                        <Clock className="w-4 h-4 text-green-700" />
+            </div>
 
-                        <span>{pkg.duration}</span>
+            <p className="text-sm text-[color:var(--text-secondary)] leading-7">
+              {destinationData.culture ||
+                'Cultural information will be available soon.'}
+            </p>
+
+          </div>
+
+        </section>
+
+        {/* ===================================================
+            PLACES + FOOD
+        ==================================================== */}
+
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-12">
+
+          {/* PLACES */}
+
+          <div className="bg-[color:var(--surface-primary)] rounded-2xl border border-[color:var(--border-primary)] p-6 shadow-sm">
+
+            <div className="flex items-center gap-3 mb-5">
+
+              <div className="w-11 h-11 rounded-xl bg-[color:var(--surface-secondary)] flex items-center justify-center">
+                <Mountain className="w-5 h-5 text-[color:var(--accent-primary)]" />
+              </div>
+
+              <div>
+                <h3 className="font-bold text-lg">
+                  Places to Visit
+                </h3>
+
+                <p className="text-xs text-[color:var(--text-secondary)]">
+                  Must-see attractions
+                </p>
+              </div>
+
+            </div>
+
+            {famousSpots.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+
+                {famousSpots.map(
+                  (spot, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-2 rounded-xl bg-[color:var(--surface-secondary)] text-sm"
+                    >
+                      {spot}
+                    </span>
+                  )
+                )}
+
+              </div>
+            ) : (
+              <p className="text-sm text-[color:var(--text-secondary)]">
+                Attraction information will be available soon.
+              </p>
+            )}
+
+          </div>
+
+          {/* FOOD */}
+
+          <div className="bg-[color:var(--surface-primary)] rounded-2xl border border-[color:var(--border-primary)] p-6 shadow-sm">
+
+            <div className="flex items-center gap-3 mb-5">
+
+              <div className="w-11 h-11 rounded-xl bg-[color:var(--surface-secondary)] flex items-center justify-center">
+                <Utensils className="w-5 h-5 text-[color:var(--accent-primary)]" />
+              </div>
+
+              <div>
+                <h3 className="font-bold text-lg">
+                  Local Food
+                </h3>
+
+                <p className="text-xs text-[color:var(--text-secondary)]">
+                  Taste the destination
+                </p>
+              </div>
+
+            </div>
+
+            {famousFood.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+
+                {famousFood.map(
+                  (food, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-2 rounded-xl bg-[color:var(--surface-secondary)] text-sm"
+                    >
+                      {food}
+                    </span>
+                  )
+                )}
+
+              </div>
+            ) : (
+              <p className="text-sm text-[color:var(--text-secondary)]">
+                Local food information will be available soon.
+              </p>
+            )}
+
+          </div>
+
+        </section>
+
+        {/* =====================================================
+            PACKAGES
+        ====================================================== */}
+
+        <section>
+
+          <div className="flex items-end justify-between gap-4 mb-6">
+
+            <div>
+
+              <div className="flex items-center gap-2 mb-1">
+                <Package className="w-5 h-5 text-[color:var(--accent-primary)]" />
+
+                <span className="text-sm font-semibold text-[color:var(--accent-primary)]">
+                  Travel Packages
+                </span>
+              </div>
+
+              <h2 className="text-2xl sm:text-3xl font-bold">
+                Tours in {destinationName}
+              </h2>
+
+              <p className="text-sm text-[color:var(--text-secondary)] mt-1">
+                Compare packages from different tour companies.
+              </p>
+
+            </div>
+
+            <span className="hidden sm:block text-sm text-[color:var(--text-secondary)]">
+              {packages.length}{' '}
+              {packages.length === 1
+                ? 'package'
+                : 'packages'}
+            </span>
+
+          </div>
+
+          {/* ===================================================
+              PACKAGES
+          ==================================================== */}
+
+          {packages.length === 0 ? (
+
+            <div className="bg-[color:var(--surface-primary)] rounded-2xl border border-[color:var(--border-primary)] p-10 text-center">
+
+              <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+
+              <h3 className="font-bold text-lg mb-2">
+                No Packages Available Yet
+              </h3>
+
+              <p className="text-sm text-[color:var(--text-secondary)]">
+                Tour companies have not added packages for this destination yet.
+              </p>
+
+            </div>
+
+          ) : (
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+              {packages.map(
+                (pkg, index) => {
+
+                  const image =
+                    getPackageImage(
+                      pkg,
+                      destinationName
+                    );
+
+                  const rating =
+                    getRating(pkg);
+
+                  return (
+                    <article
+                      key={
+                        pkg?.id ||
+                        index
+                      }
+                      className="bg-[color:var(--surface-primary)] rounded-2xl overflow-hidden border border-[color:var(--border-primary)] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
+                    >
+
+                      {/* IMAGE */}
+
+                      <div className="relative h-52 overflow-hidden bg-[color:var(--surface-secondary)]">
+
+                        <img
+                          src={image}
+                          alt={getPackageName(pkg)}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          onError={(event) => {
+                            event.currentTarget.src =
+                              getDestinationImage(
+                                destinationName
+                              );
+                          }}
+                        />
+
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />
+
+                        {pkg?.host_verified && (
+                          <div className="absolute top-3 right-3">
+
+                            <span className="inline-flex items-center gap-1 bg-white/95 text-green-700 px-2.5 py-1.5 rounded-full text-xs font-semibold shadow">
+
+                              <ShieldCheck className="w-3.5 h-3.5" />
+
+                              Verified
+
+                            </span>
+
+                          </div>
+                        )}
+
+                        <div className="absolute bottom-3 left-4 right-4">
+
+                          <h3 className="text-lg font-bold text-white line-clamp-2 drop-shadow-lg">
+                            {getPackageName(pkg)}
+                          </h3>
+
+                        </div>
+
                       </div>
-                    )}
 
-                    {/* Travelers */}
-                    {(pkg?.max_travelers ||
-                      pkg?.max_people ||
-                      pkg?.capacity) && (
-                      <div className="flex items-center gap-2 text-gray-500 text-sm mb-2">
-                        <Users className="w-4 h-4 text-green-700" />
+                      {/* CONTENT */}
 
-                        <span>
-                          Up to{" "}
-                          {pkg.max_travelers ||
-                            pkg.max_people ||
-                            pkg.capacity}{" "}
-                          travelers
-                        </span>
-                      </div>
-                    )}
+                      <div className="p-5">
 
-                    {/* Date */}
-                    {pkg?.start_date && (
-                      <div className="flex items-center gap-2 text-gray-500 text-sm mb-4">
-                        <CalendarDays className="w-4 h-4 text-green-700" />
-
-                        <span>{pkg.start_date}</span>
-                      </div>
-                    )}
-
-                    {/* Price + Button */}
-
-                    <div className="flex items-center justify-between gap-3 pt-4 border-t border-gray-100">
-                      <div>
-                        <p className="text-xs text-gray-400 mb-0.5">
-                          Starting from
+                        <p className="text-xs text-[color:var(--text-secondary)] mb-1">
+                          Offered by
                         </p>
 
-                        <p className="text-lg font-bold text-green-700">
-                          {getPrice(pkg)}
+                        <p className="font-semibold text-sm mb-4">
+                          {pkg?.host_name ||
+                            'Tour Company'}
                         </p>
+
+                        <div className="flex items-center gap-4 mb-4">
+
+                          {rating && (
+                            <div className="flex items-center gap-1">
+
+                              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+
+                              <span className="text-sm font-semibold">
+                                {rating}
+                              </span>
+
+                            </div>
+                          )}
+
+                          {pkg?.duration_days && (
+                            <div className="flex items-center gap-1 text-[color:var(--text-secondary)]">
+
+                              <Clock className="w-4 h-4" />
+
+                              <span className="text-sm">
+                                {pkg.duration_days}{' '}
+                                {Number(
+                                  pkg.duration_days
+                                ) === 1
+                                  ? 'Day'
+                                  : 'Days'}
+                              </span>
+
+                            </div>
+                          )}
+
+                        </div>
+
+                        {pkg?.description && (
+                          <p className="text-sm text-[color:var(--text-secondary)] line-clamp-2 leading-6 mb-5">
+                            {pkg.description}
+                          </p>
+                        )}
+
+                        <div className="flex items-end justify-between gap-3 pt-4 border-t border-[color:var(--border-primary)]">
+
+                          <div>
+
+                            <p className="text-xs text-[color:var(--text-secondary)] mb-1">
+                              Starting from
+                            </p>
+
+                            <p className="text-lg font-bold text-[color:var(--accent-primary)]">
+                              {getPrice(pkg)}
+                            </p>
+
+                          </div>
+
+                          <button
+                            onClick={() =>
+                              navigate(
+                                `/package/${pkg.id}`
+                              )
+                            }
+                            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[color:var(--accent-primary)] text-white text-sm font-semibold hover:opacity-90 transition"
+                          >
+                            View Package
+
+                            <ChevronRight className="w-4 h-4" />
+
+                          </button>
+
+                        </div>
+
                       </div>
 
-                      <button
-                        onClick={() =>
-                          navigate(
-                            `/package/${pkg?.id || pkg?.package_id}`
-                          )
-                        }
-                        className="flex items-center gap-1.5 bg-green-700 hover:bg-green-800 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition"
-                      >
-                        View
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                    </article>
+                  );
+                }
+              )}
+
+            </div>
+
+          )}
+
+        </section>
+
       </main>
+
     </div>
   );
 };

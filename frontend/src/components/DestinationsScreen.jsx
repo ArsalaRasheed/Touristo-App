@@ -1,133 +1,56 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  MapPin,
+  ArrowRight,
+  Compass,
+  Mountain,
+  Landmark,
+  Waves,
+} from 'lucide-react';
 
 const DestinationsScreen = () => {
   const [destinations, setDestinations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   // =========================================================
-  // DESTINATION IMAGES
-  // =========================================================
-  // If backend provides an image, backend image will be used.
-  // If not, the destination name will be used to select
-  // one of these fallback images.
+  // ACTUAL DESTINATIONS FROM YOUR BACKEND
   // =========================================================
 
   const destinationImages = {
-    'swat valley':
-      'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=85',
-
     'hunza valley':
-      'https://images.unsplash.com/photo-1530789253388-582c481c54b0?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1589308078059-be1415eab4c3?auto=format&fit=crop&w=1400&q=85',
 
-    'neelum valley':
-      'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1200&q=85',
+    skardu:
+      'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?auto=format&fit=crop&w=1400&q=85',
 
-    'skardu':
-      'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1200&q=85',
+    'swat valley':
+      'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1400&q=85',
 
-    'fairy meadows':
-      'https://images.unsplash.com/photo-1464278533981-50106e6176b1?auto=format&fit=crop&w=1200&q=85',
-
-    'naran':
-      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=85',
+    naran:
+      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1400&q=85',
 
     'babusar top':
-      'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1400&q=85',
 
-    'lahore':
-      'https://images.unsplash.com/photo-1582650625119-3a31f8fa2699?auto=format&fit=crop&w=1200&q=85',
+    lahore:
+      'https://images.unsplash.com/photo-1584285417130-12d00386b4fa?auto=format&fit=crop&w=1400&q=85',
 
     'mohenjo-daro':
-      'https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?auto=format&fit=crop&w=1400&q=85',
 
-    'gwadar':
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85',
+    gwadar:
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1400&q=85',
   };
 
-  // Generic fallback in case a destination has no
-  // matching image.
   const fallbackImage =
-    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&q=85';
+    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1400&q=85';
 
   // =========================================================
-  // SEEDED DESTINATION DATA
-  // =========================================================
-
-  const seededDestinations = [
-    {
-      id: 1,
-      name: 'Swat Valley',
-      tagline: 'The Switzerland of Pakistan',
-      category: 'mountains',
-      description:
-        'Scenic valley known for its natural beauty and historical sites.',
-      coordinates: { lat: 35.8526, lng: 72.1877 },
-    },
-
-    {
-      id: 2,
-      name: 'Hunza Valley',
-      tagline: 'Land of the Living Gods',
-      category: 'valley',
-      description:
-        'A mountainous region offering stunning views and ancient culture.',
-      coordinates: { lat: 36.3114, lng: 74.5192 },
-    },
-
-    {
-      id: 3,
-      name: 'Neelum Valley',
-      tagline: 'Valley of Flowers',
-      category: 'river',
-      description:
-        'A beautiful valley along the Neelum River with lush greenery.',
-      coordinates: { lat: 34.8167, lng: 73.7667 },
-    },
-
-    {
-      id: 4,
-      name: 'Skardu',
-      tagline: 'Gateway to High Mountains',
-      category: 'city',
-      description:
-        'Access point for K2 and other peaks in the Karakoram range.',
-      coordinates: { lat: 35.2997, lng: 75.6344 },
-    },
-
-    {
-      id: 5,
-      name: 'Fairy Meadows',
-      tagline: 'Closest View of Nanga Parbat',
-      category: 'meadow',
-      description:
-        'A picturesque meadow located near the base of Nanga Parbat.',
-      coordinates: { lat: 35.25, lng: 73.25 },
-    },
-  ];
-
-  // =========================================================
-  // GET DESTINATION IMAGE
+  // DESTINATION IMAGE
   // =========================================================
 
   const getDestinationImage = (destination) => {
-    // 1. Use image coming from backend first
-    if (destination?.image) {
-      return destination.image;
-    }
-
-    // 2. Support image_url if backend uses that field
-    if (destination?.image_url) {
-      return destination.image_url;
-    }
-
-    // 3. Support cover_image if present
-    if (destination?.cover_image) {
-      return destination.cover_image;
-    }
-
-    // 4. Match destination name with fallback image library
     const name = String(destination?.name || '')
       .trim()
       .toLowerCase();
@@ -136,7 +59,25 @@ const DestinationsScreen = () => {
   };
 
   // =========================================================
-  // FETCH DESTINATIONS FROM BACKEND
+  // CATEGORY ICON
+  // =========================================================
+
+  const getCategoryIcon = (category) => {
+    const type = String(category || '').toLowerCase();
+
+    if (type === 'coastal') {
+      return <Waves className="w-3.5 h-3.5" />;
+    }
+
+    if (type === 'historical') {
+      return <Landmark className="w-3.5 h-3.5" />;
+    }
+
+    return <Mountain className="w-3.5 h-3.5" />;
+  };
+
+  // =========================================================
+  // FETCH DESTINATIONS
   // =========================================================
 
   useEffect(() => {
@@ -145,31 +86,22 @@ const DestinationsScreen = () => {
         const response = await fetch('/api/destinations');
 
         if (!response.ok) {
-          throw new Error(
-            `HTTP error! status: ${response.status}`
-          );
+          throw new Error('Failed to load destinations');
         }
 
         const data = await response.json();
 
-        const fetchedDestinations =
+        const fetched =
           data?.data?.destinations || [];
 
-        // Use backend destinations if available.
-        // Otherwise use seeded destinations.
-        setDestinations(
-          fetchedDestinations.length > 0
-            ? fetchedDestinations
-            : seededDestinations
-        );
-      } catch (err) {
+        setDestinations(fetched);
+      } catch (error) {
         console.error(
           'Error fetching destinations:',
-          err
+          error
         );
 
-        // Keep original fallback behaviour
-        setDestinations(seededDestinations);
+        setDestinations([]);
       } finally {
         setLoading(false);
       }
@@ -179,46 +111,38 @@ const DestinationsScreen = () => {
   }, []);
 
   // =========================================================
-  // LOADING SCREEN
+  // LOADING
   // =========================================================
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] p-4 pb-24 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[color:var(--accent-primary)] mx-auto"></div>
+      <div className="min-h-screen bg-[color:var(--bg-primary)] pb-24">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
 
-          <p className="mt-4 text-[color:var(--text-secondary)]">
-            Loading destinations...
-          </p>
-        </div>
-      </div>
-    );
-  }
+          <div className="mb-8">
+            <div className="h-4 w-36 bg-[color:var(--surface-secondary)] rounded animate-pulse mb-3" />
 
-  // =========================================================
-  // ERROR SCREEN
-  // =========================================================
+            <div className="h-9 w-72 bg-[color:var(--surface-secondary)] rounded-lg animate-pulse mb-3" />
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] p-4 pb-24 flex items-center justify-center">
-        <div className="text-center p-6 bg-[color:var(--surface-primary)] rounded-xl border border-[color:var(--border-primary)] max-w-md">
+            <div className="h-4 w-full max-w-xl bg-[color:var(--surface-secondary)] rounded animate-pulse" />
+          </div>
 
-          <h2 className="text-xl font-bold mb-2 text-red-500">
-            Error Loading Destinations
-          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((item) => (
+              <div
+                key={item}
+                className="rounded-2xl overflow-hidden bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)]"
+              >
+                <div className="h-56 bg-[color:var(--surface-secondary)] animate-pulse" />
 
-          <p className="text-[color:var(--text-secondary)] mb-4">
-            Failed to load destinations: {error}
-          </p>
-
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] py-2 px-4 rounded-lg"
-          >
-            Try Again
-          </button>
+                <div className="p-5">
+                  <div className="h-5 w-2/3 bg-[color:var(--surface-secondary)] rounded animate-pulse mb-3" />
+                  <div className="h-4 w-full bg-[color:var(--surface-secondary)] rounded animate-pulse mb-2" />
+                  <div className="h-4 w-1/2 bg-[color:var(--surface-secondary)] rounded animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
 
         </div>
       </div>
@@ -226,156 +150,158 @@ const DestinationsScreen = () => {
   }
 
   // =========================================================
-  // MAIN SCREEN
+  // MAIN
   // =========================================================
 
   return (
-    <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] p-4 pb-24">
+    <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] pb-24">
 
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
 
-        {/* =================================================
-            PAGE HEADER
-        ================================================= */}
+        {/* =====================================================
+            HEADER
+        ====================================================== */}
 
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 text-[color:var(--text-primary)]">
-            Discover Pakistan
+
+          <div className="flex items-center gap-2 text-[color:var(--accent-primary)] mb-2">
+            <Compass className="w-5 h-5" />
+
+            <span className="text-sm font-semibold">
+              Explore Pakistan
+            </span>
+          </div>
+
+          <h1 className="text-3xl sm:text-4xl font-bold mb-2">
+            Discover Destinations
           </h1>
 
-          <p className="text-[color:var(--text-secondary)]">
-            Explore the diverse landscapes and rich heritage of Pakistan
+          <p className="text-[color:var(--text-secondary)] max-w-2xl leading-relaxed">
+            Discover Pakistan's breathtaking landscapes,
+            rich history, local culture and unforgettable
+            travel experiences.
           </p>
+
         </div>
 
-        {/* =================================================
-            EMPTY STATE
-        ================================================= */}
+        {/* =====================================================
+            DESTINATION GRID
+        ====================================================== */}
 
         {destinations.length === 0 ? (
-          <div className="text-center py-12">
-
+          <div className="text-center py-16">
             <div className="text-5xl mb-4">
               🌍
             </div>
 
-            <h3 className="text-xl font-bold mb-2 text-[color:var(--text-primary)]">
+            <h2 className="text-xl font-bold mb-2">
               No destinations available
-            </h3>
+            </h2>
 
-            <p className="text-[color:var(--text-secondary)] mb-6">
-              Check back later for new destination listings.
+            <p className="text-[color:var(--text-secondary)]">
+              Please try again later.
             </p>
-
           </div>
         ) : (
-
-          /* =================================================
-             DESTINATION GRID
-          ================================================= */
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
             {destinations.map((destination) => {
+              const name =
+                destination?.name ||
+                'Destination';
 
               const image =
                 getDestinationImage(destination);
 
-              const destinationName =
-                destination?.name || 'Destination';
-
-              const destinationSlug =
-                destinationName
-                  .replace(/\s+/g, '-')
-                  .toLowerCase();
+              const category =
+                destination?.category ||
+                'destination';
 
               return (
                 <Link
-                  to={`/destination/${destinationSlug}`}
                   key={destination.id}
-                  className="block group"
+                  /*
+                   * IMPORTANT:
+                   * Use DATABASE ID, NOT slug.
+                   */
+                  to={`/destination/${destination.id}`}
+                  className="group block"
                 >
 
-                  {/* =========================================
-                      DESTINATION CARD
-                  ========================================== */}
+                  <article className="bg-[color:var(--surface-primary)] rounded-2xl overflow-hidden border border-[color:var(--border-primary)] shadow-sm hover:shadow-xl transition-all duration-300 group-hover:-translate-y-1">
 
-                  <div className="bg-[color:var(--surface-primary)] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-[color:var(--border-primary)] group-hover:border-[color:var(--accent-primary)]">
+                    {/* IMAGE */}
 
-                    {/* =======================================
-                        IMAGE AREA
-                    ======================================== */}
-
-                    <div className="relative h-52 overflow-hidden bg-[color:var(--surface-secondary)]">
+                    <div className="relative h-56 overflow-hidden bg-[color:var(--surface-secondary)]">
 
                       <img
                         src={image}
-                        alt={destinationName}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        alt={name}
                         loading="lazy"
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                         onError={(event) => {
-                          if (
-                            event.currentTarget.src !==
-                            fallbackImage
-                          ) {
-                            event.currentTarget.src =
-                              fallbackImage;
-                          }
+                          event.currentTarget.src =
+                            fallbackImage;
                         }}
                       />
 
-                      {/* Dark gradient */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent pointer-events-none"></div>
+                      {/* Gradient */}
 
-                      {/* Destination name over image */}
-                      <div className="absolute bottom-4 left-4 right-4">
-
-                        <h3 className="text-2xl font-bold text-white drop-shadow-lg">
-                          {destinationName}
-                        </h3>
-
-                      </div>
-
-                    </div>
-
-                    {/* =======================================
-                        CARD CONTENT
-                    ======================================== */}
-
-                    <div className="p-6">
-
-                      {/* Tagline */}
-                      <p className="text-[color:var(--text-secondary)] text-sm">
-                        {destination?.tagline ||
-                          'Beautiful destination'}
-                      </p>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
 
                       {/* Category */}
-                      <div className="mt-4">
 
-                        <span className="inline-block bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] text-xs px-3 py-1.5 rounded-full capitalize">
-                          {destination?.category ||
-                            'location'}
+                      <div className="absolute top-4 left-4">
+
+                        <span className="inline-flex items-center gap-1.5 bg-black/35 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-xs font-medium capitalize">
+
+                          {getCategoryIcon(category)}
+
+                          {category}
+
                         </span>
 
                       </div>
 
-                      {/* Explore */}
-                      <div className="mt-5 flex items-center justify-between">
+                      {/* Name */}
 
-                        <span className="text-[color:var(--accent-primary)] font-semibold">
-                          Explore
+                      <div className="absolute bottom-4 left-5 right-5">
+
+                        <h2 className="text-2xl font-bold text-white drop-shadow-lg">
+                          {name}
+                        </h2>
+
+                      </div>
+
+                    </div>
+
+                    {/* CONTENT */}
+
+                    <div className="p-5">
+
+                      <p className="text-sm text-[color:var(--text-secondary)] line-clamp-2 min-h-[40px] leading-6">
+                        {destination?.history ||
+                          destination?.culture ||
+                          `Explore the beauty, culture and experiences of ${name}.`}
+                      </p>
+
+                      <div className="flex items-center justify-between mt-5 pt-4 border-t border-[color:var(--border-primary)]">
+
+                        <span className="font-semibold text-[color:var(--accent-primary)]">
+                          Explore Destination
                         </span>
 
-                        <span className="text-lg text-[color:var(--accent-primary)] transition-transform duration-300 group-hover:translate-x-1">
-                          →
+                        <span className="w-9 h-9 rounded-full bg-[color:var(--surface-secondary)] flex items-center justify-center text-[color:var(--accent-primary)] group-hover:bg-[color:var(--accent-primary)] group-hover:text-white transition-all">
+
+                          <ArrowRight className="w-4 h-4" />
+
                         </span>
 
                       </div>
 
                     </div>
 
-                  </div>
+                  </article>
 
                 </Link>
               );
