@@ -30,6 +30,7 @@ import HostBookingsScreen from './components/HostBookingsScreen'; // Import Host
 import DestinationExploreScreen from './components/DestinationExploreScreen'; // Import DestinationExploreScreen
 import MyPackagesScreen from './components/MyPackagesScreen'; // Import MyPackagesScreen
 import ManageTourGuidesScreen from './components/ManageTourGuidesScreen';
+import ExperienceDetailScreen from './components/ExperienceDetailScreen';
 
 // Wrapper component to conditionally render BottomNav based on user role
 const AppWithNav = () => {
@@ -121,6 +122,14 @@ const AppContent = () => {
                   <ExperiencesScreen />
                 </ProtectedRoute>
               } 
+            />
+            <Route
+              path="/experiences/:experienceId"
+              element={
+                <ProtectedRoute allowedRoles={['traveler']}>
+                  <ExperienceDetailScreen />
+                </ProtectedRoute>
+              }
             />
             <Route 
               path="/host-discovery" 
