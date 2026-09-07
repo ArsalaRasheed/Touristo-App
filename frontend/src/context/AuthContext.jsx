@@ -23,21 +23,8 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Storage Keys
-  |--------------------------------------------------------------------------
-  | These are the ONLY authentication keys used by Touristo.
-  */
-
   const USER_KEY = 'touristo_user';
   const TOKEN_KEY = 'touristo_token';
-
-  /*
-  |--------------------------------------------------------------------------
-  | Restore Authentication
-  |--------------------------------------------------------------------------
-  */
 
   useEffect(() => {
     const storedUser =
@@ -70,12 +57,6 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  /*
-  |--------------------------------------------------------------------------
-  | LOGIN
-  |--------------------------------------------------------------------------
-  */
-
   const login = (userData, token) => {
     if (!userData || !token) {
       console.error(
@@ -97,24 +78,12 @@ export const AuthProvider = ({ children }) => {
     );
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | LOGOUT
-  |--------------------------------------------------------------------------
-  */
-
   const logout = () => {
     setUser(null);
 
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(TOKEN_KEY);
   };
-
-  /*
-  |--------------------------------------------------------------------------
-  | AUTHORIZATION HEADER
-  |--------------------------------------------------------------------------
-  */
 
   const getAuthHeader = () => {
     const token =
@@ -129,21 +98,9 @@ export const AuthProvider = ({ children }) => {
     };
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Direct Token Access
-  |--------------------------------------------------------------------------
-  */
-
   const getToken = () => {
     return localStorage.getItem(TOKEN_KEY);
   };
-
-  /*
-  |--------------------------------------------------------------------------
-  | AUTH STATE
-  |--------------------------------------------------------------------------
-  */
 
   const value = {
     user,
@@ -152,14 +109,9 @@ export const AuthProvider = ({ children }) => {
     getAuthHeader,
     getToken,
     loading,
-
     isAuthenticated: !!user,
-
-    isHost:
-      user?.role === 'host',
-
-    isTraveler:
-      user?.role === 'traveler'
+    isHost: user?.role === 'host',
+    isTraveler: user?.role === 'traveler'
   };
 
   return (
