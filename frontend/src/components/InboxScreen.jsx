@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_BASE = '';
 
 export default function InboxScreen() {
     const navigate = useNavigate();
@@ -20,7 +20,7 @@ export default function InboxScreen() {
 
     const messagesEndRef = useRef(null);
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('touristo_token');
 
     // =====================================================
     // AUTH HEADERS
@@ -47,7 +47,7 @@ export default function InboxScreen() {
             }
 
             const response = await fetch(
-                `${API_BASE}/api/messages/inbox`,
+                `/api/messages/inbox`,
                 {
                     headers: getHeaders()
                 }
@@ -119,7 +119,7 @@ export default function InboxScreen() {
             setError('');
 
             const response = await fetch(
-                `${API_BASE}/api/messages/conversation/${conversation.conversation_id}`,
+                `/api/messages/conversation/${conversation.conversation_id}`,
                 {
                     headers: getHeaders()
                 }
@@ -150,7 +150,7 @@ export default function InboxScreen() {
 
             // Mark messages as read
             await fetch(
-                `${API_BASE}/api/messages/conversation/${conversation.conversation_id}/read`,
+                `/api/messages/conversation/${conversation.conversation_id}/read`,
                 {
                     method: 'PATCH',
                     headers: getHeaders()
@@ -225,7 +225,7 @@ export default function InboxScreen() {
             setError('');
 
             const response = await fetch(
-                `${API_BASE}/api/messages/conversation/${activeConversation.conversation_id}/messages`,
+                `/api/messages/conversation/${activeConversation.conversation_id}/messages`,
                 {
                     method: 'POST',
                     headers: getHeaders(),
@@ -923,7 +923,7 @@ export default function InboxScreen() {
                                                             Number(
                                                                 JSON.parse(
                                                                     localStorage.getItem(
-                                                                        'user'
+                                                                        'touristo_user'
                                                                     ) || '{}'
                                                                 )?.id
                                                             );

@@ -193,11 +193,14 @@ const PackageDetailScreen = () => {
 
   const handleChatWithHost = async () => {
     if (!packageData?.host_id) {
-      alert('Host information is not available for this package.');
+      alert(
+        'Host information is not available for this package.'
+      );
       return;
     }
 
-    const token = localStorage.getItem('token');
+    const token =
+      localStorage.getItem('touristo_token');
 
     if (!token) {
       navigate('/login');
@@ -207,22 +210,28 @@ const PackageDetailScreen = () => {
     try {
       setChatLoading(true);
 
-      const response = await fetch('/api/messages/conversation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          hostId: packageData.host_id
-        })
-      });
+      const response = await fetch(
+        '/api/messages/conversation',
+        {
+          method: 'POST',
+
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+
+          body: JSON.stringify({
+            hostId: packageData.host_id
+          })
+        }
+      );
 
       const result = await response.json();
 
       if (!response.ok) {
         throw new Error(
-          result?.message || 'Unable to open host conversation.'
+          result?.message ||
+          'Unable to open host conversation.'
         );
       }
 
@@ -230,17 +239,30 @@ const PackageDetailScreen = () => {
         result?.data?.conversation_id;
 
       if (!conversationId) {
-        throw new Error('Conversation could not be created.');
+        throw new Error(
+          'Conversation could not be created.'
+        );
       }
 
       navigate(
         `/inbox?conversation=${encodeURIComponent(
           conversationId
-        )}&package=${encodeURIComponent(packageData.id)}`
+        )}&package=${encodeURIComponent(
+          packageData.id
+        )}`
       );
-    } catch (err) {
-      console.error('Chat error:', err);
-      alert(err.message || 'Unable to open host chat.');
+
+    } catch (error) {
+      console.error(
+        'Chat with host error:',
+        error
+      );
+
+      alert(
+        error.message ||
+        'Unable to open host chat.'
+      );
+
     } finally {
       setChatLoading(false);
     }

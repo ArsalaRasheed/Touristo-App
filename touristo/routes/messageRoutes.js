@@ -3,81 +3,76 @@ const express = require('express');
 const router = express.Router();
 
 const {
-    createConversation,
-    getInbox,
-    getConversation,
-    sendMessage,
-    markAsRead,
-    getUnreadCount
+  createConversation,
+  getInbox,
+  getConversation,
+  sendMessage,
+  markAsRead,
+  getUnreadCount
 } = require('../controllers/messageController');
 
-const { authenticateToken } = require('../middleware/auth');
-
-
-// ============================================
-// GET INBOX
-// ============================================
-
-router.get(
-    '/inbox',
-    authenticateToken,
-    getInbox
-);
-
+const {
+  authenticateToken
+} = require('../middleware/auth');
 
 // ============================================
-// GET UNREAD COUNT
+// Inbox
 // ============================================
 
 router.get(
-    '/unread-count',
-    authenticateToken,
-    getUnreadCount
+  '/inbox',
+  authenticateToken,
+  getInbox
 );
 
+// ============================================
+// Unread messages
+// ============================================
+
+router.get(
+  '/unread-count',
+  authenticateToken,
+  getUnreadCount
+);
 
 // ============================================
-// CREATE / GET CONVERSATION
+// Create / get traveler-host conversation
 // ============================================
 
 router.post(
-    '/conversation',
-    authenticateToken,
-    createConversation
+  '/conversation',
+  authenticateToken,
+  createConversation
 );
 
-
 // ============================================
-// GET CONVERSATION MESSAGES
+// Get conversation messages
 // ============================================
 
 router.get(
-    '/conversation/:conversationId',
-    authenticateToken,
-    getConversation
+  '/conversation/:conversationId',
+  authenticateToken,
+  getConversation
 );
 
-
 // ============================================
-// SEND MESSAGE
+// Send message
 // ============================================
 
 router.post(
-    '/conversation/:conversationId/messages',
-    authenticateToken,
-    sendMessage
+  '/conversation/:conversationId/messages',
+  authenticateToken,
+  sendMessage
 );
 
-
 // ============================================
-// MARK AS READ
+// Mark conversation as read
 // ============================================
 
 router.patch(
-    '/conversation/:conversationId/read',
-    authenticateToken,
-    markAsRead
+  '/conversation/:conversationId/read',
+  authenticateToken,
+  markAsRead
 );
-
 
 module.exports = router;
