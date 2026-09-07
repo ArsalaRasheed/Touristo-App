@@ -147,15 +147,112 @@ async function setupSchema() {
       );
     `);
 
-    // Create the messages table
+    // ============================================================
+    // CENTRALIZED MARKETPLACE COMMUNICATION SYSTEM
+    // ============================================================
+
+    // Conversation container between one Traveler and one Host
+    await query(`
+      CREATE TABLE IF NOT EXISTS marketplace_chats (
+        id SERIAL PRIMARY KEY,
+
+        conversation_id VARCHAR(255) UNIQUE NOT NULL,
+
+        traveler_id INTEGER NOT NULL
+          REFERENCES users(id)
+          ON DELETE CASCADE,
+
+        host_id INTEGER NOT NULL
+          REFERENCES hosts(id)
+          ON DELETE CASCADE,
+
+        last_message_snippet TEXT,
+
+        updated_at TIMESTAMP DEFAULT NOW(),
+
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+       // Existing messages table is preserved for backward compatibility.
     await query(`
       CREATE TABLE IF NOT EXISTS messages (
         id SERIAL PRIMARY KEY,
-        sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        receiver_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+
+        sender_id INTEGER NOT NULL
+          REFERENCES users(id)
+          ON DELETE CASCADE,
+
+        receiver_id INTEGER NOT NULL
+          REFERENCES users(id)
+          ON DELETE CASCADE,
+
         content TEXT NOT NULL,
+
         created_at TIMESTAMP DEFAULT NOW()
       );
+    `);
+
+// Add centralized messaging columns to existing installations.
+// These statements are intentionally additive so existing data is not lost.
+    await query(`
+      ALTER TABLE messages
+      ADD COLUMN IF NOT EXISTS conversation_id VARCHAR(255);
+    `);
+
+    await query(`
+      ALTER TABLE messages
+      ADD COLUMN IF NOT EXISTS associated_package_id INTEGER
+      REFERENCES packages(id)
+      ON DELETE SET NULL;
+    `);
+
+    await query(`
+      ALTER TABLE messages
+      ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT FALSE;
+    `);
+
+    await query(`
+      ALTER TABLE messages
+      ADD COLUMN IF NOT EXISTS message_text TEXT;
+    `);
+
+ // Existing prototype messages remain usable.
+    await query(`
+      UPDATE messages
+      SET message_text = content
+      WHERE message_text IS NULL;
+    `);
+
+// Performance indexes
+    await query(`
+      CREATE INDEX IF NOT EXISTS idx_marketplace_chats_traveler
+      ON marketplace_chats(traveler_id);
+    `);
+
+    await query(`
+      CREATE INDEX IF NOT EXISTS idx_marketplace_chats_host
+      ON marketplace_chats(host_id);
+    `);
+
+    await query(`
+      CREATE INDEX IF NOT EXISTS idx_marketplace_chats_updated
+      ON marketplace_chats(updated_at DESC);
+    `);
+
+    await query(`
+      CREATE INDEX IF NOT EXISTS idx_messages_conversation
+      ON messages(conversation_id, created_at);
+    `);
+
+    await query(`
+      CREATE INDEX IF NOT EXISTS idx_messages_unread
+      ON messages(receiver_id, is_read);
+    `);
+
+    await query(`
+      CREATE INDEX IF NOT EXISTS idx_messages_package
+      ON messages(associated_package_id);
     `);
 
     // Create indexes for performance

@@ -1,259 +1,587 @@
 import './index.css';
-import { BrowserRouter as Router, Routes, Route, useLocation, Outlet, Navigate } from 'react-router-dom'; // Import useLocation and Outlet
-import React from 'react'; // Import React
-import { AuthProvider, useAuth } from './context/AuthContext'; // Import Auth context
+
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+  Outlet,
+  Navigate
+} from 'react-router-dom';
+
+import React from 'react';
+
+import { AuthProvider, useAuth } from './context/AuthContext';
+
 import SplashScreen from './components/SplashScreen';
 import OnboardingScreen from './components/OnboardingScreen';
 import HomeScreen from './components/HomeScreen';
 import SearchScreen from './components/SearchScreen';
+
 import PackageDetailScreen from './components/PackageDetailScreen';
 import BookingScreen from './components/BookingScreen';
+
 import LoginSignupScreen from './components/LoginSignupScreen';
 import CompanyRegistrationScreen from './components/CompanyRegistrationScreen';
+
 import AITripPlannerScreen from './components/AITripPlannerScreen';
 import EmergencySOSScreen from './components/EmergencySOSScreen';
 import WeatherScreen from './components/WeatherScreen';
 import MyTripsScreen from './components/MyTripsScreen';
+
 import ProfileScreen from './components/ProfileScreen';
 import HostProfileScreen from './components/HostProfileScreen';
+
 import HostDashboardScreen from './components/HostDashboardScreen';
 import CreateEditPackageScreen from './components/CreateEditPackageScreen';
+
 import NotificationsScreen from './components/NotificationsScreen';
 import SettingsScreen from './components/SettingsScreen';
 import AboutScreen from './components/AboutScreen';
 import ContactScreen from './components/ContactScreen';
-import BottomNav from './components/BottomNav'; // Import the BottomNav
+
+import BottomNav from './components/BottomNav';
+
 import DestinationsScreen from './components/DestinationsScreen';
+import DestinationExploreScreen from './components/DestinationExploreScreen';
+
 import ExperiencesScreen from './components/ExperiencesScreen';
-import HostDiscoveryScreen from './components/HostDiscoveryScreen';
-import HostBookingsScreen from './components/HostBookingsScreen'; // Import HostBookingsScreen
-import DestinationExploreScreen from './components/DestinationExploreScreen'; // Import DestinationExploreScreen
-import MyPackagesScreen from './components/MyPackagesScreen'; // Import MyPackagesScreen
-import ManageTourGuidesScreen from './components/ManageTourGuidesScreen';
 import ExperienceDetailScreen from './components/ExperienceDetailScreen';
 
-// Wrapper component to conditionally render BottomNav based on user role
+import HostDiscoveryScreen from './components/HostDiscoveryScreen';
+
+import HostBookingsScreen from './components/HostBookingsScreen';
+import MyPackagesScreen from './components/MyPackagesScreen';
+import ManageTourGuidesScreen from './components/ManageTourGuidesScreen';
+
+/*
+|--------------------------------------------------------------------------
+| CENTRALIZED MARKETPLACE COMMUNICATION
+|--------------------------------------------------------------------------
+| This file will be created in the next step.
+*/
+import InboxScreen from './components/InboxScreen';
+
+
+/*
+|--------------------------------------------------------------------------
+| AppWithNav
+|--------------------------------------------------------------------------
+*/
+
 const AppWithNav = () => {
   const location = useLocation();
-  const { user } = useAuth();
-  
-  const noNavPaths = ['/', '/onboarding', '/login', '/signup', '/company-reg']; // Paths where nav is not shown
 
-  const shouldShowNav = !noNavPaths.includes(location.pathname);
-  
-  // Define navigation based on user role
+  const noNavPaths = [
+    '/',
+    '/onboarding',
+    '/login',
+    '/signup',
+    '/company-reg'
+  ];
+
+  const shouldShowNav =
+    !noNavPaths.includes(location.pathname);
+
   if (!shouldShowNav) {
     return <Outlet />;
   }
 
   return (
-    <div className="pb-24 min-h-screen"> {/* Increased pb from 20 to 24 to account for bottom nav */}
-      <Outlet /> {/* This renders the child route components */}
-      {shouldShowNav && <BottomNav />}
+    <div className="pb-24 min-h-screen">
+      <Outlet />
+
+      <BottomNav />
     </div>
   );
 };
 
-// Protected route component
-const ProtectedRoute = ({ children, allowedRoles }) => {
+
+/*
+|--------------------------------------------------------------------------
+| Protected Route
+|--------------------------------------------------------------------------
+*/
+
+const ProtectedRoute = ({
+  children,
+  allowedRoles
+}) => {
   const { user, loading } = useAuth();
-  
+
   if (loading) {
-    return <div>Loading...</div>; // Or a spinner component
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[color:var(--bg-primary)]">
+        <div className="w-10 h-10 rounded-full border-4 border-[color:var(--accent-primary)]/20 border-t-[color:var(--accent-primary)] animate-spin" />
+      </div>
+    );
   }
-  
+
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return (
+      <Navigate
+        to="/login"
+        replace
+      />
+    );
   }
-  
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    // Redirect to appropriate dashboard based on role
-    return <Navigate to={user.role === 'host' ? "/host-dashboard" : "/home"} replace />;
+
+  if (
+    allowedRoles &&
+    !allowedRoles.includes(user.role)
+  ) {
+    return (
+      <Navigate
+        to={
+          user.role === 'host'
+            ? '/host-dashboard'
+            : '/home'
+        }
+        replace
+      />
+    );
   }
-  
+
   return children;
 };
 
-// Main App component wrapped with AuthProvider
+
+/*
+|--------------------------------------------------------------------------
+| Main App Content
+|--------------------------------------------------------------------------
+*/
+
 const AppContent = () => {
   return (
     <AuthProvider>
+
       <Router>
+
         <Routes>
-          {/* Wrap routes that need the bottom nav - now using proper nested routing */}
+
+          {/* ======================================================
+              ROUTES WITH BOTTOM NAV
+          ====================================================== */}
+
           <Route element={<AppWithNav />}>
-            {/* Traveler routes */}
-            <Route 
-              path="/home" 
+
+            {/* ====================================================
+                TRAVELER
+            ==================================================== */}
+
+            <Route
+              path="/home"
               element={
-                <ProtectedRoute allowedRoles={['traveler']}>
+                <ProtectedRoute
+                  allowedRoles={['traveler']}
+                >
                   <HomeScreen />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/search" 
+
+            <Route
+              path="/search"
               element={
-                <ProtectedRoute allowedRoles={['traveler']}>
+                <ProtectedRoute
+                  allowedRoles={['traveler']}
+                >
                   <SearchScreen />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/destinations" 
+
+            {/* Destinations */}
+
+            <Route
+              path="/destinations"
               element={
-                <ProtectedRoute allowedRoles={['traveler']}>
+                <ProtectedRoute
+                  allowedRoles={['traveler']}
+                >
                   <DestinationsScreen />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/destination/:destination" 
+
+            <Route
+              path="/destination/:destination"
               element={
-                <ProtectedRoute allowedRoles={['traveler', 'host']}>
+                <ProtectedRoute
+                  allowedRoles={[
+                    'traveler',
+                    'host'
+                  ]}
+                >
                   <DestinationExploreScreen />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/experiences" 
+
+            {/* Experiences */}
+
+            <Route
+              path="/experiences"
               element={
-                <ProtectedRoute allowedRoles={['traveler']}>
+                <ProtectedRoute
+                  allowedRoles={['traveler']}
+                >
                   <ExperiencesScreen />
                 </ProtectedRoute>
-              } 
+              }
             />
+
             <Route
               path="/experiences/:experienceId"
               element={
-                <ProtectedRoute allowedRoles={['traveler']}>
+                <ProtectedRoute
+                  allowedRoles={['traveler']}
+                >
                   <ExperienceDetailScreen />
                 </ProtectedRoute>
               }
             />
-            <Route 
-              path="/host-discovery" 
+
+            {/* Hosts */}
+
+            <Route
+              path="/host-discovery"
               element={
-                <ProtectedRoute allowedRoles={['traveler']}>
+                <ProtectedRoute
+                  allowedRoles={['traveler']}
+                >
                   <HostDiscoveryScreen />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/package/:id" 
+
+            <Route
+              path="/host-profile/:id"
               element={
-                <ProtectedRoute allowedRoles={['traveler', 'host']}>
+                <ProtectedRoute
+                  allowedRoles={[
+                    'traveler',
+                    'host'
+                  ]}
+                >
+                  <HostProfileScreen />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Package */}
+
+            <Route
+              path="/package/:id"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    'traveler',
+                    'host'
+                  ]}
+                >
                   <PackageDetailScreen />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/booking" 
+
+            {/* Booking */}
+
+            <Route
+              path="/booking"
               element={
-                <ProtectedRoute allowedRoles={['traveler']}>
+                <ProtectedRoute
+                  allowedRoles={['traveler']}
+                >
                   <BookingScreen />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/trip-planner" 
+
+            {/* AI Planner */}
+
+            <Route
+              path="/trip-planner"
               element={
-                <ProtectedRoute allowedRoles={['traveler']}>
+                <ProtectedRoute
+                  allowedRoles={['traveler']}
+                >
                   <AITripPlannerScreen />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/sos" 
+
+            {/* SOS */}
+
+            <Route
+              path="/sos"
               element={
-                <ProtectedRoute allowedRoles={['traveler', 'host']}>
+                <ProtectedRoute
+                  allowedRoles={[
+                    'traveler',
+                    'host'
+                  ]}
+                >
                   <EmergencySOSScreen />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/weather" 
+
+            {/* Weather */}
+
+            <Route
+              path="/weather"
               element={
-                <ProtectedRoute allowedRoles={['traveler']}>
+                <ProtectedRoute
+                  allowedRoles={['traveler']}
+                >
                   <WeatherScreen />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/my-trips" 
+
+            {/* My Trips */}
+
+            <Route
+              path="/my-trips"
               element={
-                <ProtectedRoute allowedRoles={['traveler']}>
+                <ProtectedRoute
+                  allowedRoles={['traveler']}
+                >
                   <MyTripsScreen />
                 </ProtectedRoute>
-              } 
+              }
             />
-            
-            {/* Host routes */}
-            <Route 
-              path="/host-dashboard" 
+
+
+            {/* ====================================================
+                CENTRALIZED COMMUNICATION
+            ==================================================== */}
+
+            <Route
+              path="/inbox"
               element={
-                <ProtectedRoute allowedRoles={['host']}>
+                <ProtectedRoute
+                  allowedRoles={[
+                    'traveler',
+                    'host'
+                  ]}
+                >
+                  <InboxScreen />
+                </ProtectedRoute>
+              }
+            />
+
+
+            {/* ====================================================
+                HOST DASHBOARD
+            ==================================================== */}
+
+            <Route
+              path="/host-dashboard"
+              element={
+                <ProtectedRoute
+                  allowedRoles={['host']}
+                >
                   <HostDashboardScreen />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/my-packages" 
+
+            <Route
+              path="/my-packages"
               element={
-                <ProtectedRoute allowedRoles={['host']}>
+                <ProtectedRoute
+                  allowedRoles={['host']}
+                >
                   <MyPackagesScreen />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/host/create-package" 
+
+            <Route
+              path="/host/create-package"
               element={
-                <ProtectedRoute allowedRoles={['host']}>
+                <ProtectedRoute
+                  allowedRoles={['host']}
+                >
                   <CreateEditPackageScreen />
                 </ProtectedRoute>
-              } 
+              }
             />
+
             <Route
               path="/host/guides"
-              element={<ProtectedRoute allowedRoles={['host']}><ManageTourGuidesScreen /></ProtectedRoute>}
-            />
-            <Route 
-              path="/bookings" 
               element={
-                <ProtectedRoute allowedRoles={['host']}>
+                <ProtectedRoute
+                  allowedRoles={['host']}
+                >
+                  <ManageTourGuidesScreen />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/bookings"
+              element={
+                <ProtectedRoute
+                  allowedRoles={['host']}
+                >
                   <HostBookingsScreen />
                 </ProtectedRoute>
-              } 
+              }
             />
-            
-            {/* Shared routes */}
-            <Route path="/profile" element={<ProfileScreen />} />
-            <Route path="/host-profile/:id" element={<HostProfileScreen />} />
-            <Route path="/notifications" element={<NotificationsScreen />} />
-            <Route path="/settings" element={<SettingsScreen />} />
-            <Route path="/about" element={<AboutScreen />} />
-            <Route path="/contact" element={<ContactScreen />} />
+
+
+            {/* ====================================================
+                SHARED
+            ==================================================== */}
+
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    'traveler',
+                    'host'
+                  ]}
+                >
+                  <ProfileScreen />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    'traveler',
+                    'host'
+                  ]}
+                >
+                  <NotificationsScreen />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    'traveler',
+                    'host'
+                  ]}
+                >
+                  <SettingsScreen />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/about"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    'traveler',
+                    'host'
+                  ]}
+                >
+                  <AboutScreen />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/contact"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    'traveler',
+                    'host'
+                  ]}
+                >
+                  <ContactScreen />
+                </ProtectedRoute>
+              }
+            />
+
           </Route>
 
-          {/* Routes without bottom nav */}
-          <Route path="/" element={<SplashScreen />} />
-          <Route path="/onboarding" element={<OnboardingScreen />} />
-          <Route path="/login" element={<LoginSignupScreen />} />
-          <Route path="/signup" element={<LoginSignupScreen />} />
-          <Route path="/company-reg" element={<CompanyRegistrationScreen />} />
 
-          {/* Catch-all for any undefined routes */}
-          <Route path="*" element={
-            <div className="p-4 text-center text-[color:var(--text-secondary)]">Page Not Found</div>
-          } />
+          {/* ======================================================
+              ROUTES WITHOUT BOTTOM NAV
+          ====================================================== */}
+
+          <Route
+            path="/"
+            element={<SplashScreen />}
+          />
+
+          <Route
+            path="/onboarding"
+            element={<OnboardingScreen />}
+          />
+
+          <Route
+            path="/login"
+            element={<LoginSignupScreen />}
+          />
+
+          <Route
+            path="/signup"
+            element={<LoginSignupScreen />}
+          />
+
+          <Route
+            path="/company-reg"
+            element={
+              <CompanyRegistrationScreen />
+            }
+          />
+
+
+          {/* ======================================================
+              404
+          ====================================================== */}
+
+          <Route
+            path="*"
+            element={
+              <div className="min-h-screen flex items-center justify-center bg-[color:var(--bg-primary)] px-4">
+                <div className="text-center">
+
+                  <h1 className="text-5xl font-bold mb-3">
+                    404
+                  </h1>
+
+                  <p className="text-[color:var(--text-secondary)] mb-6">
+                    The page you are looking for does not exist.
+                  </p>
+
+                  <Navigate
+                    to="/home"
+                    replace
+                  />
+
+                </div>
+              </div>
+            }
+          />
+
         </Routes>
+
       </Router>
+
     </AuthProvider>
   );
 };
 
+
 function App() {
   return <AppContent />;
-};
+}
 
 export default App;

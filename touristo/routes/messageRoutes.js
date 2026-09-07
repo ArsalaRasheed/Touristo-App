@@ -1,30 +1,83 @@
 const express = require('express');
+
 const router = express.Router();
-const Message = require('../models/Message');
+
+const {
+    createConversation,
+    getInbox,
+    getConversation,
+    sendMessage,
+    markAsRead,
+    getUnreadCount
+} = require('../controllers/messageController');
+
 const { authenticateToken } = require('../middleware/auth');
 
-// GET /api/messages/conversation/:senderId/:receiverId - Get conversation between two users
-router.get('/conversation/:senderId/:receiverId', authenticateToken, async (req, res) => {
-  try {
-    const { senderId, receiverId } = req.params;
-    const messages = await Message.findBySenderAndReceiver(senderId, receiverId);
-    res.json({ success: true, data: messages });
-  } catch (error) {
-    console.error('Error fetching messages:', error);
-    res.status(500).json({ success: false, message: 'Error fetching messages', error: error.message });
-  }
-});
 
-// POST /api/messages - Send a new message
-router.post('/', authenticateToken, async (req, res) => {
-  try {
-    const messageData = req.body;
-    const newMessage = await Message.create(messageData);
-    res.status(201).json({ success: true, data: newMessage });
-  } catch (error) {
-    console.error('Error sending message:', error);
-    res.status(500).json({ success: false, message: 'Error sending message', error: error.message });
-  }
-});
+// ============================================
+// GET INBOX
+// ============================================
+
+router.get(
+    '/inbox',
+    authenticateToken,
+    getInbox
+);
+
+
+// ============================================
+// GET UNREAD COUNT
+// ============================================
+
+router.get(
+    '/unread-count',
+    authenticateToken,
+    getUnreadCount
+);
+
+
+// ============================================
+// CREATE / GET CONVERSATION
+// ============================================
+
+router.post(
+    '/conversation',
+    authenticateToken,
+    createConversation
+);
+
+
+// ============================================
+// GET CONVERSATION MESSAGES
+// ============================================
+
+router.get(
+    '/conversation/:conversationId',
+    authenticateToken,
+    getConversation
+);
+
+
+// ============================================
+// SEND MESSAGE
+// ============================================
+
+router.post(
+    '/conversation/:conversationId/messages',
+    authenticateToken,
+    sendMessage
+);
+
+
+// ============================================
+// MARK AS READ
+// ============================================
+
+router.patch(
+    '/conversation/:conversationId/read',
+    authenticateToken,
+    markAsRead
+);
+
 
 module.exports = router;

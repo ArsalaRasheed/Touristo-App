@@ -8,7 +8,7 @@ const HomeScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState(''); // State for search query
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // State for mobile menu
   const navigate = useNavigate(); // Hook for navigation
 
   // Handle search submission
@@ -63,12 +63,12 @@ const HomeScreen = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] p-4 flex items-center justify-center">
-        <div className="text-center p-6 bg-[color:var(--surface-primary)] rounded-xl border border-[color:var(--border-primary)] max-w-md">
+        <div className="text-center p-6 bg-[color:var(--surface-primary)] rounded-xl border border-[color:var(--border-primary)] shadow-sm max-w-md">
           <h2 className="text-xl font-bold mb-2 text-red-500">Error Loading Homepage</h2>
           <p className="text-[color:var(--text-secondary)] mb-4">Failed to load homepage data: {error}</p>
           <button 
             onClick={() => window.location.reload()}
-            className="bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] py-2 px-4 rounded-lg"
+            className="bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] py-2 px-4 rounded-lg transition"
           >
             Try Again
           </button>
@@ -106,23 +106,26 @@ const HomeScreen = () => {
               <Link to="/about" className="hover:text-[color:var(--accent-primary)] transition text-[color:var(--nav-text)]">About</Link>
               <Link to="/contact" className="hover:text-[color:var(--accent-primary)] transition text-[color:var(--nav-text)]">Contact</Link>
             </div>
-            <button 
+            <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden text-2xl text-[color:var(--nav-text)]"
+              aria-label="Toggle menu"
             >
               {mobileMenuOpen ? '✕' : '☰'}
             </button>
-            {mobileMenuOpen && (
-              <div className="md:hidden absolute top-full left-0 right-0 bg-[color:var(--nav-footer-bg)] border-t border-[color:var(--border-primary)] py-4 z-20">
-                <div className="flex flex-col space-y-4 px-6">
-                  <Link to="/destinations" onClick={() => setMobileMenuOpen(false)} className="text-[color:var(--nav-text)]">Destinations</Link>
-                  <Link to="/experiences" onClick={() => setMobileMenuOpen(false)} className="text-[color:var(--nav-text)]">Experiences</Link>
-                  <Link to="/about" onClick={() => setMobileMenuOpen(false)} className="text-[color:var(--nav-text)]">About</Link>
-                  <Link to="/contact" onClick={() => setMobileMenuOpen(false)} className="text-[color:var(--nav-text)]">Contact</Link>
-                </div>
-              </div>
-           )}
           </div>
+
+          {/* Mobile dropdown menu */}
+          {mobileMenuOpen && (
+            <div className="md:hidden absolute top-full left-0 right-0 bg-[color:var(--nav-footer-bg)] border-t border-[color:var(--border-primary)] py-4 z-20 shadow-lg">
+              <div className="flex flex-col space-y-4 px-6">
+                <Link to="/destinations" onClick={() => setMobileMenuOpen(false)} className="text-[color:var(--nav-text)]">Destinations</Link>
+                <Link to="/experiences" onClick={() => setMobileMenuOpen(false)} className="text-[color:var(--nav-text)]">Experiences</Link>
+                <Link to="/about" onClick={() => setMobileMenuOpen(false)} className="text-[color:var(--nav-text)]">About</Link>
+                <Link to="/contact" onClick={() => setMobileMenuOpen(false)} className="text-[color:var(--nav-text)]">Contact</Link>
+              </div>
+            </div>
+          )}
         </nav>
 
         {/* Search Bar - Added at the top of the hero content */}
@@ -159,7 +162,7 @@ const HomeScreen = () => {
         </div>
 
         {/* Hero Content */}
-        <div className="flex-grow flex flex-col items-center justify-center px-4 text-center relative z-10">
+        <div className="flex-grow flex flex-col items-center justify-center px-4 pb-24 text-center relative z-10">
           <div className="max-w-4xl">
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight text-[color:var(--nav-text)]">
               Discover <span className="text-[color:var(--accent-primary)]">Pakistan</span>, Verified
@@ -168,20 +171,19 @@ const HomeScreen = () => {
               Experience the breathtaking beauty of Pakistan through trusted, verified tour operators. From the mountains of Hunza to the beaches of Gwadar.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Link to="/destinations" className="btn btn-primary hover-lift py-4 px-8 text-lg">
+              <Link
+                to="/destinations"
+                className="py-4 px-8 text-lg rounded-xl font-bold bg-[color:var(--accent-primary)] text-white hover:bg-[color:var(--accent-primary-hover)] hover-lift transition"
+              >
                 Explore Destinations
               </Link>
-              <Link to="/host-discovery" className="btn btn-secondary hover-lift py-4 px-8 text-lg">
+              <Link
+                to="/host-discovery"
+                className="py-4 px-8 text-lg rounded-xl font-bold bg-[color:var(--accent-primary)] text-white hover:bg-[color:var(--accent-primary-hover)] hover-lift transition"
+              >
                 Find Trusted Operators
               </Link>
             </div>
-          </div>
-        </div>
-
-        {/* Scrolling indicator */}
-        <div className="self-center pb-10 relative z-10">
-          <div className="animate-bounce w-10 h-16 rounded-full border-2 border-[color:var(--accent-primary)] flex justify-center">
-            <div className="w-1 h-3 mt-2 bg-[color:var(--accent-primary)] rounded-full"></div>
           </div>
         </div>
       </div>
@@ -198,7 +200,7 @@ const HomeScreen = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {recommendedPackages.map(pkg => (
                 <Link to={`/package/${pkg.id}`} key={pkg.id}>
-                  <div className="bg-[color:var(--surface-primary)] rounded-xl overflow-hidden hover:shadow-lg transition border border-[color:var(--border-primary)] relative">
+                  <div className="bg-[color:var(--surface-primary)] rounded-xl overflow-hidden hover:shadow-lg transition border border-[color:var(--border-primary)] relative shadow-sm">
                     {/* Top Match Badge */}
                     {pkg.comparisonBadge === 'Top Match' && (
                       <div className="absolute top-2 left-2 bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold z-10">
@@ -253,7 +255,7 @@ const HomeScreen = () => {
               >
                 <div className="h-48 overflow-hidden rounded-t-lg">
                   <img
-                    src={destination.packages?.[0]?.image || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80"}
+                    src={destination.packages?.[0]?.image || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&q=80"}
                     alt={destination.name}
                     className="w-full h-full object-cover"
                   />
