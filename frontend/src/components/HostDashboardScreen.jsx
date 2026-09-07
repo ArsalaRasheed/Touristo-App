@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { MessageCircle, ChevronRight } from 'lucide-react';
 
 const HostDashboardScreen = () => {
   const [stats, setStats] = useState({
@@ -141,13 +142,54 @@ const HostDashboardScreen = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="mb-6">
-        <Link 
-          to="/host/guides" 
-          className="inline-flex items-center bg-[color:var(--surface-primary)] hover:bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] px-4 py-3 rounded-xl border border-[color:var(--border-primary)] font-medium transition"
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+
+        {/* Customer Inquiries */}
+        <Link
+          to="/inbox"
+          className="flex items-center justify-between bg-[color:var(--surface-primary)] hover:bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] p-4 rounded-xl border border-[color:var(--border-primary)] shadow-sm hover:shadow-md transition group"
         >
-          🧑‍🏫 Manage Tour Guides
+          <div className="flex items-center gap-4">
+            <div className="w-11 h-11 rounded-xl bg-[color:var(--surface-secondary)] flex items-center justify-center">
+              <MessageCircle className="w-6 h-6 text-[color:var(--accent-primary)]" />
+            </div>
+
+            <div>
+              <p className="font-bold text-base">
+                Customer Inquiries
+              </p>
+              <p className="text-sm text-[color:var(--text-secondary)]">
+                View and reply to traveler messages
+              </p>
+            </div>
+          </div>
+
+          <ChevronRight className="w-5 h-5 text-[color:var(--text-secondary)] group-hover:translate-x-1 transition-transform" />
         </Link>
+
+        {/* Manage Tour Guides */}
+        <Link
+          to="/host/guides"
+          className="flex items-center justify-between bg-[color:var(--surface-primary)] hover:bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] p-4 rounded-xl border border-[color:var(--border-primary)] shadow-sm hover:shadow-md transition group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-11 h-11 rounded-xl bg-[color:var(--surface-secondary)] flex items-center justify-center">
+              <span className="text-xl">🧑‍🏫</span>
+            </div>
+
+            <div>
+              <p className="font-bold text-base">
+                Manage Tour Guides
+              </p>
+              <p className="text-sm text-[color:var(--text-secondary)]">
+                Add and manage your tour guides
+              </p>
+            </div>
+          </div>
+
+          <ChevronRight className="w-5 h-5 text-[color:var(--text-secondary)] group-hover:translate-x-1 transition-transform" />
+        </Link>
+
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

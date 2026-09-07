@@ -9,6 +9,7 @@ import {
   Shield,
   CreditCard,
   Bell,
+  MessageCircle,
   LayoutDashboard,
   ChevronRight,
 } from 'lucide-react';
@@ -165,7 +166,28 @@ const ProfileScreen = () => {
           </div>
           <ChevronRight className="w-5 h-5 opacity-80 group-hover:translate-x-1 transition-transform" />
         </Link>
-        
+        {/* Messages / Inbox */}
+        <Link
+          to="/inbox"
+          className="flex items-center justify-between bg-[color:var(--surface-primary)] text-[color:var(--text-primary)] rounded-2xl p-5 mb-6 border border-[color:var(--border-primary)] shadow-sm hover:shadow-md hover:bg-[color:var(--surface-secondary)] transition group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-11 h-11 rounded-xl bg-[color:var(--surface-secondary)] flex items-center justify-center">
+              <MessageCircle className="w-6 h-6 text-[color:var(--accent-primary)]" />
+            </div>
+
+            <div>
+              <p className="font-bold text-lg leading-tight">
+                Messages &amp; Inbox
+              </p>
+              <p className="text-sm text-[color:var(--text-secondary)]">
+                Chat with tour companies and manage your inquiries
+              </p>
+            </div>
+          </div>
+
+          <ChevronRight className="w-5 h-5 text-[color:var(--text-secondary)] group-hover:translate-x-1 transition-transform" />
+        </Link>
         {/* Host-specific information if user is a host */}
         {isHost && hostData && (
           <div className="bg-[color:var(--surface-primary)] rounded-2xl p-6 mb-6 border border-[color:var(--border-primary)] shadow-sm">
