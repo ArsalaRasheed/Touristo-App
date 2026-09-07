@@ -1,72 +1,343 @@
-# Touristo - UI/UX Design Brief
+# Touristo — UI/UX Design Brief
 
 ## 1. Introduction
-This document outlines the visual and interactive design principles for the Touristo application. It defines the color palette, typography, and general layout guidelines to ensure a consistent and appealing user experience.
 
-## 2. Brand Identity & Mood
-*   **Core Concept:** Trust, Discovery, Adventure, Simplicity.
-*   **Mood:** Friendly, Modern, Reliable, Inviting, Pakistani Cultural Elements (subtle).
+Touristo is a modern Pakistan-first tourism marketplace designed to connect travelers with tour companies and tour guides.
 
-## 3. Color Palette
-### 3.1 Primary Colors
-*   **Primary Blue:** #007BFF (Trust, Reliability, Action Buttons)
-*   **Primary Green:** #28A745 (Success, Confirmations, Positive Actions)
-*   **Primary Red:** #DC3545 (Errors, Destructive Actions, SOS Feature)
+The interface should communicate:
 
-### 3.2 Secondary Colors
-*   **Accent Orange:** #FD7E14 (Highlights, Promotions, Important Info)
-*   **Neutral Gray:** #6C757D (Text, Borders, Disabled States)
-*   **Light Gray:** #F8F9FA (Backgrounds, Cards)
-*   **Dark Gray:** #343A40 (Headings, Text on Light)
+* Trust
+* Discovery
+* Adventure
+* Simplicity
+* Safety
+* Professionalism
 
-### 3.3 Background & Surface Colors
-*   **Main Background:** #FFFFFF (Clean, Bright)
-*   **Card Background:** #FFFFFF (Or subtle #F8F9FA if contrast is needed)
+The design should feel modern and premium without becoming visually complicated.
 
-## 4. Typography
-### 4.1 Font Family
-*   **Primary Font:** Inter or a similar modern, clean sans-serif font for readability on mobile devices.
+---
 
-### 4.2 Hierarchy
-*   **H1 (Page Titles):** 28px, Bold
-*   **H2 (Section Headers):** 24px, Semi-Bold
-*   **H3 (Sub-Headers):** 20px, Semi-Bold
-*   **Body Large:** 16px, Regular
-*   **Body Small:** 14px, Regular
-*   **Caption:** 12px, Regular
-*   **Button Text:** 16px, Medium
+# 2. Design Direction
 
-## 5. Layout & Spacing
-### 5.1 Grid System
-*   Use a flexible grid system based on Tailwind CSS principles for responsiveness.
-*   Standard gutter width: 16px (1rem).
-*   Margin/Padding scale based on 4px increments (e.g., 2, 4, 8, 12, 16, 20, 24, 32, 40, 48, 64).
+## Overall Mood
 
-### 5.2 Screen Layout Principles
-*   **Mobile-First:** Prioritize single-column layouts.
-*   **Consistent Margins:** Maintain 16px margin from screen edges.
-*   **Touch Targets:** Ensure all interactive elements (buttons, links) are at least 44x44 pixels for easy tapping.
-*   **Card-Based Design:** Use cards to group related content on the Home, Search, and Explore screens.
+* Modern
+* Clean
+* Friendly
+* Trustworthy
+* Travel-focused
+* Professional
+* Energetic
+* Easy to navigate
 
-## 6. Key UI Components
-### 6.1 Buttons
-*   **Primary Button:** Solid background with primary blue, white text.
-*   **Secondary Button:** Outline with primary blue border and text.
-*   **Danger Button:** Solid red background, white text.
-*   **Size:** Minimum height of 44px, padding horizontal 16px.
+Subtle Pakistani cultural elements may be used where appropriate, but the interface should remain contemporary rather than heavily decorative.
 
-### 6.2 Input Fields
-*   **Style:** Rounded corners (e.g., `rounded-lg`), border outline.
-*   **Padding:** 12px vertical, 16px horizontal.
-*   **Focus State:** Border color changes to primary blue with a subtle shadow.
+---
 
-### 6.3 Navigation
-*   **Bottom Tab Bar:** For primary app navigation (Home, Search, Bookings, Profile).
-*   **Header:** Clear back button, title, and potential action icons (e.g., search, menu).
+# 3. Color System
 
-## 7. Design Guidelines
-*   **Clarity:** Prioritize clear, scannable information.
-*   **Feedback:** Provide immediate feedback for user actions (button presses, loading states).
-*   **Accessibility:** Ensure sufficient color contrast and support for screen readers.
-*   **Visual Hierarchy:** Use size, weight, and color to guide the user's eye.
-*   **Loading States:** Implement skeleton screens or spinners for API calls.
+The application should use the existing project theme and CSS variables rather than introducing a new fixed palette in individual screens.
+
+Use semantic theme variables such as:
+
+```text
+--surface-primary
+--surface-secondary
+--text-primary
+--text-secondary
+--border-primary
+--accent-primary
+```
+
+Components should remain consistent with the existing Touristo visual system.
+
+### Important
+
+Do not introduce unrelated blue/green/orange color systems into individual screens.
+
+Status colors may still be used semantically:
+
+* Success
+* Warning
+* Error
+* Emergency/SOS
+
+---
+
+# 4. Typography
+
+Use a clean modern sans-serif font.
+
+Recommended hierarchy:
+
+* Page title: 28–32px, bold
+* Section heading: 20–24px, semibold
+* Card title: 16–18px, semibold
+* Body: 14–16px
+* Supporting text: 12–14px
+* Button text: 14–16px, medium/semibold
+
+Typography should prioritize readability and hierarchy.
+
+---
+
+# 5. Layout
+
+The interface should use:
+
+* Responsive layouts
+* Consistent spacing
+* Flexible grids
+* Clear content sections
+* Appropriate whitespace
+* Card-based grouping
+* Responsive desktop/mobile behavior
+
+Avoid overcrowded screens.
+
+---
+
+# 6. Cards
+
+Cards should be used for:
+
+* Destinations
+* Tour packages
+* Hosts
+* Tour guides
+* Experiences
+* Booking information
+* Inbox conversations
+
+Cards should have:
+
+* Clear hierarchy
+* Consistent padding
+* Subtle borders/shadows
+* Appropriate image proportions
+* Clear primary action
+* Good hover/focus states
+
+---
+
+# 7. Package Cards
+
+Package cards should clearly show:
+
+* Package image
+* Package title
+* Host/company
+* Verification indicator when available
+* Rating
+* Duration
+* Price
+* Short supporting information
+* Primary action
+
+Avoid excessive text inside cards.
+
+---
+
+# 8. Host Cards
+
+Host cards should communicate:
+
+* Company name
+* Verification
+* Rating
+* Location
+* Package availability
+* Short description
+
+The design should emphasize trust.
+
+---
+
+# 9. Tour Guide Cards
+
+Tour-guide cards should show:
+
+* Photo where available
+* Name
+* Specialty
+* Rating
+
+Pre-booking guide chat should not be presented as a primary action.
+
+---
+
+# 10. Navigation
+
+### Traveler Primary Navigation
+
+```text
+Home
+Search
+AI Planner
+SOS
+Profile
+```
+
+### Host Primary Navigation
+
+```text
+Dashboard
+My Packages
+Bookings
+Profile
+```
+
+Additional functionality such as Inbox is accessible through the Profile/Dashboard experience and contextual actions.
+
+---
+
+# 11. Inbox UX
+
+The Inbox should provide:
+
+### Traveler
+
+* Conversation list
+* Host/company identity
+* Verification badge
+* Last message
+* Timestamp
+* Unread count
+* Package context
+* Active conversation
+* Message composer
+
+### Host
+
+* Customer inquiries
+* Traveler identity
+* Last message
+* Unread count
+* Package context
+* Conversation workspace
+
+The messaging experience should remain simple and marketplace-focused.
+
+---
+
+# 12. Booking UX
+
+Booking screens should clearly display:
+
+* Package
+* Travel date
+* Traveler count
+* Special requests
+* Price breakdown
+* Payment-method selection
+* Booking confirmation state
+
+The UI must clearly distinguish booking submission from actual payment processing because the current MVP does not include a live payment gateway.
+
+---
+
+# 13. AI Trip Planner UX
+
+The AI Planner should feel like a helpful travel assistant.
+
+It should include:
+
+* Conversation history
+* User messages
+* AI responses
+* Loading state
+* Error state
+* Suggested prompts
+* Language-aware responses
+
+---
+
+# 14. Safety UX
+
+The SOS feature should be visually distinct and easy to access.
+
+Important actions should be:
+
+* Clearly labeled
+* High contrast
+* Large enough to tap
+* Easy to understand under stress
+
+The interface must not imply that the application automatically contacts emergency authorities when it does not.
+
+---
+
+# 15. Loading & Empty States
+
+All API-driven screens should provide appropriate:
+
+* Loading skeletons
+* Empty states
+* Error messages
+* Retry actions
+
+Empty states should explain what the user can do next instead of simply showing a blank screen.
+
+---
+
+# 16. Accessibility
+
+The application should prioritize:
+
+* Sufficient color contrast
+* Keyboard accessibility
+* Visible focus states
+* Semantic buttons/links
+* Descriptive labels
+* Accessible touch targets
+* Clear error messages
+
+---
+
+# 17. Responsive Design
+
+The interface must work across:
+
+* Mobile
+* Tablet
+* Desktop
+
+Mobile layouts should prioritize:
+
+* Single-column content
+* Clear navigation
+* Touch-friendly controls
+
+Desktop layouts can use:
+
+* Multi-column grids
+* Sidebars
+* Expanded content areas
+
+---
+
+# 18. Design Principles
+
+### Clarity
+
+Users should understand what each screen does immediately.
+
+### Consistency
+
+Similar components should look and behave consistently.
+
+### Trust
+
+Verification, ratings, pricing, and host information should be easy to understand.
+
+### Simplicity
+
+Avoid unnecessary decoration or excessive text.
+
+### Feedback
+
+Every important interaction should provide visual feedback.
+
+### Responsiveness
+
+Layouts should adapt smoothly to different screen sizes.

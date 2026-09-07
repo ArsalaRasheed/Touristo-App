@@ -1,83 +1,585 @@
-# UI/UX Design Prompt: Touristo App
+TOURISTO — UI/UX DESIGN PROMPT
 
-## 1. Project Overview
-Design a mobile-first user interface and user experience for "Touristo," a marketplace connecting verified tour companies with travelers across Pakistan. The app aims to simplify discovering, booking, and experiencing local tours. Your design should be intuitive, visually appealing, reflect Pakistani cultural elements subtly, and prioritize trust and ease of use.
+Design a polished, modern, responsive tourism marketplace called "Touristo".
 
-## 2. Target Audience
-*   **Primary Users:** Individual travelers and small groups seeking domestic tours in Pakistan.
-*   **Secondary Users:** Verified tour companies managing their listings and bookings.
+Touristo is a Pakistan-first tourism marketplace connecting travelers with tour companies and tour guides.
 
-## 3. Core User Flows & Screens
-Based on the app flow, design for these key journeys:
+The interface should feel trustworthy, premium, modern, welcoming, and easy to use.
 
-### 3.1 User Onboarding
-*   **Splash Screen:** Logo, tagline, 1-2 second duration.
-*   **Onboarding Carousel:** 3-4 skippable screens highlighting key features (e.g., Discover, Book, Trust Verified Hosts). Cinematic and engaging.
-*   **Login/Signup:** Forms for new user registration and existing user login. Clear distinction and easy switching between the two.
+---
 
-### 3.2 Discovery & Exploration
-*   **Home/Discover Screen:** The main feed/dashboard. Showcase featured packages, quick search bar, navigation tabs (e.g., Home, Search, Hosts, Profile). Should feel vibrant and inviting.
-*   **Search Results:** Filterable list/grid of tour packages based on destination, date, price, etc.
-*   **Destination Explore Page:** Dedicated page for a destination with photos, description, and a list of available packages.
-*   **AI Trip Planner:** Chat-like interface for users to ask for personalized trip suggestions.
+1. PRODUCT
 
-### 3.3 Package Interaction & Booking
-*   **Package Detail Screen:** Comprehensive view of a tour package. Include title, price, host info, detailed itinerary, photo gallery, reviews, and a prominent "Book Now" CTA.
-*   **Host Profile:** Information about the tour company, their rating, past reviews, and a list of their packages.
-*   **Booking & Payment:** Form to select dates, number of travelers, and a secure payment interface. Summary of the booking details.
+---
 
-### 3.4 User Management & Trips
-*   **My Trips:** List of past, current, and upcoming bookings. Status indicators (Confirmed, Pending, Completed).
-*   **Active Trip View:** For ongoing trips, show package details, live weather/road status, live location, and SOS button.
-*   **User Profile:** Edit personal details, view booking history, and manage settings.
-*   **Post-Trip Review:** Interface for users to rate the host and package, and leave a written review.
+Touristo helps travelers:
 
-## 4. Design Guidelines & Constraints
+* Discover Pakistani destinations
+* Explore tour packages
+* Compare tour companies
+* Discover and compare tour guides
+* Plan trips using AI
+* Submit tour bookings
+* Manage trips
+* Communicate with tour companies
+* Check weather information
+* Use emergency SOS/location sharing
 
-### 4.1 Visual Identity
-*   **Color Palette:**
-    *   Primary Blue: #007BFF (for primary buttons, key actions)
-    *   Primary Green: #28A745 (for success states, confirmations)
-    *   Primary Red: #DC3545 (for errors, destructive actions, SOS)
-    *   Accent Orange: #FD7E14 (for highlights, promotions)
-    *   Neutral Grays: For text, borders, and backgrounds (#6C757D, #F8F9FA, #343A40).
-    *   White: Main background color.
-*   **Typography:** Use a modern, clean sans-serif font (e.g., Inter). Adhere to the following hierarchy:
-    *   H1: 28px, Bold
-    *   H2: 24px, Semi-Bold
-    *   Body Large: 16px, Regular
-    *   Body Small: 14px, Regular
-    *   Button Text: 16px, Medium
-*   **Layout:** Mobile-first, single-column layouts. Use a card-based design for content blocks. Maintain 16px margins from screen edges. Touch targets must be at least 44x44 pixels.
+Tour companies can:
 
-### 4.2 UI Components
-*   **Buttons:** Distinct styles for Primary (solid), Secondary (outline), and Danger (solid red). Minimum height 44px.
-*   **Input Fields:** Outlined with rounded corners. Clear focus state (e.g., blue border, subtle shadow).
-*   **Navigation:** Bottom tab bar for core app navigation (Home, Search, Bookings/Trips, Profile).
-*   **Loading States:** Use skeleton screens or spinners for any data fetching from the backend API.
+* Manage their company profile
+* Create and manage tour packages
+* Manage bookings
+* Manage tour guides
+* Respond to traveler inquiries
 
-### 4.3 UX Principles
-*   **Clarity:** Information should be scannable and hierarchically structured.
-*   **Feedback:** Provide immediate visual feedback for all user actions (taps, submissions).
-*   **Accessibility:** Ensure sufficient color contrast and consider screen reader compatibility.
-*   **Trust Building:** Display host verification badges, clear pricing, and prominent review/rating systems.
+---
 
-## 5. Technical Context (For Realism)
-*   The app communicates with a Node.js/Express REST API.
-*   Data is stored in a PostgreSQL database hosted on Supabase.
-*   Images and media will be served via a CDN from Supabase Storage.
-*   The final product will be a responsive web app built with React, but the design focus is on the mobile experience.
+2. TARGET USERS
 
-## 6. Deliverables Expected for Competition
-Please provide high-fidelity mockups for the following key screens:
-1.  Splash Screen
-2.  Onboarding Carousel (Show 2-3 slides)
-3.  Home/Discover Screen
-4.  Search Results Screen
-5.  Package Detail Screen
-6.  Booking & Payment Screen
-7.  My Trips Screen
-8.  Active Trip View (Optional but impressive)
-9.  User Profile Screen
+---
 
-Include annotations explaining key interactions and design decisions. Consider creating a short flow diagram showing the main user journey from discovering a package to completing a booking.
+Primary:
+
+* Pakistani travelers
+* Domestic tourists
+* Students and young travelers
+* Families
+* Small travel groups
+* Adventure travelers
+
+Secondary:
+
+* Tour companies
+* Tour operators
+* Tour guides
+
+---
+
+3. DESIGN STYLE
+
+---
+
+Create a:
+
+* Modern
+* Clean
+* Premium
+* Travel-focused
+* Trustworthy
+* Friendly
+* Responsive
+* Professional
+
+experience.
+
+Avoid:
+
+* Overcrowded layouts
+* Excessive text
+* Unnecessary decorative elements
+* Inconsistent colors
+* Huge blocks of information
+* Outdated mobile-app patterns
+
+Use strong visual hierarchy and generous spacing.
+
+---
+
+4. BRAND / COLOR
+
+---
+
+Use the existing Touristo project theme.
+
+Do NOT introduce a new blue/green/orange palette.
+
+Use the application's semantic theme variables:
+
+--surface-primary
+--surface-secondary
+--text-primary
+--text-secondary
+--border-primary
+--accent-primary
+
+Use semantic success/warning/error colors only where necessary.
+
+The overall interface should remain visually consistent across all screens.
+
+---
+
+5. TYPOGRAPHY
+
+---
+
+Use a clean modern sans-serif font.
+
+Recommended hierarchy:
+
+H1:
+28–32px, bold
+
+H2:
+20–24px, semibold
+
+Card titles:
+16–18px, semibold
+
+Body:
+14–16px
+
+Supporting text:
+12–14px
+
+Buttons:
+14–16px, medium/semibold
+
+---
+
+6. TRAVELER NAVIGATION
+
+---
+
+Primary bottom navigation:
+
+1. Home
+2. Search
+3. AI Planner
+4. SOS
+5. Profile
+
+My Trips is accessible through the Profile area.
+
+Inbox is accessible through Profile and contextual "Chat with Host" actions.
+
+---
+
+7. HOST NAVIGATION
+
+---
+
+Host navigation:
+
+1. Dashboard
+2. My Packages
+3. Bookings
+4. Profile
+
+Customer Inquiries / Inbox is accessible from the Host Dashboard.
+
+---
+
+8. REQUIRED TRAVELER SCREENS
+
+---
+
+Design the following:
+
+1. Splash Screen
+2. Onboarding
+3. Login
+4. Traveler Registration
+5. Home
+6. Search
+7. Destinations
+8. Destination Explore
+9. Experiences
+10. Experience Detail
+11. Package Detail
+12. Booking
+13. My Trips
+14. AI Trip Planner
+15. Host Discovery
+16. Host Profile
+17. Tour Guide Information
+18. Inbox
+19. Notifications
+20. Profile
+21. Settings
+22. Weather
+23. Emergency SOS
+24. About
+25. Contact
+
+---
+
+9. REQUIRED HOST SCREENS
+
+---
+
+Design:
+
+1. Host Dashboard
+2. My Packages
+3. Create/Edit Package
+4. Host Bookings
+5. Manage Tour Guides
+6. Customer Inquiries / Inbox
+7. Host Profile
+
+---
+
+10. HOME SCREEN
+
+---
+
+The Home screen should immediately communicate:
+
+"Discover Pakistan. Find the right trip."
+
+Include:
+
+* Greeting
+* Search
+* Featured destinations
+* Recommended packages
+* Popular packages
+* Destination cards
+* Host/company discovery
+* AI Planner entry point
+
+Cards should remain compact and visually clear.
+
+---
+
+11. DESTINATION EXPERIENCE
+
+---
+
+Destination Explore should contain:
+
+* Hero image
+* Destination name
+* About
+* History
+* Culture
+* Famous places
+* Local food
+* Available tour packages
+
+Use clear sections and whitespace.
+
+---
+
+12. PACKAGE DETAIL
+
+---
+
+Package Detail should include:
+
+* Large package image
+* Package title
+* Host/company
+* Verification badge
+* Rating
+* Price
+* Duration
+* Location
+* Description
+* Inclusions
+* Exclusions
+* Itinerary
+* Tour guides
+* Reviews
+* AI review summary when available
+
+Primary actions:
+
+BOOK NOW
+
+CHAT WITH HOST
+
+SAVE
+
+Do NOT add a pre-booking "Chat with Guide" button.
+
+---
+
+13. HOST COMMUNICATION
+
+---
+
+Messaging is:
+
+Traveler ↔ Host
+
+The traveler can start a conversation from Package Detail.
+
+The host can manage customer inquiries from the Host Dashboard.
+
+Inbox should display:
+
+* Host/company identity
+* Verification
+* Last message
+* Timestamp
+* Unread count
+* Package context
+* Message history
+* Message composer
+
+Do not design unsupported voice-call or file-attachment functionality as current features.
+
+---
+
+14. TOUR GUIDES
+
+---
+
+Tour guides are displayed as informational/matching resources.
+
+Show:
+
+* Photo
+* Name
+* Specialty
+* Rating
+
+Allow:
+
+* Search
+* Filtering
+* Comparison
+* Matching
+
+Guide communication can be introduced later for active/paid trips.
+
+---
+
+15. BOOKING
+
+---
+
+Booking screen should contain:
+
+* Package summary
+* Travel/start date
+* Number of travelers
+* Special requests
+* Price calculation
+* Payment method selection
+* Booking submission
+* Confirmation state
+
+The current MVP does not contain a live payment gateway.
+
+Do not present a fake external payment integration as already implemented.
+
+---
+
+16. AI TRIP PLANNER
+
+---
+
+Create a conversational travel assistant.
+
+Users can ask:
+
+* Where should I travel?
+* Which destination is best?
+* Suggest a trip for my budget.
+* What can I do in Hunza?
+* What should I visit in Skardu?
+
+Support:
+
+* English
+* Urdu
+* Roman Urdu
+
+The assistant should have:
+
+* User messages
+* AI responses
+* Loading state
+* Error state
+* Suggested prompts
+
+---
+
+17. MY TRIPS
+
+---
+
+Show:
+
+* Upcoming trips
+* Booking information
+* Package
+* Travel date
+* Number of travelers
+* Booking status
+
+Use clear status indicators.
+
+---
+
+18. WEATHER
+
+---
+
+Show:
+
+* Current temperature
+* Feels-like temperature
+* Humidity
+* Wind
+* Forecast
+* Simplified road status
+
+Use clear weather cards and icons.
+
+---
+
+19. SOS
+
+---
+
+The SOS interface should prioritize safety and clarity.
+
+Include:
+
+* Get Current Location
+* Latitude
+* Longitude
+* Google Maps link
+* Share/Copy location
+* Regional emergency/tourism information
+
+Do not imply automatic emergency dispatch.
+
+---
+
+20. HOST DASHBOARD
+
+---
+
+Show:
+
+* Business overview
+* Customer inquiries
+* Package management
+* Booking management
+* Tour-guide management
+
+Customer Inquiries should be a prominent dashboard action.
+
+---
+
+21. RESPONSIVE DESIGN
+
+---
+
+Mobile:
+
+* Single-column layouts
+* Large touch targets
+* Bottom navigation
+* Compact cards
+* Sticky primary actions where appropriate
+
+Tablet/Desktop:
+
+* Multi-column grids
+* Wider content containers
+* Side-by-side sections
+* Expanded inbox layout
+* Dashboard cards
+
+---
+
+22. UI QUALITY
+
+---
+
+Every screen should include appropriate:
+
+* Loading state
+* Error state
+* Empty state
+* Hover state
+* Focus state
+* Disabled state
+
+Use:
+
+* Consistent border radius
+* Subtle shadows
+* Consistent spacing
+* Strong typography hierarchy
+* Clear CTA buttons
+
+The final interface should look like a professional production-ready tourism marketplace rather than a basic student prototype.
+
+---
+
+23. FUTURE ADMIN DASHBOARD
+
+---
+
+Keep the architecture ready for a future Admin Dashboard with:
+
+* User management
+* Host verification
+* Package moderation
+* Booking monitoring
+* Review moderation
+* Reports
+* Analytics
+* Safety monitoring
+
+---
+
+24. TECHNOLOGY CONTEXT
+
+---
+
+Frontend:
+
+React 19
+Vite
+React Router
+Tailwind CSS
+
+Backend:
+
+Node.js
+Express
+REST APIs
+JWT authentication
+bcrypt
+
+Database:
+
+PostgreSQL
+Supabase
+
+AI:
+
+Google Gemini
+
+Weather:
+
+OpenWeatherMap
+
+Maps:
+
+Leaflet
+OpenStreetMap
+
+Deployment:
+
+Vercel-compatible full-stack architecture
+
+---
+
+25. FINAL DESIGN GOAL
+
+---
+
+The final Touristo experience should make a traveler feel:
+
+"I can discover a place, find a trustworthy tour company, understand the package, talk to the host, book my trip, manage it, and stay informed — all from one platform."
+
+Prioritize usability, trust, clarity, responsiveness, and visual polish over unnecessary decoration.

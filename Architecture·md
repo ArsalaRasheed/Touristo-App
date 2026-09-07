@@ -1,149 +1,395 @@
 # Touristo — Architecture Map
 
-This document is the single source of truth for how screens, tech layers, and data connect. Refer to this before creating new screens, routes, or database changes.
+This document describes the current architecture of the Touristo application and should be used as the technical reference when extending the project.
 
-## 1. Screen Flow & Navigation
+---
+
+## 1. System Overview
+
+Touristo is a full-stack web application built using:
+
+* React 19
+* Vite
+* Tailwind CSS
+* React Router
+* Node.js
+* Express
+* PostgreSQL on Supabase
+* JWT authentication
+* bcrypt password hashing
+* Google Gemini
+* OpenWeatherMap
+* Leaflet / OpenStreetMap
+
+The platform supports two main roles:
+
+* Traveler
+* Tour Company / Host
+
+---
+
+## 2. High-Level Architecture
 
 ```mermaid
 flowchart TD
-    Splash["Splash Screen (1-2 sec, logo + tagline)"] -->|first-time user| Onboarding
-    Splash -->|returning user| Home
 
-    Onboarding["Onboarding Carousel (skippable, cinematic slides)"] --> Home
+    Browser["Traveler / Host Browser"]
 
-    Home["Home / Discover"] --> Search["Search Results"]
-    Home --> Explore["Destination Explore Page"]
-    Home --> HostList["Host Discovery Tab"]
-    Home --> Notifications
+    Frontend["React 19 + Vite + Tailwind CSS"]
 
-    Search --> PackageDetail["Package Detail"]
-    Explore --> PackageDetail
-    Explore -->|Ask AI about destination| TripPlanner["AI Trip Planner (shared chatbot)"]
+    Backend["Node.js + Express REST API"]
 
-    PackageDetail --> Booking["Booking & Payment"]
-    PackageDetail --> HostProfile["Host Profile"]
-    Booking --> MyTrip["Booking Confirmation / My Trip"]
+    Auth["JWT Authentication"]
 
-    MyTrip --> Weather["Live Weather & Road Status"]
-    MyTrip --> SOS["Emergency SOS"]
-    MyTrip --> LiveLocation["Live Location (self-position map)"]
-    MyTrip --> Review["Post-Trip Review"]
+    DB["Supabase PostgreSQL"]
 
-    HostList --> HostProfile
-    HostProfile --> PackageDetail
+    Gemini["Google Gemini API"]
 
-    Home --> TripPlanner
-    TripPlanner --> PackageDetail
+    Weather["OpenWeatherMap API"]
 
-    Login["Sign-Up / Login"] --> Home
-    Home --> Profile["Traveler Profile & Settings"]
+    Maps["OpenStreetMap + Leaflet"]
 
-    CompanyReg["Company Registration"] --> CompanyDash["Company Dashboard"]
-    Login --> CompanyReg
-
-    %% New Host-Side Flows
-    CompanyDash --> HDashboard["Host Dashboard (/host-dashboard)"]
-    CompanyDash --> HPackages["My Packages (/my-packages)"]
-    CompanyDash --> HBookings["Host Bookings (/bookings)"]
-    HBookings --> MyTrip
+    Browser --> Frontend
+    Frontend --> Backend
+    Backend --> Auth
+    Backend --> DB
+    Backend --> Gemini
+    Backend --> Weather
+    Frontend --> Maps
 ```
 
-## 2. Technical Architecture (System Layers)
+---
+
+## 3. Deployment Architecture
+
+The current project uses a Vercel-compatible architecture.
 
 ```mermaid
-flowchart LR
-    subgraph Client["Frontend — React + Vite + Tailwind"]
-        UI["Screens (Splash, Onboarding, Home, Search, etc.)"]
-    end
+flowchart TD
 
-    subgraph Server["Backend — Node.js + Express"]
-        API["REST API Routes"]
-        Controllers["Controllers"]
-        Models["Models"]
-        AILayer["AI Layer (Trip Planner, Ranking, Summarizer, Comparison, Recommendations)"]
-    end
+    User["User Browser"]
 
-    subgraph Cloud["Supabase"]
-        RDS[("Database — PostgreSQL")]
-        OSS["Storage — Images, Video Storage"]
-        ECS["Functions — Hosting"]
-        CDN["Realtime — Real-time updates"]
-        WAF["Auth — Authentication & Authorization"]
-    end
+    Vercel["Vercel"]
 
-    UI -->|HTTP requests| API
-    API --> Controllers
-    Controllers --> Models
-    Controllers --> AILayer
-    Models -->|SQL queries| RDS
-    UI -->|images/video| CDN
-    CDN --> OSS
-    Server --> ECS
-    WAF --> ECS
+    React["React + Vite Frontend"]
+
+    Express["Express API"]
+
+    Supabase["Supabase PostgreSQL"]
+
+    User --> Vercel
+    Vercel --> React
+    React --> Express
+    Express --> Supabase
 ```
 
-## 3. Database Entities (Core Tables)
+The project includes a root Express application and a Vercel API entry point.
+
+Frontend API requests should use the application's `/api/...` routes in the deployed environment.
+
+---
+
+## 4. Frontend Architecture
+
+```text
+frontend/
+└── src/
+    ├── components/
+    │   ├── HomeScreen
+    │   ├── SearchScreen
+    │   ├── DestinationsScreen
+    │   ├── DestinationExploreScreen
+    │   ├── ExperiencesScreen
+    │   ├── ExperienceDetailScreen
+    │   ├── PackageDetailScreen
+    │   ├── BookingScreen
+    │   ├── MyTripsScreen
+    │   ├── ProfileScreen
+    │   ├── HostDiscoveryScreen
+    │   ├── HostProfileScreen
+    │   ├── HostDashboardScreen
+    │   ├── MyPackagesScreen
+    │   ├── HostBookingsScreen
+    │   ├── ManageTourGuidesScreen
+    │   ├── InboxScreen
+    │   ├── AITripPlannerScreen
+    │   ├── WeatherScreen
+    │   ├── EmergencySOSScreen
+    │   └── ...
+    │
+    ├── context/
+    │   └── AuthContext
+    │
+    ├── utils/
+    │   └── recommendation / helper utilities
+    │
+    └── App.jsx
+```
+
+---
+
+## 5. Routing Architecture
+
+### Traveler Routes
+
+```text
+/home
+/search
+/destinations
+/destination/:destination
+/experiences
+/experiences/:experienceId
+/package/:id
+/booking
+/trip-planner
+/my-trips
+/weather
+/sos
+/profile
+/inbox
+```
+
+### Host Routes
+
+```text
+/host-dashboard
+/my-packages
+/host/create-package
+/host/guides
+/bookings
+/inbox
+```
+
+### Shared Routes
+
+```text
+/profile
+/host-profile/:id
+/notifications
+/settings
+/about
+/contact
+```
+
+Protected routes require authentication and role validation where applicable.
+
+---
+
+## 6. Backend Architecture
+
+```text
+touristo/
+├── config/
+│   └── database.js
+│
+├── controllers/
+│   ├── bookingController.js
+│   ├── destinationController.js
+│   ├── generalController.js
+│   ├── hostController.js
+│   ├── messageController.js
+│   ├── packageController.js
+│   ├── reviewController.js
+│   ├── tripPlannerController.js
+│   ├── userController.js
+│   └── weatherController.js
+│
+├── middleware/
+│   └── auth.js
+│
+├── models/
+│   ├── Booking.js
+│   ├── Host.js
+│   ├── MarketplaceMessage.js
+│   ├── Package.js
+│   ├── Review.js
+│   ├── TourGuide.js
+│   └── User.js
+│
+├── routes/
+│   ├── bookingRoutes.js
+│   ├── destinationRoutes.js
+│   ├── hostBookingRoutes.js
+│   ├── hostRoutes.js
+│   ├── messageRoutes.js
+│   ├── packageRoutes.js
+│   ├── reviewRoutes.js
+│   ├── tourGuideRoutes.js
+│   ├── tripPlannerRoutes.js
+│   ├── userRoutes.js
+│   └── weatherRoutes.js
+│
+└── utils/
+    ├── emergencyHelper.js
+    ├── hostRanking.js
+    ├── packageComparison.js
+    ├── recommendations.js
+    ├── reviewSummarizer.js
+    ├── seedData.js
+    └── weatherRoadStatus.js
+```
+
+---
+
+## 7. Authentication Architecture
+
+Authentication is handled by the application's Express backend.
+
+```mermaid
+flowchart TD
+
+    Login["Email + Password"]
+
+    UserController["User Controller"]
+
+    DB["PostgreSQL"]
+
+    JWT["JWT Token"]
+
+    LocalStorage["Browser Local Storage"]
+
+    Protected["Protected API Route"]
+
+    Login --> UserController
+    UserController --> DB
+    UserController --> JWT
+    JWT --> LocalStorage
+    LocalStorage --> Protected
+```
+
+Passwords are hashed using bcrypt.
+
+JWT tokens are validated through the authentication middleware.
+
+The frontend uses role-based routing for Traveler and Host users.
+
+---
+
+## 8. Database Architecture
+
+The main entities are:
 
 ```mermaid
 erDiagram
-    USERS ||--o{ BOOKINGS : makes
-    USERS ||--o{ REVIEWS : writes
-    HOSTS ||--o{ PACKAGES : offers
-    HOSTS ||--o{ REVIEWS : receives
-    PACKAGES ||--o{ BOOKINGS : booked_in
-    PACKAGES }o--|| DESTINATIONS : located_in
 
-    USERS {
-        int id
-        string name
-        string email
-        string password_hash
-        string phone
-    }
-    HOSTS {
-        int id
-        string company_name
-        boolean verified
-        float rating_score
-    }
-    PACKAGES {
-        int id
-        int host_id
-        int destination_id
-        string title
-        decimal price
-        text itinerary
-    }
-    BOOKINGS {
-        int id
-        int user_id
-        int package_id
-        date travel_date
-        string status
-    }
-    REVIEWS {
-        int id
-        int user_id
-        int host_id
-        int rating
-        text comment
-    }
-    DESTINATIONS {
-        int id
-        string name
-        string category
-        text history
-        text culture
-    }
+    USERS ||--o{ BOOKINGS : creates
+    USERS ||--o{ REVIEWS : writes
+
+    HOSTS ||--o{ PACKAGES : creates
+    HOSTS ||--o{ TOUR_GUIDES : manages
+
+    DESTINATIONS ||--o{ PACKAGES : contains
+
+    PACKAGES ||--o{ BOOKINGS : receives
+    PACKAGES ||--o{ REVIEWS : receives
+
+    HOSTS ||--o{ MARKETPLACE_CHATS : participates
+    USERS ||--o{ MARKETPLACE_CHATS : participates
+
+    MARKETPLACE_CHATS ||--o{ MESSAGES : contains
 ```
 
-## 4. Current Build Status (update as we progress)
+---
 
-- [x] Backend structure (routes, controllers, models) — built, needs cleanup of duplicate folders
-- [x] Frontend scaffold (Vite + React + Tailwind) — built, styling currently broken/plain, being fixed
-- [x] Splash → Onboarding → Home routing — built, styling pending
-- [x] Host-side routing for Dashboard, My Packages, and Bookings — built
-- [ ] AI Trip Planner integration — not started
-- [ ] Supabase Database connection — not started (currently local, DB connection intentionally non-blocking)
-- [ ] Remaining screens (Search, Package Detail, Booking, etc.) — **Partially Complete:** Host-side booking screen is now functional.
-- [ ] Onboarding cinematic video — deferred until app is stable
+## 9. Messaging Architecture
+
+The marketplace messaging system is designed around:
+
+`Traveler ↔ Host`
+
+Pre-booking communication is not between travelers and tour guides.
+
+A conversation contains:
+
+* Traveler
+* Host
+* Conversation ID
+* Last message
+* Updated timestamp
+
+Messages can contain:
+
+* Sender
+* Receiver
+* Message text
+* Associated package
+* Read state
+* Creation timestamp
+
+The conversation remains persistent even when package information changes.
+
+---
+
+## 10. AI Architecture
+
+Touristo uses Google Gemini for:
+
+* AI Trip Planner
+* AI review summarization
+
+Additional recommendation utilities are handled by the application's backend logic.
+
+---
+
+## 11. External Services
+
+### Google Gemini
+
+Used for AI-powered travel assistance and review summarization.
+
+### OpenWeatherMap
+
+Used for weather and forecast information.
+
+### OpenStreetMap / Leaflet
+
+Used for map visualization and location display.
+
+### Google Maps URLs
+
+Used by the SOS feature for location sharing.
+
+---
+
+## 12. Current Build Status
+
+The project is a working full-stack MVP/prototype.
+
+Implemented areas include:
+
+* Authentication
+* Traveler flows
+* Host flows
+* Destination discovery
+* Package management
+* Booking
+* My Trips
+* AI Trip Planner
+* AI review summarization
+* Host ranking
+* Tour-guide management
+* Traveler/host messaging
+* Weather
+* SOS
+* Maps
+* Notifications/settings UI
+
+Some production-level features remain simplified or planned.
+
+---
+
+## 13. Known Production-Level Future Work
+
+Future improvements include:
+
+* Live payment gateway integration
+* Advanced password recovery
+* Email verification improvements
+* Real-time notifications
+* Production media storage
+* Advanced active-trip communication
+* Guide/group communication after booking
+* Admin dashboard
+* Host verification workflow
+* Analytics
+* Enhanced safety/navigation services
