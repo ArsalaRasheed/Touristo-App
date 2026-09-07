@@ -1,968 +1,1025 @@
-Touristo 🇵🇰
+# Touristo 🇵🇰
 
-Pakistan Tourism Marketplace
+## Pakistan Tourism Marketplace
 
-Touristo is a mobile-first tourism marketplace for Pakistan that connects travelers with tour companies and helps users discover destinations, compare tour packages and guides, plan trips, make bookings, manage trips, and access travel-safety information.
+Touristo is a full-stack tourism marketplace designed to connect **travelers with tour companies across Pakistan**. The platform allows travelers to discover destinations, explore tour packages, compare hosts and guides, plan trips with AI assistance, make bookings, communicate with tour companies, manage trips, and access travel-safety features.
 
-Touristo follows an asset-light marketplace model: the platform connects travelers with tour companies rather than operating tours itself.
+Touristo follows an **asset-light marketplace model**: Touristo does not operate tours itself. Instead, it provides a digital marketplace where travelers can discover and communicate with tour companies and hosts.
 
-Current implementation note: This repository contains a working full-stack prototype/MVP. Some features are fully connected to the backend/database, while others are UI/demo implementations or simplified versions of the planned production functionality. This README describes what is actually implemented in the current codebase rather than only the original product plan.
+> **Project Status:** Active Development — Full-Stack MVP
+> **Primary Focus:** Pakistan Domestic Tourism Marketplace
 
-✨ Current Features
+---
 
-👤 Authentication & User Roles
+# ✨ Current Features
 
-Traveler and Tour Company/Host registration flows.
+## 👤 Authentication & User Roles
 
-Email/password login.
+Touristo currently supports two primary user roles:
 
-Password hashing with bcrypt.
+* **Traveler**
+* **Tour Company / Host**
 
-JWT-based authentication.
+### Current Authentication
 
-Authentication state persisted in browser localStorage.
+* Traveler registration
+* Tour company/host registration
+* Email and password login
+* Password hashing using bcrypt
+* JWT-based authentication
+* Persistent authentication using browser localStorage
+* Protected routes
+* Role-based access
+* Traveler-specific navigation
+* Host-specific dashboard and navigation
+* Linked host/company profiles
 
-Role-based routing for:
+The authentication system is currently functional for the MVP. A more advanced production-grade authentication system is planned for the next phase.
 
-Travelers
+---
 
-Tour companies/hosts
+# 🧳 Traveler Experience
 
-Protected routes using React ProtectedRoute.
+Travelers can currently:
 
-Host registration creates a linked company/host profile.
+* Explore the Touristo home/discovery experience
+* Search for destinations and tour packages
+* Browse Pakistani destinations
+* Explore destination information
+* View available tour packages
+* View detailed package information
+* View tour company/host profiles
+* Explore available experiences
+* Browse tour guides
+* Compare guide information
+* Use AI Trip Planner
+* View package reviews and ratings
+* View AI-generated review summaries where available
+* Make package bookings
+* Manage trips through My Trips
+* Communicate with tour companies/hosts
+* Access weather information
+* Use Emergency SOS/location-sharing features
+* Manage profile and account settings
+* Receive notification information through the application interface
 
-Host-specific dashboard and management screens.
+---
 
-🏠 Traveler Experience
+# 🏢 Tour Company / Host Experience
 
-Splash screen.
+Tour companies can currently:
 
-Onboarding screen.
+* Register as a host
+* Create a linked company profile
+* Access a host dashboard
+* Create tour packages
+* Edit and manage packages
+* Add package descriptions
+* Set package prices
+* Set package duration
+* Add locations
+* Add availability information
+* Define inclusions and exclusions
+* View bookings associated with their packages
+* Manage tour guides
+* Add tour guides
+* Add guide specialties
+* Add guide photo URLs
+* View travelers' inquiries through the messaging system
 
-Home/discovery experience.
+---
 
-Search for packages and tour companies.
+# 🔎 Search & Discovery
 
-Destination discovery.
+Touristo provides multiple discovery mechanisms including:
 
-Destination detail/explore pages.
+* Package search
+* Destination discovery
+* Tour company discovery
+* Destination-based package discovery
+* Package cards with pricing and duration
+* Host rating information
+* Featured packages
+* Recommended packages
+* Package comparison indicators
+* Experience-based discovery
 
-Package detail pages.
+The goal is to make it easier for travelers to compare tourism options before booking.
 
-Host/company profile pages.
+---
 
-Experiences section.
+# 🗺️ Pakistani Destinations
 
-My Trips section.
+The current application contains seeded destinations including:
 
-Profile and settings screens.
+1. Hunza Valley
+2. Skardu
+3. Swat Valley
+4. Naran
+5. Babusar Top
+6. Lahore
+7. Mohenjo-daro
+8. Gwadar
 
-Notifications screen.
+Destination information can include:
 
-🔎 Search & Discovery
+* Category
+* History
+* Culture
+* Famous places
+* Local food
+* Latitude
+* Longitude
+* Available tour packages
 
-Search packages by title, destination, location and related text.
+---
 
-Search/discover tour companies.
-
-Destination-based package discovery.
-
-Package cards with price, duration and rating information.
-
-Host ranking information exposed by the backend.
-
-Featured/recommended package sections on the home screen.
-
-Top Match and Best Value style comparison badges are supported in the recommendation/featured-package flow.
-
-🗺️ Pakistan Destinations
-
-The application contains seeded tourism destinations including:
-
-Hunza Valley
-
-Skardu
-
-Swat Valley
-
-Naran
-
-Babusar Top
-
-Lahore
-
-Mohenjo-daro
-
-Gwadar
-
-Destination data includes, where available:
-
-Category
-
-History/background
-
-Culture/traditions
-
-Famous spots
-
-Local food
-
-Latitude/longitude
-
-📦 Tour Package Management
+# 📦 Tour Package Management
 
 Travelers can:
 
-View package details.
-
-See package price and duration.
-
-View group size.
-
-View inclusions/exclusions.
-
-View itinerary information.
-
-View host/company information.
-
-View package reviews and ratings.
-
-View AI-generated review summaries when available.
+* Browse packages
+* View package details
+* View package price
+* View duration
+* View group size
+* View inclusions
+* View exclusions
+* View itinerary
+* View host information
+* View ratings and reviews
+* View AI review summaries where available
+* Start the booking process
+* Contact the host before booking
 
 Hosts can:
 
-Open a host dashboard.
+* Create packages
+* Edit packages
+* Delete/manage packages
+* Add package information
+* Set price and duration
+* Add location
+* Add availability
+* Add inclusions/exclusions
+* Manage their package listings
 
-Create tour packages.
+The backend provides package CRUD functionality.
 
-Add package title, description, price and duration.
+---
 
-Add location and availability information.
+# 🧾 Booking & My Trips
 
-Add inclusions and exclusions.
+Travelers can currently:
 
-Manage their package list.
+* Select a package
+* Select number of travelers
+* Select a start date
+* Add special requests
+* Select a displayed payment method
+* View calculated booking totals
+* Submit bookings
+* View bookings through My Trips
 
-The backend provides package create, read, update and delete APIs.
+Hosts can:
 
-🧳 Booking System
+* View bookings related to their packages
+* View traveler and package information
+
+### Payment Status
+
+The current MVP contains booking/payment-status logic and displays payment-method choices.
+
+However, **live payment gateway integration is not yet implemented**.
+
+Future production integrations may include:
+
+* JazzCash
+* Easypaisa
+* Bank payments
+* Card payments
+* Other secure payment providers
+
+---
+
+# 💬 Traveler ↔ Host Messaging
+
+Touristo now includes a centralized marketplace messaging architecture for **Traveler ↔ Host communication**.
+
+### Current Messaging Flow
 
 Travelers can:
 
-Select a package.
-
-Select number of travelers.
-
-Select a start date.
-
-Enter special requests.
-
-Select a displayed payment method.
-
-See calculated total price.
-
-Submit a booking.
-
-View their trips/bookings in My Trips.
+* Start a conversation with a host
+* Open conversations from the Inbox
+* Send messages
+* View previous messages
+* See host/company information
+* See verified-host information
+* View unread message counts
+* Continue conversations from package-related inquiries
 
 Hosts can:
 
-View bookings associated with their packages.
+* View traveler inquiries
+* Open conversations
+* Reply to travelers
+* See unread messages
+* See package context associated with inquiries
 
-See traveler/package information through the host bookings flow.
+### Messaging Rules
 
-Payment status: The current prototype stores a payment status and presents payment-method choices, but it does not contain a live payment-gateway integration such as Stripe, JazzCash, Easypaisa or a bank API. Production payment processing still needs to be integrated.
+The current marketplace communication model is:
 
-🤖 AI Trip Planner
+**Traveler ↔ Host**
 
-Touristo includes an AI travel-planning chatbot powered by Google Gemini.
+Pre-booking communication is intentionally handled between the traveler and the tour company/host.
 
-Implemented behavior:
+Tour guides are shown as part of package/host information, but **direct guide messaging is not available before an active booking**.
 
-Users can ask travel questions.
+Future trip-based communication may introduce guide/group communication after a booking becomes active.
 
-The assistant is instructed to respond in the same language/script used by the user.
+---
 
-Supports English, Urdu script and Roman Urdu prompts.
+# 🤖 AI Trip Planner
 
-Provides concise destination/travel recommendations.
-
-Uses a chat-style interface with loading/error handling.
-
-Backend endpoint: POST /api/trip-planner.
-
-⭐ AI Review Summarization
-
-Package detail pages can receive an AI-generated review summary.
-
-Implemented backend behavior:
-
-Reads package reviews from PostgreSQL.
-
-Sends review content to Gemini.
-
-Generates a short summary covering:
-
-Overall sentiment
-
-Positive highlights
-
-Recurring concerns/suggestions
-
-Stores/caches the generated summary in review_summaries.
-
-Provides fallback messages when AI is unavailable.
-
-🏆 Host Ranking
-
-The backend includes a host-ranking utility that calculates a ranking score using:
-
-Review score: 40%
-
-Response time: 30%
-
-Completion rate: 30%
-
-Host badges include:
-
-Top Rated
-
-Highly Recommended
-
-Rising Host
-
-Trusted Operator
-
-New Host
-
-The host discovery/profile APIs expose ranking-related information such as rating, completion rate, response time and ranking score.
-
-Prototype limitation: Average response time is currently a placeholder value because response-time tracking is not yet stored in the database.
-
-💡 Recommendations
-
-The backend includes personalized/trending package recommendations.
-
-Current logic:
-
-Check the user's previous bookings.
-
-Use previously visited/booked destinations as a basis for similar package recommendations.
-
-Exclude packages already booked by the user where applicable.
-
-Fall back to trending/popular packages when history is unavailable.
-
-Home-page recommendations can receive comparison badges such as Top Match.
-
-🧭 Tour Guide Features
+Touristo includes an AI-powered travel assistant using the **Google Gemini API**.
 
 Travelers can:
 
-Browse available tour guides.
+* Ask travel questions
+* Ask for destination recommendations
+* Ask for trip-planning suggestions
+* Use English
+* Use Urdu
+* Use Roman Urdu
+* Receive concise travel recommendations
 
-Compare guides.
+The backend provides:
 
-Search/filter guide matching using specialty text.
+`POST /api/trip-planner`
 
-See guide ratings.
+---
 
-Get a best-match ordering based on preference matching and rating.
+# ⭐ AI Review Summarization
+
+Tour package reviews can be processed through AI to generate summarized insights.
+
+The system can identify:
+
+* Overall sentiment
+* Positive highlights
+* Recurring concerns
+* Suggestions from travelers
+
+Generated summaries can be cached in the database to avoid unnecessary repeated AI processing.
+
+---
+
+# 🏆 Host Ranking & Recommendations
+
+Touristo includes host-ranking and recommendation functionality.
+
+Host ranking can consider:
+
+* Review score
+* Response-time information
+* Completion rate
+
+Host badges can include:
+
+* Top Rated
+* Highly Recommended
+* Rising Host
+* Trusted Operator
+* New Host
+
+The recommendation system can use traveler activity and booking history to provide more relevant package suggestions.
+
+---
+
+# 🧭 Tour Guide Features
+
+Travelers can:
+
+* Browse tour guides
+* View guide specialties
+* View guide ratings
+* Compare guides
+* Search/filter guides
+* Receive preference-based guide matching
 
 Hosts can:
 
-Open Manage Tour Guides.
+* Add guides
+* Manage guides
+* Add guide specialties
+* Add optional guide photos
+* Remove guides associated with their company
 
-Add a guide.
+### Guide Communication
 
-Add guide specialty.
+Tour guides are currently presented as part of the tour package/host ecosystem.
 
-Add an optional photo URL.
+**Pre-booking direct chat with guides is intentionally restricted.**
 
-View guides belonging to their company.
+A future active-trip communication system may allow travelers to communicate with assigned guides after a confirmed/active booking.
 
-Delete guides.
+---
 
-💬 Tour Guide Messaging
+# 🏔️ Experiences
 
-A messaging system is implemented with:
+Touristo includes experience-based discovery such as:
 
-Conversation retrieval between sender/receiver.
+* Mountain Adventures
+* Cultural Tours
+* Coastal Getaways
+* Wildlife Safaris
+* Food & Culinary
+* Adventure Sports
 
-Sending messages.
+Each experience is intended to help travelers discover relevant tourism activities and packages.
 
-Database-backed message storage.
+---
 
-Authentication middleware on message endpoints.
+# 🌦️ Weather & Road Status
 
-The host profile includes the tour-guide communication flow.
+Touristo includes weather information for Pakistani locations.
 
-🌦️ Weather & Road Status
+Current weather functionality includes:
 
-Touristo includes a weather screen with location selection for Pakistani locations.
+* Current weather
+* Temperature
+* Humidity
+* Wind speed
+* Feels-like temperature
+* Forecast information
+* Simplified road-status information
 
-Implemented backend integration:
+Weather data is integrated using OpenWeatherMap.
 
-OpenWeatherMap API.
+Road status can currently be categorized as:
 
-Current weather information.
+* Clear
+* Caution
+* Unknown
 
-Humidity.
+Fallback data may be used if the external weather service is unavailable.
 
-Wind speed.
+---
 
-Feels-like temperature.
+# 🚨 Emergency SOS
 
-Five-day forecast processing.
+Touristo provides an Emergency SOS interface designed to support traveler safety.
 
-Simplified road-status calculation.
+Current functionality includes:
 
-Road status is currently categorized as:
+* Browser geolocation
+* Current latitude/longitude
+* Google Maps location generation
+* Location sharing
+* Tourism/emergency contact information
+* Region-based emergency information
 
-Clear
+### Current Limitation
 
-Caution
+This is currently a **travel-safety feature, not a real emergency dispatch service**.
 
-Unknown
+It does not currently:
 
-Weather data falls back to mock data if the weather API key is unavailable or the external API request fails.
+* Automatically contact emergency authorities
+* Continuously transmit location
+* Provide professional emergency dispatch
+* Replace local emergency services
 
-🚨 Emergency SOS
+---
 
-The Emergency SOS screen provides a travel-safety interface with:
+# 🗺️ Maps
 
-Browser geolocation access.
+Touristo uses Leaflet and OpenStreetMap for map functionality.
 
-Current latitude/longitude display.
+Current map functionality includes:
 
-Google Maps location link generation.
+* OpenStreetMap tiles
+* User location marker
+* Destination marker
+* Automatic map positioning
+* Location-based visualization
 
-Location sharing through clipboard/Google Maps.
+The current system is primarily intended for destination/location awareness rather than full turn-by-turn navigation.
 
-Regional tourism/emergency contact information.
+---
 
-Location-based nearest-region matching logic in the backend helper.
+# 👤 Profile, Settings & Notifications
 
-Current limitation: This is not yet a real emergency dispatch/SOS service. It does not automatically contact emergency authorities or continuously transmit a user's location.
+Touristo includes:
 
-📍 Live Map
+* Traveler profile
+* Host/company profiles
+* Account settings
+* Notification interface
+* Language preference interface
+* Currency preference interface
+* Profile/activity settings
+* About Touristo
+* Contact Touristo
 
-A reusable Leaflet-based map component is included.
+Some settings and notification functionality is still being expanded toward persistent backend-based behavior.
 
-Implemented functionality:
+---
 
-OpenStreetMap tiles.
+# 🛠️ Technology Stack
 
-User-location marker.
+## Frontend
 
-Destination marker.
+* React 19
+* Vite
+* React Router
+* Tailwind CSS
+* Responsive/mobile-first UI
+* JavaScript
+* Browser localStorage for authentication persistence
 
-Automatic map centering/fitting around locations.
+## Backend
 
-Dynamic loading of Leaflet assets.
+* Node.js
+* Express.js
+* REST APIs
+* JWT authentication
+* bcrypt password hashing
+* express-validator
+* Helmet
+* CORS
+* express-rate-limit
+* Morgan
 
-The current implementation is primarily a map/self-orientation component rather than a full turn-by-turn navigation system.
+## Database
 
-⚙️ Profile, Settings & Notifications
+* Supabase
+* PostgreSQL
+* PostgreSQL `pg` driver
 
-The application includes screens for:
+The application communicates with PostgreSQL through the Node.js backend.
 
-User profile.
+## AI
 
-Host/company information in host profiles.
+* Google Gemini API
+* AI Trip Planner
+* AI Review Summarization
+* Recommendation-related functionality
 
-Account settings.
+## External Services
 
-Profile/activity visibility preferences.
+* OpenWeatherMap — weather
+* OpenStreetMap — map data
+* Leaflet — interactive maps
+* Nominatim — location lookup
+* Google Maps URLs — location sharing
 
-Notification preferences.
+## Deployment
 
-Language preference UI.
+* Vercel
+* Supabase PostgreSQL
 
-Currency preference UI.
+The project uses a Vercel-compatible architecture where the frontend and API can be deployed through the same project structure.
 
-Notifications.
+---
 
-About Touristo.
+# 📁 Project Structure
 
-Contact Touristo.
-
-Some of these settings/notifications are currently frontend/demo state and are not yet persisted to the backend.
-
-🛠️ Technology Stack
-
-Frontend
-
-React 19
-
-Vite 8
-
-React Router
-
-Tailwind CSS 3
-
-Responsive/mobile-first UI
-
-Browser localStorage for authentication persistence
-
-Backend
-
-Node.js
-
-Express 5
-
-REST API architecture
-
-jsonwebtoken for JWT authentication
-
-bcrypt for password hashing
-
-express-validator for validation utilities
-
-helmet for security headers
-
-cors for cross-origin requests
-
-morgan for HTTP request logging
-
-express-rate-limit for API/login rate limiting
-
-Database
-
-Supabase PostgreSQL
-
-PostgreSQL accessed from the Node.js backend using the pg package.
-
-Database schema is created/verified by the application's schema setup utility.
-
-Database indexes are created for frequently queried relationships.
-
-The application does not use the Supabase JavaScript client for its main database operations; it connects to the Supabase PostgreSQL database through PostgreSQL connection credentials.
-
-AI
-
-Google Gemini API
-
-AI Trip Planner
-
-AI Review Summarization
-
-External Services / APIs
-
-OpenWeatherMap — weather and forecast data.
-
-OpenStreetMap + Leaflet — maps.
-
-Nominatim — location lookup used by the My Trips flow.
-
-Google Maps URLs — emergency location sharing.
-
-Deployment
-
-Vercel — deployment target for the frontend.
-
-Supabase — hosted PostgreSQL database.
-
-The current repository contains a standard Express Node.js backend and a Vite frontend. The frontend currently contains several development-time  API URLs, so these must be replaced with the deployed backend URL (or centralized into a Vite environment variable) before the production Vercel build can communicate with a remotely hosted backend.
-
-📁 Project Structure
-
+```text
 Touristo-App/
+│
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── AITripPlannerScreen.jsx
-│   │   │   ├── BookingScreen.jsx
-│   │   │   ├── CreateEditPackageScreen.jsx
-│   │   │   ├── DestinationExploreScreen.jsx
-│   │   │   ├── DestinationsScreen.jsx
-│   │   │   ├── EmergencySOSScreen.jsx
-│   │   │   ├── GuideComparisonScreen.jsx
-│   │   │   ├── HostDashboardScreen.jsx
-│   │   │   ├── HostDiscoveryScreen.jsx
-│   │   │   ├── HostProfileScreen.jsx
-│   │   │   ├── HostBookingsScreen.jsx
-│   │   │   ├── ManageTourGuidesScreen.jsx
-│   │   │   ├── MyPackagesScreen.jsx
-│   │   │   ├── MyTripsScreen.jsx
-│   │   │   ├── PackageDetailScreen.jsx
-│   │   │   ├── ProfileScreen.jsx
-│   │   │   ├── SearchScreen.jsx
-│   │   │   ├── WeatherScreen.jsx
-│   │   │   └── ...
 │   │   ├── context/
-│   │   │   └── AuthContext.js
 │   │   ├── utils/
-│   │   │   └── aiRecommendation.js
 │   │   └── App.jsx
+│   │
 │   └── package.json
 │
 ├── touristo/
 │   ├── config/
-│   │   └── database.js
 │   ├── controllers/
-│   │   ├── bookingController.js
-│   │   ├── destinationController.js
-│   │   ├── generalController.js
-│   │   ├── hostController.js
-│   │   ├── packageController.js
-│   │   ├── reviewController.js
-│   │   ├── tripPlannerController.js
-│   │   ├── userController.js
-│   │   └── weatherController.js
 │   ├── middleware/
-│   │   └── auth.js
 │   ├── models/
-│   │   ├── Booking.js
-│   │   ├── Host.js
-│   │   ├── Message.js
-│   │   ├── Package.js
-│   │   ├── Review.js
-│   │   ├── TourGuide.js
-│   │   └── User.js
 │   ├── routes/
-│   │   ├── bookingRoutes.js
-│   │   ├── destinationRoutes.js
-│   │   ├── hostBookingRoutes.js
-│   │   ├── hostRoutes.js
-│   │   ├── messageRoutes.js
-│   │   ├── packageRoutes.js
-│   │   ├── reviewRoutes.js
-│   │   ├── tourGuideRoutes.js
-│   │   ├── tripPlannerRoutes.js
-│   │   ├── userRoutes.js
-│   │   └── weatherRoutes.js
 │   └── utils/
-│       ├── emergencyHelper.js
-│       ├── hostRanking.js
-│       ├── packageComparison.js
-│       ├── recommendations.js
-│       ├── reviewSummarizer.js
-│       ├── seedData.js
-│       ├── weatherRoadStatus.js
-│       └── ...
+│
+├── api/
+│   └── index.js
 │
 ├── index.js
 ├── BackendSchema.md
 ├── AppFlow.md
 ├── PRD.md
 ├── TRD.md
+├── ImplementationPlan.md
+├── UIUXDesignBrief.md
 └── README.md
+```
+
+---
+
+# 🗃️ Main Database Entities
+
+The application currently uses database entities including:
+
+| Table               | Purpose                            |
+| ------------------- | ---------------------------------- |
+| `users`             | Traveler and host accounts         |
+| `hosts`             | Tour company profiles              |
+| `destinations`      | Pakistani destination information  |
+| `packages`          | Tour package listings              |
+| `bookings`          | Traveler bookings                  |
+| `reviews`           | Package reviews and ratings        |
+| `review_summaries`  | AI-generated review summaries      |
+| `tour_guides`       | Tour guides associated with hosts  |
+| `messages`          | Marketplace messages               |
+| `marketplace_chats` | Traveler-host conversation records |
+
+Foreign-key relationships connect users, hosts, packages, bookings, reviews, guides and marketplace conversations.
+
+---
+
+# 🔐 Authentication Architecture
+
+The current authentication flow is:
+
+```text
+Traveler / Host
+       │
+       ▼
+   Registration
+       │
+       ▼
+   User Account
+       │
+       ▼
+ Email + Password
+       │
+       ▼
+ bcrypt Verification
+       │
+       ▼
+ JWT Token
+       │
+       ▼
+ Protected Routes
+       │
+       ├── Traveler
+       │
+       └── Host
+```
+
+The current system provides role-based authentication and protected application routes.
+
+### Authentication Improvements — Next Phase
+
+The authentication system will be strengthened in the next development phase.
+
+Planned improvements include:
+
+* Forgot Password
+* Reset Password
+* Password reset tokens
+* Stronger password validation
+* Better session/token handling
+* Improved account security
+* Better authentication error handling
+* Email-based account recovery
+* Additional security protections
+* Improved login protection
+* More robust production authentication flow
+
+---
+
+# 🔌 Main API Areas
+
+### Users
+
+```text
+GET     /api/users
+GET     /api/users/:id
+POST    /api/users
+POST    /api/users/login
+PUT     /api/users/:id
+DELETE  /api/users/:id
+```
+
+### Hosts
+
+```text
+GET     /api/hosts
+GET     /api/hosts/:id
+GET     /api/hosts/user/:id
+POST    /api/hosts
+PUT     /api/hosts/:id
+DELETE  /api/hosts/:id
+```
+
+### Packages
+
+```text
+GET     /api/packages
+GET     /api/packages/:id
+GET     /api/packages/destination/:destinationId
+GET     /api/packages/host/:hostId
+POST    /api/packages
+PUT     /api/packages/:id
+DELETE  /api/packages/:id
+```
+
+### Bookings
+
+```text
+GET     /api/bookings
+GET     /api/bookings/:id
+GET     /api/bookings/user/:userId
+GET     /api/bookings/host/:hostId
+POST    /api/bookings
+PUT     /api/bookings/:id
+DELETE  /api/bookings/:id
+```
+
+### Destinations
+
+```text
+GET     /api/destinations
+GET     /api/destinations/:id
+GET     /api/destinations/name/:name
+```
+
+### Reviews
+
+```text
+GET     /api/reviews
+GET     /api/reviews/:id
+POST    /api/reviews
+PATCH   /api/reviews/:id
+DELETE  /api/reviews/:id
+```
+
+### Tour Guides
+
+```text
+GET     /api/tour-guides
+GET     /api/tour-guides/:id
+GET     /api/tour-guides/host/:hostId
+POST    /api/tour-guides
+PUT     /api/tour-guides/:id
+DELETE  /api/tour-guides/:id
+```
+
+### Marketplace Messaging
+
+```text
+POST    /api/messages/conversation
+GET     /api/messages/inbox
+GET     /api/messages/unread-count
+GET     /api/messages/conversation/:conversationId
+POST    /api/messages/conversation/:conversationId/messages
+PATCH   /api/messages/conversation/:conversationId/read
+```
+
+### AI Trip Planner
+
+```text
+POST    /api/trip-planner
+```
+
+### Weather
+
+```text
+GET     /api/weather/coordinates?lat=<lat>&lon=<lon>
+```
+
+### Home / Recommendations
+
+```text
+GET     /api/homepage-data
+```
 
-🗃️ Database Model
+---
 
-The current schema contains the following main tables:
+# 🚀 Next Development Phase
+
+The current MVP provides the core marketplace foundation. The next phase will focus on transforming the prototype into a stronger production-ready tourism marketplace.
+
+## 👨‍💼 1. Admin Dashboard
+
+A dedicated **Admin Dashboard** will be developed in the next phase.
 
-Table
+Planned functionality includes:
 
-Purpose
+* Admin authentication
+* Admin dashboard
+* User management
+* Traveler management
+* Host management
+* Tour company management
+* Host verification/approval
+* Package moderation
+* Destination management
+* Booking monitoring
+* Review moderation
+* Guide management
+* Messaging monitoring where appropriate
+* Platform statistics
+* Reports and analytics
+* Platform-level controls
 
-users
+---
 
-Traveler and host accounts
+## 🔐 2. Advanced Authentication & Account Security
 
-hosts
+The current login system will be strengthened with:
 
-Tour company profiles linked to users
+* Forgot Password
+* Reset Password
+* Password recovery through email
+* Strong password requirements
+* Better token/session security
+* Account security improvements
+* Improved login protection
+* Better validation
+* Secure password reset workflow
+* Production-grade authentication handling
 
-destinations
+---
 
-Pakistani destinations and destination metadata
+## 💳 3. Real Payment Integration
 
-packages
+Future payment functionality may include:
 
-Tour packages/listings created by hosts
+* JazzCash
+* Easypaisa
+* Debit/Credit Cards
+* Bank payment options
+* Secure payment verification
+* Payment transaction records
+* Booking payment confirmation
+* Refund handling
+* Payment status synchronization
 
-bookings
+---
 
-Traveler bookings
+## 🔔 4. Production Notification System
 
-reviews
+Planned notification improvements:
 
-Package reviews and ratings
+* Real-time notifications
+* Push notifications
+* Booking notifications
+* Booking status updates
+* New message notifications
+* Host response notifications
+* Trip reminders
+* Payment notifications
 
-review_summaries
+---
 
-Cached AI review summaries
+## 🏢 5. Host Verification System
 
-tour_guides
+A production-grade host verification workflow will be introduced.
 
-Guides associated with tour companies
+Potential features:
 
-messages
+* Business verification
+* License/registration verification
+* Document submission
+* Admin review
+* Approval/rejection workflow
+* Verified host badge
+* Host verification status tracking
 
-User/guide conversation messages
+---
 
-Foreign-key relationships connect users, hosts, packages, bookings, reviews, guides and messages.
+## 💬 6. Advanced Trip Communication
 
-The application also creates indexes for common package, booking, review, destination, guide and message lookups.
+Future communication features may include:
 
-🔐 Authentication Flow
+* Active-trip group chat
+* Traveler ↔ assigned guide communication
+* Trip-specific conversations
+* Booking-linked conversations
+* Real-time messaging
+* Message notifications
+* Rich message attachments where appropriate
 
-User
-  │
-  ├── Traveler Signup
-  │       └── users record
-  │
-  └── Host Signup
-          ├── users record
-          └── hosts record linked by user_id
+Pre-booking communication will remain focused on:
 
-Login
-  │
-  ├── Email + Password
-  ├── bcrypt password verification
-  ├── JWT generated by backend
-  └── Token + user saved in localStorage
+**Traveler ↔ Host**
 
-Protected React Route
-  │
-  └── Role check
-       ├── traveler
-       └── host
+---
 
-JWT tokens are currently configured to expire after 7 days.
+## 📍 7. Advanced Travel Safety
 
-🔌 Main API Endpoints
+Future safety improvements may include:
 
-Users
+* Continuous location sharing
+* Emergency contact workflows
+* Improved regional emergency information
+* Trip safety alerts
+* Location-based notifications
+* Advanced SOS functionality
+* Real emergency-service integrations where technically and legally appropriate
 
-GET    /api/users
-GET    /api/users/:id
-POST   /api/users
-POST   /api/users/login
-PUT    /api/users/:id
-DELETE /api/users/:id
+---
 
-Hosts
+## 🗺️ 8. Advanced Navigation
 
-GET    /api/hosts
-GET    /api/hosts/:id
-GET    /api/hosts/user/:id
-POST   /api/hosts
-PUT    /api/hosts/:id
-DELETE /api/hosts/:id
+Future map functionality may include:
 
-Packages
+* Route planning
+* Turn-by-turn navigation
+* Live route tracking
+* Travel distance/time estimation
+* Road-condition integration
+* Offline travel maps
 
-GET    /api/packages
-GET    /api/packages/:id
-GET    /api/packages/destination/:destinationId
-GET    /api/packages/host/:hostId
-POST   /api/packages
-PUT    /api/packages/:id
-DELETE /api/packages/:id
+---
 
-Bookings
+## 📸 9. Production Media Storage
 
-GET    /api/bookings
-GET    /api/bookings/:id
-GET    /api/bookings/user/:userId
-GET    /api/bookings/host/:hostId
-POST   /api/bookings
-PUT    /api/bookings/:id
-DELETE /api/bookings/:id
+Future versions will introduce proper media infrastructure for:
 
-Destinations
+* Package images
+* Host/company images
+* Tour guide photos
+* Destination media
+* User profile images
+* Review images
 
-GET    /api/destinations
-GET    /api/destinations/:id
-GET    /api/destinations/name/:name
+---
 
-Reviews
+## ⭐ 10. Advanced Reviews & Ratings
 
-GET    /api/reviews
-GET    /api/reviews/:id
-POST   /api/reviews
-PATCH  /api/reviews/:id
-DELETE /api/reviews/:id
+Future improvements include:
 
-Tour Guides
+* Complete review submission flow
+* Verified booking reviews
+* Photo reviews
+* Host ratings
+* Guide ratings
+* Review moderation
+* Review reporting
+* More advanced AI review insights
 
-GET    /api/tour-guides
-GET    /api/tour-guides/:id
-GET    /api/tour-guides/host/:hostId
-POST   /api/tour-guides
-PUT    /api/tour-guides/:id
-DELETE /api/tour-guides/:id
+---
 
-Messaging
+## 📊 11. Analytics & Marketplace Intelligence
 
-GET    /api/messages/conversation/:senderId/:receiverId
-POST   /api/messages
+Future analytics may include:
 
-AI Trip Planner
+* Traveler behavior analytics
+* Package performance
+* Host performance
+* Booking trends
+* Conversion analytics
+* Popular destinations
+* Popular experiences
+* Revenue analytics
+* Admin marketplace statistics
 
-POST   /api/trip-planner
+---
 
-Weather
+## 🧠 12. More Advanced AI
 
-GET    /api/weather/coordinates?lat=<lat>&lon=<lon>
+Future AI capabilities may include:
 
-Home / Recommendations
+* Personalized trip generation
+* AI package recommendations
+* Budget-aware trip planning
+* Personalized destination recommendations
+* Smart itinerary generation
+* AI travel assistant improvements
+* Context-aware recommendations
+* Intelligent host/package matching
 
-GET    /api/homepage-data
+---
 
-🚀 Local Development Setup
+# 🛡️ Security & Reliability
 
-1. Clone/download the project
+The backend currently includes security-related measures such as:
 
-git clone <your-repository-url>
-cd Touristo-App
+* JWT authentication
+* bcrypt password hashing
+* Helmet security headers
+* CORS configuration
+* Rate limiting
+* Login protection
+* Input validation
+* Parameterized PostgreSQL queries
+* Foreign-key constraints
+* Protected API routes
+* Role-based access control
+* Error handling
 
-2. Install backend dependencies
+Security will continue to be strengthened as the platform moves toward production.
 
-npm install
+---
 
-3. Install frontend dependencies
+# 📱 Responsive Design
 
-cd frontend
-npm install
-cd ..
+Touristo follows a **mobile-first responsive design approach** while supporting desktop layouts.
 
-4. Configure environment variables
+The UI includes:
 
-Create a .env file in the project root.
+* Responsive navigation
+* Bottom navigation for travelers
+* Role-specific navigation
+* Responsive package grids
+* Destination cards
+* Host cards
+* Guide cards
+* Responsive messaging interface
+* Mobile-friendly booking flow
+* Responsive dashboards
 
-Example:
+---
 
-PORT=3000
+# ⚠️ Current MVP Limitations
 
-# Supabase PostgreSQL connection
-DB_HOST=<supabase-db-host>
-DB_PORT=5432
-DB_NAME=<database-name>
-DB_USER=<database-user>
-DB_PASSWORD=<database-password>
-DB_SSL_MODE=require
+The following areas are intentionally considered future development rather than completed production functionality:
 
-# Authentication
-JWT_SECRET=<strong-random-secret>
+* Live payment gateway integration
+* Advanced admin dashboard
+* Forgot/reset password system
+* Production-grade authentication hardening
+* Full host verification workflow
+* Real-time push notifications
+* Advanced real-time messaging
+* Active-trip guide/group communication
+* Continuous emergency location tracking
+* Real emergency dispatch integration
+* Full turn-by-turn navigation
+* Production media/file storage
+* Complete review submission and moderation system
+* Advanced analytics dashboard
+* Full automated testing
+* Advanced AI package personalization
 
-# AI
-GEMINI_API_KEY=<your-gemini-api-key>
+---
 
-# Weather
-OPENWEATHER_API_KEY=<your-openweathermap-api-key>
+# 🎯 Product Vision
 
-For the frontend AI helper, the Vite environment variable used by the current code is:
+Touristo aims to become a trusted digital marketplace for **domestic tourism in Pakistan**.
 
-VITE_GEMINI_API_KEY=<your-gemini-api-key>
+The long-term vision is to provide:
 
-Never commit real API keys, database passwords or JWT secrets to GitHub.
+* Trusted tour-company discovery
+* Verified tourism businesses
+* Transparent package comparison
+* Secure bookings
+* Reliable traveler-host communication
+* Personalized recommendations
+* AI-powered trip planning
+* Destination discovery
+* Tour guide discovery
+* Travel safety tools
+* Secure payments
+* Strong account security
+* Admin-controlled marketplace management
+* Scalable tourism infrastructure
 
-5. Start the backend
+The platform is designed to bring travelers and tourism businesses together through one centralized digital marketplace.
 
-From the project root:
+---
 
-npm run dev
+# 📚 Related Documentation
 
-Backend default:
+The repository also contains supporting project documentation:
 
+* `PRD.md` — Product Requirements Document
+* `TRD.md` — Technical Requirements Document
+* `BackendSchema.md` — Database and backend schema
+* `AppFlow.md` — Application flow
+* `ImplementationPlan.md` — Development planning
+* `UIUXDesignBrief.md` — UI/UX direction
 
+---
 
-6. Start the frontend
+# 👩‍💻 Development Status
 
-In another terminal:
+**Project:** Touristo
+**Type:** Full-Stack Pakistan Tourism Marketplace
+**Status:** Active Development / MVP
+**Frontend:** React + Vite + Tailwind CSS
+**Backend:** Node.js + Express
+**Database:** Supabase PostgreSQL
+**AI:** Google Gemini
+**Weather:** OpenWeatherMap
+**Maps:** Leaflet + OpenStreetMap
+**Deployment:** Vercel
 
-cd frontend
-npm run dev
+Touristo is currently being developed toward a more complete, secure and production-ready tourism marketplace.
 
-Vite will display the local frontend URL in the terminal.
+---
 
-🗄️ Supabase Database
+# 📜 License
 
-Touristo currently uses Supabase as the PostgreSQL database provider.
+This project currently uses the license configuration specified in `package.json`.
 
-The backend uses the standard PostgreSQL driver (pg) and connects using database environment variables.
-
-On backend startup, the application attempts to:
-
-Connect to the database.
-
-Ensure required tables exist.
-
-Create missing indexes.
-
-Seed initial tourism data when applicable.
-
-The schema setup is handled by:
-
-touristo/utils/schemaSetup.js
-
-Initial demo/seed records are handled by:
-
-touristo/utils/seedData.js
-
-☁️ Vercel Deployment
-
-The frontend is intended to be deployed on Vercel.
-
-Recommended production architecture:
-
-                  ┌─────────────────────┐
-                  │       Vercel        │
-                  │   React + Vite UI   │
-                  └──────────┬──────────┘
-                             │
-                             │ HTTPS API calls
-                             ▼
-                  ┌─────────────────────┐
-                  │   Node + Express    │
-                  │      Backend        │
-                  └──────────┬──────────┘
-                             │
-                             ▼
-                  ┌─────────────────────┐
-                  │       Supabase      │
-                  │    PostgreSQL DB    │
-                  └─────────────────────┘
-
-Important production task
-
-The current frontend source contains development URLs such as:
-
-/api/...
-
-For Vercel production, these should be centralized into an environment variable, for example:
-
-VITE_API_BASE_URL=https://your-backend-domain.com
-
-Then frontend requests should use:
-
-`${import.meta.env.VITE_API_BASE_URL}/api/...`
-
-This is necessary when the backend is deployed separately from the Vercel frontend.
-
-🛡️ Security & Reliability Measures
-
-The backend currently includes:
-
-JWT authentication.
-
-Password hashing with bcrypt.
-
-Helmet security headers.
-
-CORS configuration.
-
-Login rate limiting.
-
-General API rate limiting.
-
-Input validation/sanitization in important controllers.
-
-PostgreSQL parameterized queries.
-
-Foreign-key relationships.
-
-Error handling and fallback behavior for several external services.
-
-📱 Responsive Design
-
-Touristo is designed with a mobile-first approach and also supports larger desktop layouts.
-
-The UI uses:
-
-Tailwind CSS responsive breakpoints.
-
-Card-based discovery layouts.
-
-Bottom navigation for application navigation.
-
-Protected role-specific navigation.
-
-Responsive grids for packages, destinations and guides.
-
-🧪 Current Prototype / Production Gaps
-
-The following items are not yet full production implementations and should not be described as completed production features:
-
-Live payment gateway integration.
-
-Real-time emergency dispatch/SOS service.
-
-Continuous background live-location tracking.
-
-Real-time push notification infrastructure.
-
-Persistent settings/preferences backend storage.
-
-Full review submission UI in the current frontend flow.
-
-Production-grade host verification workflow/approval backend.
-
-Real host response-time tracking; current ranking uses a placeholder response-time value.
-
-Full AI package recommendations directly generated by the Trip Planner; the current Trip Planner returns AI advice and the backend recommendation system is separate.
-
-Complete turn-by-turn navigation.
-
-Production file/image upload storage.
-
-Centralized production API base URL for all frontend requests.
-
-Full automated test suite.
-
-These are future improvements rather than claims of functionality that is already complete.
-
-🧭 Product Direction
-
-The long-term Touristo product is intended to provide:
-
-Trusted tour-company discovery.
-
-Better package comparison.
-
-Personalized travel recommendations.
-
-AI-assisted trip planning.
-
-Better destination discovery.
-
-Travel safety information.
-
-Reliable booking and communication between travelers and tour companies.
-
-A scalable marketplace focused initially on tourism within Pakistan.
-
-📄 Related Documentation
-
-PRD.md — Product requirements and product vision.
-
-TRD.md — Technical requirements.
-
-BackendSchema.md — Backend/database schema information.
-
-AppFlow.md — Application flow.
-
-ImplementationPlan.md — Implementation planning.
-
-UIUXDesignBrief.md — UI/UX design direction.
-
-👩‍💻 Development Status
-
-Project: Touristo
-
-Type: Full-stack Pakistan tourism marketplace MVP/prototype
-
-Frontend: React + Vite + Tailwind CSS
-
-Backend: Node.js + Express
-
-Database: Supabase PostgreSQL
-
-AI: Google Gemini
-
-Weather: OpenWeatherMap
-
-Maps: Leaflet + OpenStreetMap
-
-Frontend Deployment: Vercel
-
-Status: Active development
-
-📜 License
-
-This project currently uses the license configuration specified in package.json (ISC) unless a separate project license is added.
+License: **ISC**
