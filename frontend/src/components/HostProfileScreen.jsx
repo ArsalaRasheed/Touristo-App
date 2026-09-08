@@ -1,57 +1,146 @@
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import TourGuideChat from './TourGuideChat';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import {
+  ArrowLeft,
+  BadgeCheck,
+  BriefcaseBusiness,
+  CalendarDays,
+  CheckCircle2,
+  Clock3,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+  ShieldCheck,
+  Star,
+  Users,
+  X
+} from 'lucide-react';
+
+const FALLBACK_PACKAGE_IMAGE =
+  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&q=85';
 
 const HostProfileScreen = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+
   const [hostData, setHostData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('overview'); // Added tab state
-  const [selectedGuide, setSelectedGuide] = useState(null);
+
+  const [activeTab, setActiveTab] = useState('overview');
+
   const [guidePreference, setGuidePreference] = useState('');
   const [guideRecommendation, setGuideRecommendation] = useState(null);
   const [recommending, setRecommending] = useState(false);
 
-  const handleGetRecommendation = async () => {
-    if (!guidePreference.trim()) return;
-    setRecommending(true);
-    setGuideRecommendation(null);
+  const [chatLoading, setChatLoading] = useState(false);
+
+  const getRankingBadge = (badge) => {
+    switch (badge) {
+      case 'Top Rated':
+        return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
+      case 'Highly Recommended':
+        return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
+      case 'Rising Host':
+        return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20';
+      case 'Trusted Operator':
+        return 'bg-purple-500/10 text-purple-600 border-purple-500/20';
+      case 'New Host':
+        return 'bg-gray-500/10 text-gray-600 border-gray-500/20';
+      default:
+        return 'bg-[color:var(--surface-secondary)] text-[color:var(--text-secondary)] border-[color:var(--border-primary)]';
+    }
+  };
+
+  const getInitial = (name) =>
+    name?.trim()?.charAt(0)?.toUpperCase() || 'T';
+
+  const handleChatWithHost = async () => {
+    if (!hostData?.id) {
+      alert('Host information is not available.');
+      return;
+    }
+
+    const token = localStorage.getItem('touristo_token');
+
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
     try {
+      setChatLoading(true);
+
+      const response = await fetch('/api/messages/conversation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          hostId: hostData.id
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result?.message || 'Unable to open host conversation.'
+        );
+      }
+
+      const conversationId = result?.data?.conversation_id;
+
+      if (!conversationId) {
+        throw new Error('Conversation could not be created.');
+      }
+
+      navigate(
+        `/inbox?conversation=${encodeURIComponent(conversationId)}`
+      );
+    } catch (err) {
+      console.error('Chat with host error:', err);
+      alert(err.message || 'Unable to open host chat.');
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const handleGetRecommendation = async () => {
+    if (!guidePreference.trim() || !hostData?.tourGuides?.length) return;
+
+    try {
+      setRecommending(true);
+      setGuideRecommendation(null);
+
       const response = await fetch('/api/tour-guides/recommend', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
           guides: hostData.tourGuides,
           preference: guidePreference
         })
       });
-      const data = await response.json();
-      setGuideRecommendation(data.data);
-    } catch (err) {
-      setGuideRecommendation({ error: 'Could not get a recommendation right now.' });
-    } finally {
-    setRecommending(false);
-    }
-  };
-  const navigate = useNavigate(); // Added navigation hook
 
-  // Function to get appropriate color for ranking badge
-  const getRankingBadgeColor = (badge) => {
-    switch(badge) {
-      case 'Top Rated':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'Highly Recommended':
-        return 'bg-blue-100 text-blue-800';
-      case 'Rising Host':
-        return 'bg-green-100 text-green-800';
-      case 'Trusted Operator':
-        return 'bg-purple-100 text-purple-800';
-      case 'New Host':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.message || 'Could not get a recommendation.'
+        );
+      }
+
+      setGuideRecommendation(data?.data || null);
+    } catch (err) {
+      setGuideRecommendation({
+        error: err.message || 'Could not get a recommendation right now.'
+      });
+    } finally {
+      setRecommending(false);
     }
   };
 
@@ -59,51 +148,82 @@ const HostProfileScreen = () => {
     const fetchHostData = async () => {
       try {
         setLoading(true);
+        setError(null);
+
         const response = await fetch(`/api/hosts/${id}`);
-        
+
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`Unable to load host (${response.status})`);
         }
-        
+
         const data = await response.json();
-        setHostData(data.data.host);
+
+        const host = data?.data?.host || data?.host;
+
+        if (!host) {
+          throw new Error('Host not found.');
+        }
+
+        setHostData(host);
       } catch (err) {
-        console.error('Error fetching host data:', err);
-        setError(err.message);
+        console.error('Error fetching host:', err);
+        setError(err.message || 'Unable to load host profile.');
       } finally {
         setLoading(false);
       }
     };
 
-    // Validate that id exists before making the API call
     if (id) {
       fetchHostData();
     } else {
-      setError('Invalid host ID');
+      setError('Invalid host ID.');
       setLoading(false);
     }
-  }, [id]); // Added id as dependency
+  }, [id]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] p-4 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[color:var(--accent-primary)] mx-auto"></div>
-          <p className="mt-4 text-[color:var(--text-secondary)]">Loading host profile...</p>
+      <div className="min-h-screen bg-[color:var(--bg-primary)] p-4">
+        <div className="max-w-6xl mx-auto animate-pulse space-y-6">
+
+          <div className="h-8 w-24 rounded-lg bg-[color:var(--surface-secondary)]" />
+
+          <div className="h-56 md:h-72 rounded-3xl bg-[color:var(--surface-secondary)]" />
+
+          <div className="h-64 rounded-3xl bg-[color:var(--surface-secondary)]" />
+
+          <div className="grid md:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((item) => (
+              <div
+                key={item}
+                className="h-28 rounded-2xl bg-[color:var(--surface-secondary)]"
+              />
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  if (error || !hostData) {
     return (
-      <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] p-4 flex items-center justify-center">
-        <div className="text-center p-6 bg-[color:var(--surface-primary)] rounded-xl border border-[color:var(--border-primary)] max-w-md">
-          <h2 className="text-xl font-bold mb-2 text-red-500">Error Loading Host</h2>
-          <p className="text-[color:var(--text-secondary)] mb-4">Failed to load host data: {error}</p>
-          <button 
-            onClick={() => navigate(-1)} // Go back to previous page
-            className="bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] py-2 px-4 rounded-lg"
+      <div className="min-h-screen bg-[color:var(--bg-primary)] flex items-center justify-center px-4">
+        <div className="max-w-md w-full text-center bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)] rounded-3xl p-8">
+          <div className="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+            <X className="text-red-500" size={26} />
+          </div>
+
+          <h2 className="text-xl font-bold mb-2">
+            Unable to Load Host
+          </h2>
+
+          <p className="text-[color:var(--text-secondary)] mb-6">
+            {error || 'The requested host could not be found.'}
+          </p>
+
+          <button
+            onClick={() => navigate(-1)}
+            className="px-5 py-3 rounded-xl bg-[color:var(--accent-primary)] text-[color:var(--nav-text)] font-semibold"
           >
             Go Back
           </button>
@@ -112,293 +232,493 @@ const HostProfileScreen = () => {
     );
   }
 
-  if (!hostData) {
-    return (
-      <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] p-4 flex items-center justify-center">
-        <div className="text-center p-6 bg-[color:var(--surface-primary)] rounded-xl border border-[color:var(--border-primary)] max-w-md">
-          <h2 className="text-xl font-bold mb-2">Host Not Found</h2>
-          <p className="text-[color:var(--text-secondary)] mb-4">The requested host could not be found.</p>
-          <button 
-            onClick={() => navigate(-1)} // Go back to previous page
-            className="bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] py-2 px-4 rounded-lg"
-          >
-            Go Back
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const packages = Array.isArray(hostData.packages)
+    ? hostData.packages
+    : [];
+
+  const guides = Array.isArray(hostData.tourGuides)
+    ? hostData.tourGuides
+    : [];
 
   return (
-    <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)]">
-      {/* Cover Photo */}
-      <div className="h-48 overflow-hidden">
-        <div className="w-full h-full bg-gradient-to-r from-[color:var(--accent-primary)] to-teal-600 flex items-center justify-center">
-          <span className="text-4xl text-[color:var(--nav-text)] font-bold">{hostData.company_name?.charAt(0) || 'H'}</span>
-        </div>
+    <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] pb-24">
+
+      {/* Back */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-5">
+        <button
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] transition"
+        >
+          <ArrowLeft size={18} />
+          Back
+        </button>
       </div>
-      
-      <div className="max-w-4xl mx-auto px-4 -mt-16 relative z-10">
-        {/* Profile Header */}
-        <div className="bg-[color:var(--surface-primary)] rounded-2xl shadow-xl p-6 mb-6 border border-[color:var(--border-primary)]">
-          <div className="flex flex-col md:flex-row items-start md:items-end gap-6">
-            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-[color:var(--bg-primary)]">
-              <div className="w-full h-full bg-gradient-to-br from-[color:var(--accent-primary)] to-teal-600 flex items-center justify-center text-[color:var(--nav-text)] font-bold text-3xl">
-                {hostData.company_name?.charAt(0) || 'H'}
-              </div>
+
+      {/* Hero */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 mt-5">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[color:var(--accent-primary)] via-[color:var(--accent-primary-hover)] to-slate-900 min-h-[280px]">
+
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-white blur-3xl" />
+            <div className="absolute -bottom-32 -left-20 w-80 h-80 rounded-full bg-black blur-3xl" />
+          </div>
+
+          <div className="relative z-10 p-6 sm:p-8 md:p-10 flex flex-col md:flex-row gap-7 items-start md:items-center">
+
+            {/* Logo */}
+            <div className="w-28 h-28 sm:w-32 sm:h-32 shrink-0 rounded-3xl bg-white/15 backdrop-blur-md border border-white/25 flex items-center justify-center shadow-xl">
+              <span className="text-5xl font-black text-white">
+                {getInitial(hostData.company_name)}
+              </span>
             </div>
-            
-            <div className="flex-grow">
-              <div className="flex flex-wrap items-center gap-4 mb-2">
-                <h1 className="text-2xl md:text-3xl font-bold text-[color:var(--text-primary)]">{hostData.company_name}</h1>
+
+            <div className="flex-1 text-white">
+
+              <div className="flex flex-wrap gap-2 mb-3">
+
                 {hostData.verified && (
-                  <span className="bg-[color:var(--accent-primary)] text-[color:var(--nav-text)] px-3 py-1 rounded-full flex items-center text-sm">
-                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.118l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    Verified
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 border border-white/20 text-sm font-semibold">
+                    <BadgeCheck size={16} />
+                    Verified Operator
                   </span>
                 )}
+
                 {hostData.ranking_badge && (
-                  <span className={`px-3 py-1 rounded-full text-sm font-bold ${getRankingBadgeColor(hostData.ranking_badge)}`}>
+                  <span className="px-3 py-1.5 rounded-full bg-white/15 border border-white/20 text-sm font-semibold">
                     {hostData.ranking_badge}
                   </span>
                 )}
+
               </div>
-              
-              <div className="flex flex-wrap items-center gap-6 mb-4">
-                <div className="flex items-center">
-                  <svg className="w-5 h-5 text-[color:var(--accent-primary)] mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <span className="font-bold text-lg">{hostData.avgRating?.toFixed(1) || 0}</span>
-                  <span className="mx-2">•</span>
-                  <span>{hostData.total_reviews || 0} reviews</span>
-                </div>
-                
-                <div className="flex items-center">
-                  <svg className="w-5 h-5 text-[color:var(--accent-primary)] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                  </svg>
-                  <span>{hostData.trips_completed || 0} trips</span>
-                </div>
+
+              <h1 className="text-3xl md:text-4xl font-black tracking-tight">
+                {hostData.company_name || 'Tour Operator'}
+              </h1>
+
+              <div className="flex flex-wrap gap-4 mt-3 text-white/85 text-sm">
+                <span className="inline-flex items-center gap-1.5">
+                  <Star size={16} fill="currentColor" />
+                  {Number(hostData.avgRating || 0).toFixed(1)}
+                  <span>rating</span>
+                </span>
+
+                <span className="inline-flex items-center gap-1.5">
+                  <BriefcaseBusiness size={16} />
+                  {hostData.packageCount || packages.length} packages
+                </span>
+
+                {hostData.location && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <MapPin size={16} />
+                    {hostData.location}
+                  </span>
+                )}
               </div>
-              
-              <p className="text-[color:var(--text-secondary)] mb-4">{hostData.description || 'No description available.'}</p>
-              
-              <div className="flex flex-wrap gap-3">
-                <a 
-                  href={`mailto:${hostData.contact_email || 'info@example.com'}`} 
-                  className="bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] px-4 py-2 rounded-lg font-medium transition"
+
+              <p className="mt-4 max-w-2xl text-white/80 leading-relaxed">
+                {hostData.description ||
+                  'Discover trusted travel experiences and tour packages from this operator.'}
+              </p>
+
+              {/* ACTIONS */}
+              <div className="flex flex-wrap gap-3 mt-6">
+
+                <button
+                  onClick={handleChatWithHost}
+                  disabled={chatLoading}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white text-slate-900 font-bold hover:bg-white/90 transition disabled:opacity-60"
                 >
-                  Contact via Email
-                </a>
-                <a 
-                  href={`tel:${hostData.contact_phone || '+92000000000'}`} 
-                  className="border border-[color:var(--accent-primary)] text-[color:var(--accent-primary)] px-4 py-2 rounded-lg font-medium hover:bg-[color:var(--accent-primary)] hover:text-[color:var(--nav-text)] transition"
-                >
-                  Call Now
-                </a>
+                  <MessageCircle size={18} />
+                  {chatLoading ? 'Opening...' : 'Chat with Host'}
+                </button>
+
+                {hostData.contact_email && (
+                  <a
+                    href={`mailto:${hostData.contact_email}`}
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white/10 border border-white/25 text-white font-semibold hover:bg-white/20 transition"
+                  >
+                    <Mail size={18} />
+                    Email
+                  </a>
+                )}
+
+                {hostData.contact_phone && (
+                  <a
+                    href={`tel:${hostData.contact_phone}`}
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white/10 border border-white/25 text-white font-semibold hover:bg-white/20 transition"
+                  >
+                    <Phone size={18} />
+                    Call
+                  </a>
+                )}
+
               </div>
             </div>
           </div>
         </div>
-        
-        {/* Host Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-[color:var(--surface-secondary)] rounded-xl p-4 text-center border border-[color:var(--border-primary)]">
-            <div className="text-2xl font-bold text-[color:var(--accent-primary)]">{hostData.rankingScore || 0}</div>
-            <div className="text-sm text-[color:var(--text-secondary)]">Ranking Score</div>
+      </section>
+
+      {/* Stats */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 mt-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+
+          <div className="bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)] rounded-2xl p-5">
+            <Star className="text-[color:var(--accent-primary)] mb-3" size={21} />
+            <p className="text-2xl font-black">
+              {Number(hostData.avgRating || 0).toFixed(1)}
+            </p>
+            <p className="text-sm text-[color:var(--text-secondary)]">
+              Average Rating
+            </p>
           </div>
-          <div className="bg-[color:var(--surface-secondary)] rounded-xl p-4 text-center border border-[color:var(--border-primary)]">
-            <div className="text-2xl font-bold text-[color:var(--accent-primary)]">{hostData.avgResponseTime || '?'}h</div>
-            <div className="text-sm text-[color:var(--text-secondary)]">Avg Response Time</div>
+
+          <div className="bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)] rounded-2xl p-5">
+            <Clock3 className="text-[color:var(--accent-primary)] mb-3" size={21} />
+            <p className="text-2xl font-black">
+              {hostData.avgResponseTime || '?'}h
+            </p>
+            <p className="text-sm text-[color:var(--text-secondary)]">
+              Avg Response
+            </p>
           </div>
-          <div className="bg-[color:var(--surface-secondary)] rounded-xl p-4 text-center border border-[color:var(--border-primary)]">
-            <div className="text-2xl font-bold text-[color:var(--accent-primary)]">{hostData.completionRate || 0}%</div>
-            <div className="text-sm text-[color:var(--text-secondary)]">Completion Rate</div>
+
+          <div className="bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)] rounded-2xl p-5">
+            <CheckCircle2 className="text-[color:var(--accent-primary)] mb-3" size={21} />
+            <p className="text-2xl font-black">
+              {hostData.completionRate || 0}%
+            </p>
+            <p className="text-sm text-[color:var(--text-secondary)]">
+              Completion Rate
+            </p>
           </div>
-          <div className="bg-[color:var(--surface-secondary)] rounded-xl p-4 text-center border border-[color:var(--border-primary)]">
-            <div className="text-2xl font-bold text-[color:var(--accent-primary)]">{hostData.packageCount || 0}</div>
-            <div className="text-sm text-[color:var(--text-secondary)]">Active Packages</div>
+
+          <div className="bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)] rounded-2xl p-5">
+            <Users className="text-[color:var(--accent-primary)] mb-3" size={21} />
+            <p className="text-2xl font-black">
+              {hostData.trips_completed || 0}
+            </p>
+            <p className="text-sm text-[color:var(--text-secondary)]">
+              Trips Completed
+            </p>
           </div>
+
         </div>
-        
-        {/* Tab Navigation */}
-        <div className="flex border-b border-[color:var(--border-primary)] mb-6">
-          <button
-            className={`px-4 py-2 font-medium ${activeTab === 'overview' ? 'text-[color:var(--accent-primary)] border-b-2 border-[color:var(--accent-primary)]' : 'text-[color:var(--text-secondary)]'}`}
-            onClick={() => setActiveTab('overview')}
-          >
-            Overview
-          </button>
-          <button
-            className={`px-4 py-2 font-medium ${activeTab === 'packages' ? 'text-[color:var(--accent-primary)] border-b-2 border-[color:var(--accent-primary)]' : 'text-[color:var(--text-secondary)]'}`}
-            onClick={() => setActiveTab('packages')}
-          >
-            Packages ({hostData.packages?.length || 0})
-          </button>
-          <button
-            className={`px-4 py-2 font-medium ${activeTab === 'guides' ? 'text-[color:var(--accent-primary)] border-b-2 border-[color:var(--accent-primary)]' : 'text-[color:var(--text-secondary)]'}`}
-            onClick={() => setActiveTab('guides')}
-          >
-            Tour Guides ({hostData.tourGuides?.length || 0})
-          </button>
+      </section>
+
+      {/* Tabs */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 mt-8">
+
+        <div className="flex gap-1 p-1 bg-[color:var(--surface-secondary)] border border-[color:var(--border-primary)] rounded-2xl overflow-x-auto">
+
+          {[
+            ['overview', 'Overview'],
+            ['packages', `Packages (${packages.length})`],
+            ['guides', `Tour Guides (${guides.length})`]
+          ].map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setActiveTab(key)}
+              className={`flex-1 min-w-max px-5 py-3 rounded-xl text-sm font-bold transition ${
+                activeTab === key
+                  ? 'bg-[color:var(--surface-primary)] text-[color:var(--accent-primary)] shadow-sm'
+                  : 'text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+
         </div>
-        
-        {/* Tab Content */}
-        <div className="mb-8">
-          {activeTab === 'overview' && (
-            <div>
-              <h2 className="text-xl font-bold mb-4 text-[color:var(--text-primary)]">About {hostData.company_name}</h2>
-              <p className="text-[color:var(--text-secondary)] mb-6">{hostData.description || 'No additional information available.'}</p>
-              
-              <h3 className="text-lg font-bold mb-3 text-[color:var(--text-primary)]">Available Packages</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {(hostData.packages || []).slice(0, 4).map(pkg => (
-                  <div key={pkg.id} className="bg-[color:var(--surface-secondary)] rounded-xl p-4 border border-[color:var(--border-primary)]">
-                    <h4 className="font-bold text-[color:var(--text-primary)]">{pkg.title}</h4>
-                    <p className="text-[color:var(--accent-primary)] font-semibold">PKR {parseInt(pkg.price || 0).toLocaleString()} • {pkg.duration_days || 0} days</p>
-                  </div>
-                ))}
+
+        {/* OVERVIEW */}
+        {activeTab === 'overview' && (
+          <div className="mt-6 space-y-6">
+
+            <div className="bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)] rounded-3xl p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <ShieldCheck
+                  className="text-[color:var(--accent-primary)]"
+                  size={22}
+                />
+                <h2 className="text-xl font-bold">
+                  About {hostData.company_name}
+                </h2>
               </div>
+
+              <p className="text-[color:var(--text-secondary)] leading-7">
+                {hostData.description ||
+                  'This tour company provides travel experiences and packages for travelers exploring Pakistan.'}
+              </p>
             </div>
-          )}
-          
-          {activeTab === 'packages' && (
-            <div>
-              <h2 className="text-xl font-bold mb-4 text-[color:var(--text-primary)]">All Packages</h2>
-              {hostData.packages && hostData.packages.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {hostData.packages.map(pkg => (
-                    <div key={pkg.id} className="bg-[color:var(--surface-primary)] rounded-xl overflow-hidden hover:shadow-lg transition border border-[color:var(--border-primary)]">
-                      <div className="h-40 overflow-hidden">
-                        <img 
-                          src={pkg.image || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80"} 
+
+            {packages.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold">
+                    Featured Packages
+                  </h2>
+
+                  <button
+                    onClick={() => setActiveTab('packages')}
+                    className="text-sm font-bold text-[color:var(--accent-primary)]"
+                  >
+                    View all →
+                  </button>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-5">
+                  {packages.slice(0, 4).map((pkg) => (
+                    <Link
+                      key={pkg.id}
+                      to={`/package/${pkg.id}`}
+                      className="group bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)] rounded-2xl overflow-hidden hover:-translate-y-1 hover:shadow-xl transition"
+                    >
+                      <div className="h-44 overflow-hidden">
+                        <img
+                          src={pkg.image || FALLBACK_PACKAGE_IMAGE}
                           alt={pkg.title}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                         />
                       </div>
-                      <div className="p-4">
-                        <h3 className="font-bold mb-1 text-[color:var(--text-primary)] text-sm truncate">{pkg.title}</h3>
+
+                      <div className="p-5">
+                        <h3 className="font-bold line-clamp-1">
+                          {pkg.title}
+                        </h3>
+
                         <div className="flex justify-between items-center mt-3">
-                          <div>
-                            <span className="font-bold text-[color:var(--accent-primary)] text-sm">PKR {parseInt(pkg.price || 0).toLocaleString()}</span>
-                            <span className="text-xs text-[color:var(--text-secondary)]"> per person</span>
-                          </div>
-                          <div className="text-xs text-[color:var(--text-secondary)]">
+                          <span className="font-black text-[color:var(--accent-primary)]">
+                            PKR {Number(pkg.price || 0).toLocaleString()}
+                          </span>
+
+                          <span className="text-sm text-[color:var(--text-secondary)]">
                             {pkg.duration_days || 0} days
-                          </div>
-                        </div>
-                        <div className="mt-2 text-xs text-[color:var(--text-secondary)]">
-                          {pkg.group_size || '2-6 people'}
+                          </span>
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
-              ) : (
-                <p className="text-[color:var(--text-secondary)]">No packages available.</p>
-              )}
-            </div>
-          )}
-          
-          {activeTab === 'guides' && (
-            <div>
-              <h2 className="text-xl font-bold mb-4 text-[color:var(--text-primary)]">Tour Guides</h2>
-              {hostData.tourGuides && hostData.tourGuides.length > 1 && (
-                <div className="bg-[color:var(--surface-secondary)] rounded-xl p-4 mb-6 border border-[color:var(--border-primary)]">
-                  <h3 className="font-bold text-[color:var(--text-primary)] mb-2">🤖 Which guide is best for me?</h3>
-                  <p className="text-sm text-[color:var(--text-secondary)] mb-3">e.g. "Urdu-speaking guide for a family trip"</p>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={guidePreference}
-                      onChange={(e) => setGuidePreference(e.target.value)}
-                      placeholder="Describe what you need..."
-                      className="flex-1 p-2 rounded-lg border border-[color:var(--border-primary)] bg-[color:var(--surface-primary)]"
-                    />
-                    <button
-                      onClick={handleGetRecommendation}
-                      disabled={recommending}
-                      className="bg-[color:var(--accent-primary)] text-[color:var(--nav-text)] px-4 py-2 rounded-lg font-medium disabled:opacity-50"
-                    >
-                      {recommending ? '...' : 'Ask AI'}
-                    </button>
+              </div>
+            )}
+
+          </div>
+        )}
+
+        {/* PACKAGES */}
+        {activeTab === 'packages' && (
+          <div className="mt-6">
+
+            {packages.length > 0 ? (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {packages.map((pkg) => (
+                  <Link
+                    key={pkg.id}
+                    to={`/package/${pkg.id}`}
+                    className="group bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)] rounded-2xl overflow-hidden hover:-translate-y-1 hover:shadow-xl transition"
+                  >
+                    <div className="h-44 overflow-hidden">
+                      <img
+                        src={pkg.image || FALLBACK_PACKAGE_IMAGE}
+                        alt={pkg.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                      />
+                    </div>
+
+                    <div className="p-5">
+                      <h3 className="font-bold line-clamp-2 min-h-[48px]">
+                        {pkg.title}
+                      </h3>
+
+                      <div className="flex items-center justify-between mt-4">
+                        <span className="font-black text-[color:var(--accent-primary)]">
+                          PKR {Number(pkg.price || 0).toLocaleString()}
+                        </span>
+
+                        <span className="text-sm text-[color:var(--text-secondary)]">
+                          {pkg.duration_days || 0} days
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2 mt-3 text-xs text-[color:var(--text-secondary)]">
+                        <Users size={14} />
+                        {pkg.group_size || '2-6 people'}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-14">
+                <BriefcaseBusiness
+                  size={42}
+                  className="mx-auto mb-4 text-[color:var(--text-secondary)]"
+                />
+                <h3 className="font-bold text-lg">
+                  No packages available
+                </h3>
+                <p className="text-[color:var(--text-secondary)] mt-1">
+                  This operator has not listed any packages yet.
+                </p>
+              </div>
+            )}
+
+          </div>
+        )}
+
+        {/* TOUR GUIDES */}
+        {activeTab === 'guides' && (
+          <div className="mt-6">
+
+            {/* AI Recommendation */}
+            {guides.length > 1 && (
+              <div className="bg-gradient-to-br from-[color:var(--surface-primary)] to-[color:var(--surface-secondary)] border border-[color:var(--border-primary)] rounded-3xl p-6 mb-6">
+
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-[color:var(--accent-primary)]/10 flex items-center justify-center">
+                    <span className="text-lg">✨</span>
                   </div>
-                  {guideRecommendation && !guideRecommendation.error && (
-                    <div className="mt-3 p-3 bg-[color:var(--surface-primary)] rounded-lg">
-                      <p className="font-bold text-[color:var(--accent-primary)]">{guideRecommendation.recommendedGuideName}</p>
-                      <p className="text-sm text-[color:var(--text-secondary)]">{guideRecommendation.reason}</p>
+
+                  <div>
+                    <h2 className="font-bold text-lg">
+                      Find the Right Guide with AI
+                    </h2>
+
+                    <p className="text-sm text-[color:var(--text-secondary)] mt-1">
+                      Tell us what kind of guide you need and AI will recommend the best match.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <input
+                    type="text"
+                    value={guidePreference}
+                    onChange={(e) =>
+                      setGuidePreference(e.target.value)
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleGetRecommendation();
+                      }
+                    }}
+                    placeholder="e.g. Urdu-speaking guide for a family trip"
+                    className="flex-1 px-4 py-3 rounded-xl border border-[color:var(--border-primary)] bg-[color:var(--surface-primary)] outline-none focus:ring-2 focus:ring-[color:var(--accent-primary)]"
+                  />
+
+                  <button
+                    onClick={handleGetRecommendation}
+                    disabled={recommending || !guidePreference.trim()}
+                    className="px-5 py-3 rounded-xl bg-[color:var(--accent-primary)] text-[color:var(--nav-text)] font-bold disabled:opacity-50"
+                  >
+                    {recommending ? 'Finding...' : 'Ask AI'}
+                  </button>
+                </div>
+
+                {guideRecommendation &&
+                  !guideRecommendation.error && (
+                    <div className="mt-4 p-4 rounded-2xl bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)]">
+                      <p className="font-bold text-[color:var(--accent-primary)]">
+                        {guideRecommendation.recommendedGuideName}
+                      </p>
+
+                      <p className="text-sm text-[color:var(--text-secondary)] mt-1 leading-6">
+                        {guideRecommendation.reason}
+                      </p>
                     </div>
                   )}
-                  {guideRecommendation?.error && (
-                    <p className="text-sm text-red-500 mt-2">{guideRecommendation.error}</p>
-                  )}
-                </div>
-              )}
-              {hostData.tourGuides && hostData.tourGuides.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {hostData.tourGuides.map(guide => (
-                    <div key={guide.id} className="bg-[color:var(--surface-primary)] rounded-xl p-4 border border-[color:var(--border-primary)]">
-                      <div className="flex items-center mb-4">
-                        <div className="w-16 h-16 rounded-full overflow-hidden mr-4">
-                          <img 
-                            src={guide.photo || `https://randomuser.me/api/portraits/${guide.name?.includes(' ') ? 'women' : 'men'}/${Math.floor(Math.random() * 100)}.jpg`} 
+
+                {guideRecommendation?.error && (
+                  <p className="text-sm text-red-500 mt-3">
+                    {guideRecommendation.error}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Guides */}
+            {guides.length > 0 ? (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+
+                {guides.map((guide) => (
+                  <article
+                    key={guide.id}
+                    className="bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)] rounded-3xl p-5 hover:-translate-y-1 hover:shadow-lg transition"
+                  >
+                    <div className="flex items-center gap-4">
+
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden bg-[color:var(--surface-secondary)] flex-shrink-0">
+
+                        {guide.photo ? (
+                          <img
+                            src={guide.photo}
                             alt={guide.name}
                             className="w-full h-full object-cover"
                           />
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-[color:var(--text-primary)]">{guide.name}</h3>
-                          <p className="text-[color:var(--accent-primary)] text-sm">{guide.specialty}</p>
-                          <div className="flex items-center mt-1">
-                            <svg className="w-4 h-4 text-[color:var(--accent-primary)] mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                            <span className="text-sm">{guide.rating || 0}</span>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-xl font-black text-[color:var(--accent-primary)]">
+                            {getInitial(guide.name)}
                           </div>
+                        )}
+
+                      </div>
+
+                      <div className="min-w-0">
+                        <h3 className="font-bold truncate">
+                          {guide.name || 'Tour Guide'}
+                        </h3>
+
+                        <p className="text-sm text-[color:var(--accent-primary)] font-semibold truncate">
+                          {guide.specialty || 'Local Guide'}
+                        </p>
+
+                        <div className="flex items-center gap-1 mt-1 text-sm">
+                          <Star
+                            size={14}
+                            className="text-amber-500"
+                            fill="currentColor"
+                          />
+                          {Number(guide.rating || 0).toFixed(1)}
                         </div>
                       </div>
-                      <button
-                        onClick={() => setSelectedGuide(guide)}
-                        className="w-full bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] py-2 px-4 rounded-lg font-medium transition"
-                      >
-                        Chat with Guide
-                      </button>
+
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-[color:var(--text-secondary)]">No tour guides available.</p>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {/* Tour Guide Chat Modal */}
-      {selectedGuide && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[color:var(--surface-primary)] rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col border border-[color:var(--border-primary)]">
-            <div className="p-4 border-b border-[color:var(--border-primary)] flex justify-between items-center">
-              <h3 className="text-xl font-bold text-[color:var(--text-primary)]">Chat with {selectedGuide.name}</h3>
-              <button 
-                onClick={() => setSelectedGuide(null)}
-                className="text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="flex-grow overflow-auto p-4">
-              <TourGuideChat
-                tourGuideId={selectedGuide.id}
-                tourGuideName={selectedGuide.name}
-              />
-            </div>
+
+                    <div className="mt-5 pt-4 border-t border-[color:var(--border-primary)]">
+                      <div className="flex items-center gap-2 text-xs text-[color:var(--text-secondary)]">
+                        <ShieldCheck
+                          size={15}
+                          className="text-[color:var(--accent-primary)]"
+                        />
+                        Available through this tour operator
+                      </div>
+                    </div>
+
+                  </article>
+                ))}
+
+              </div>
+            ) : (
+              <div className="text-center py-14">
+                <Users
+                  size={42}
+                  className="mx-auto mb-4 text-[color:var(--text-secondary)]"
+                />
+
+                <h3 className="font-bold text-lg">
+                  No tour guides available
+                </h3>
+
+                <p className="text-[color:var(--text-secondary)] mt-1">
+                  This operator has not added tour guides yet.
+                </p>
+              </div>
+            )}
+
           </div>
-        </div>
-      )}
+        )}
+
+      </section>
     </div>
   );
 };

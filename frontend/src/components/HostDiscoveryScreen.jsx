@@ -1,100 +1,49 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  ArrowRight,
+  BadgeCheck,
+  BriefcaseBusiness,
+  Clock3,
+  MapPin,
+  Search,
+  ShieldCheck,
+  Star,
+  Users
+} from 'lucide-react';
 
 const HostDiscoveryScreen = () => {
   const [hosts, setHosts] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState('');
 
-  // Seeded host data
-  const seededHosts = [
-    {
-      id: 1,
-      company_name: "Mountain Trails Pakistan",
-      verified: true,
-      ranking_badge: "Top Rated",
-      avgRating: 4.9,
-      rankingScore: 98,
-      avgResponseTime: 2,
-      description: "Specializing in Northern Areas trekking and cultural tours.",
-      languages: ["English", "Urdu", "Pashto"],
-      contact_email: "info@mountaintrails.pk",
-      contact_phone: "+92 300 1234567",
-      joinDate: "2020",
-      completionRate: 99
-    },
-    {
-      id: 2,
-      company_name: "Historic Heritage Tours",
-      verified: true,
-      ranking_badge: "Highly Recommended",
-      avgRating: 4.7,
-      rankingScore: 92,
-      avgResponseTime: 4,
-      description: "Expert guides for Mughal architecture and ancient ruins.",
-      languages: ["English", "Urdu", "Hindi"],
-      contact_email: "tours@heritage.pk",
-      contact_phone: "+92 310 9876543",
-      joinDate: "2019",
-      completionRate: 97
-    },
-    {
-      id: 3,
-      company_name: "Adventure Seekers Co.",
-      verified: false,
-      ranking_badge: "Rising Host",
-      avgRating: 4.5,
-      rankingScore: 85,
-      avgResponseTime: 6,
-      description: "Thrill-seekers paradise with activities like paragliding and rock climbing.",
-      languages: ["English", "Urdu"],
-      contact_email: "adventures@seekers.pk",
-      contact_phone: "+92 320 5555555",
-      joinDate: "2022",
-      completionRate: 95
-    },
-    {
-      id: 4,
-      company_name: "Luxury Pakistan Journeys",
-      verified: true,
-      ranking_badge: "Trusted Operator",
-      avgRating: 4.8,
-      rankingScore: 95,
-      avgResponseTime: 1,
-      description: "Premium travel experience with luxury accommodations.",
-      languages: ["English", "Urdu", "French"],
-      contact_email: "hello@luxuryjourneys.pk",
-      contact_phone: "+92 330 1112222",
-      joinDate: "2018",
-      completionRate: 98
-    }
-  ];
-
-  // Fetch hosts from the backend
   useEffect(() => {
     const fetchHosts = async () => {
       try {
+        setLoading(true);
+        setError('');
+
         const response = await fetch('/api/hosts');
-        
+
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`Unable to load tour operators (${response.status})`);
         }
-        
+
         const data = await response.json();
-        const fetchedHosts = data.data?.hosts || [];
-        
-        // Log if no hosts found
-        if (fetchedHosts.length === 0) {
-          console.log('No hosts found in the database, using seeded data');
-        }
-        
-        // Use fetched data if available, otherwise use seeded data
-        setHosts(fetchedHosts.length > 0 ? fetchedHosts : seededHosts);
+
+        const fetchedHosts =
+          data?.data?.hosts ||
+          data?.hosts ||
+          [];
+
+        setHosts(Array.isArray(fetchedHosts) ? fetchedHosts : []);
       } catch (err) {
         console.error('Error fetching hosts:', err);
-        setError(err.message);
-        // Fallback to seeded data on error
-        setHosts(seededHosts);
+        setError(
+          err.message || 'Unable to load tour operators.'
+        );
+        setHosts([]);
       } finally {
         setLoading(false);
       }
@@ -103,114 +52,320 @@ const HostDiscoveryScreen = () => {
     fetchHosts();
   }, []);
 
-  // Function to determine ranking badge color
-  const getRankingBadgeColor = (ranking) => {
-    switch(ranking) {
-      case "Top Rated":
-        return "bg-yellow-100 text-yellow-800";
-      case "Highly Recommended":
-        return "bg-blue-100 text-blue-800";
-      case "Rising Host":
-        return "bg-green-100 text-green-800";
-      case "Trusted Operator":
-        return "bg-purple-100 text-purple-800";
-      case "New Host":
-        return "bg-gray-100 text-gray-800";
+  const filteredHosts = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    return hosts
+      .filter((host) => {
+        if (!query) return true;
+
+        return (
+          String(host.company_name || '')
+            .toLowerCase()
+            .includes(query) ||
+          String(host.description || '')
+            .toLowerCase()
+            .includes(query) ||
+          String(host.location || '')
+            .toLowerCase()
+            .includes(query)
+        );
+      })
+      .sort(
+        (a, b) =>
+          Number(b.rating_score || b.avgRating || 0) -
+          Number(a.rating_score || a.avgRating || 0)
+      );
+  }, [hosts, searchQuery]);
+
+  const getInitial = (name) =>
+    name?.trim()?.charAt(0)?.toUpperCase() || 'T';
+
+  const getBadgeClass = (badge) => {
+    switch (badge) {
+      case 'Top Rated':
+        return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
+
+      case 'Highly Recommended':
+        return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
+
+      case 'Rising Host':
+        return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20';
+
+      case 'Trusted Operator':
+        return 'bg-purple-500/10 text-purple-600 border-purple-500/20';
+
       default:
-        return "bg-gray-100 text-gray-800";
+        return 'bg-[color:var(--surface-secondary)] text-[color:var(--text-secondary)] border-[color:var(--border-primary)]';
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] p-4 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[color:var(--accent-primary)] mx-auto"></div>
-          <p className="mt-4 text-[color:var(--text-secondary)]">Loading hosts...</p>
-        </div>
-      </div>
-    );
-  }
+      <div className="min-h-screen bg-[color:var(--bg-primary)] pb-24">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 animate-pulse">
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] p-4 flex items-center justify-center">
-        <div className="text-center p-6 bg-[color:var(--surface-primary)] rounded-xl border border-[color:var(--border-primary)] max-w-md">
-          <h2 className="text-xl font-bold mb-2 text-red-500">Error Loading Hosts</h2>
-          <p className="text-[color:var(--text-secondary)] mb-4">Failed to load hosts: {error}</p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] py-2 px-4 rounded-lg"
-          >
-            Try Again
-          </button>
+          <div className="h-10 w-72 rounded-xl bg-[color:var(--surface-secondary)] mb-3" />
+
+          <div className="h-5 w-96 max-w-full rounded bg-[color:var(--surface-secondary)] mb-8" />
+
+          <div className="h-14 rounded-2xl bg-[color:var(--surface-secondary)] mb-8" />
+
+          <div className="grid md:grid-cols-2 gap-5">
+            {[1, 2, 3, 4, 5, 6].map((item) => (
+              <div
+                key={item}
+                className="h-52 rounded-3xl bg-[color:var(--surface-secondary)]"
+              />
+            ))}
+          </div>
+
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] p-4">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-2 text-[color:var(--text-primary)]">Discover Top-Ranked Hosts</h1>
-        <p className="text-[color:var(--text-secondary)] mb-8">Find trusted and highly-rated tour operators for your journey</p>
-        
-        {hosts.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-5xl mb-4">🏨</div>
-            <h3 className="text-xl font-bold mb-2 text-[color:var(--text-primary)]">No hosts available</h3>
-            <p className="text-[color:var(--text-secondary)] mb-6">Check back later for new hosts joining our platform.</p>
+    <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] pb-24">
+
+      {/* Header */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-8">
+
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5">
+
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[color:var(--accent-primary)]/10 text-[color:var(--accent-primary)] text-xs font-bold mb-3">
+              <ShieldCheck size={15} />
+              Trusted Marketplace
+            </div>
+
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight">
+              Find Trusted Tour Operators
+            </h1>
+
+            <p className="mt-2 text-[color:var(--text-secondary)] max-w-2xl">
+              Compare verified and highly-rated tour companies before choosing your next Pakistan adventure.
+            </p>
+          </div>
+
+          <div className="text-sm text-[color:var(--text-secondary)]">
+            {hosts.length} operators available
+          </div>
+
+        </div>
+
+        {/* Search */}
+        <div className="relative mt-7">
+          <Search
+            size={20}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-[color:var(--text-secondary)]"
+          />
+
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search tour companies or locations..."
+            className="w-full pl-12 pr-4 py-4 rounded-2xl bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)] outline-none focus:ring-2 focus:ring-[color:var(--accent-primary)] shadow-sm"
+          />
+        </div>
+
+      </section>
+
+      {/* Error */}
+      {error && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-6">
+          <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4 text-red-500">
+            {error}
+          </div>
+        </div>
+      )}
+
+      {/* Operators */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 mt-7">
+
+        {filteredHosts.length === 0 ? (
+          <div className="text-center py-20">
+
+            <div className="w-16 h-16 rounded-2xl bg-[color:var(--surface-secondary)] flex items-center justify-center mx-auto mb-5">
+              <BriefcaseBusiness
+                size={28}
+                className="text-[color:var(--text-secondary)]"
+              />
+            </div>
+
+            <h2 className="text-xl font-bold">
+              No tour operators found
+            </h2>
+
+            <p className="text-[color:var(--text-secondary)] mt-2">
+              Try another company name or location.
+            </p>
+
           </div>
         ) : (
-          <div className="space-y-6">
-            {hosts.map(host => (
-              <Link to={`/host-profile/${host.id}`} key={host.id}>
-                <div className="bg-[color:var(--surface-primary)] rounded-xl p-6 flex items-center gap-6 hover:bg-[color:var(--surface-secondary)] transition border border-[color:var(--border-primary)]">
-                  <div className="w-16 h-16 rounded-full overflow-hidden">
-                    <div className="w-full h-full bg-[color:var(--accent-primary)] flex items-center justify-center text-[color:var(--nav-text)] font-bold">
-                      {(host.company_name || 'H').charAt(0)}
+          <div className="grid md:grid-cols-2 gap-5">
+
+            {filteredHosts.map((host) => {
+
+              const rating = Number(
+                host.avgRating ??
+                host.rating_score ??
+                host.rating ??
+                0
+              );
+
+              const packageCount =
+                host.packageCount ??
+                host.package_count ??
+                host.packages?.length ??
+                0;
+
+              return (
+                <Link
+                  key={host.id}
+                  to={`/host-profile/${host.id}`}
+                  className="group"
+                >
+                  <article className="h-full bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)] rounded-3xl p-6 hover:-translate-y-1 hover:shadow-xl transition duration-300">
+
+                    {/* Top */}
+                    <div className="flex items-start gap-4">
+
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[color:var(--accent-primary)] to-[color:var(--accent-primary-hover)] flex items-center justify-center text-white font-black text-2xl shrink-0 shadow-lg">
+                        {getInitial(host.company_name)}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+
+                        <div className="flex flex-wrap items-center gap-2">
+
+                          <h2 className="font-black text-lg truncate">
+                            {host.company_name || 'Tour Operator'}
+                          </h2>
+
+                          {host.verified && (
+                            <BadgeCheck
+                              size={18}
+                              className="text-[color:var(--accent-primary)] shrink-0"
+                            />
+                          )}
+
+                        </div>
+
+                        {host.location && (
+                          <div className="flex items-center gap-1.5 mt-1 text-sm text-[color:var(--text-secondary)]">
+                            <MapPin size={14} />
+                            {host.location}
+                          </div>
+                        )}
+
+                      </div>
+
+                      <ArrowRight
+                        size={20}
+                        className="text-[color:var(--text-secondary)] group-hover:text-[color:var(--accent-primary)] group-hover:translate-x-1 transition"
+                      />
+
                     </div>
-                  </div>
-                  
-                  <div className="flex-grow">
-                    <div className="flex flex-wrap items-center gap-4 mb-1">
-                      <h3 className="text-xl font-bold text-[color:var(--text-primary)]">{host.company_name || 'Host Company'}</h3>
-                      {host.verified && (
-                        <span className="bg-[color:var(--accent-primary)] text-[color:var(--nav-text)] text-xs px-2 py-1 rounded-full flex items-center">
-                          <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                          Verified
+
+                    {/* Badge */}
+                    {host.ranking_badge && (
+                      <div className="mt-5">
+                        <span
+                          className={`inline-flex px-3 py-1.5 rounded-full border text-xs font-bold ${getBadgeClass(
+                            host.ranking_badge
+                          )}`}
+                        >
+                          {host.ranking_badge}
                         </span>
-                      )}
-                      <span className={`text-xs px-2 py-1 rounded-full ${getRankingBadgeColor(host.ranking_badge)}`}>
-                        {host.ranking_badge || 'No Ranking'}
+                      </div>
+                    )}
+
+                    {/* Description */}
+                    <p className="mt-4 text-sm leading-6 text-[color:var(--text-secondary)] line-clamp-2">
+                      {host.description ||
+                        'Explore travel packages and experiences from this tour operator.'}
+                    </p>
+
+                    {/* Stats */}
+                    <div className="grid grid-cols-3 gap-3 mt-5 pt-5 border-t border-[color:var(--border-primary)]">
+
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <Star
+                            size={15}
+                            className="text-amber-500"
+                            fill="currentColor"
+                          />
+                          <span className="font-bold">
+                            {rating.toFixed(1)}
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-[color:var(--text-secondary)] mt-1">
+                          Rating
+                        </p>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <BriefcaseBusiness
+                            size={15}
+                            className="text-[color:var(--accent-primary)]"
+                          />
+                          <span className="font-bold">
+                            {packageCount}
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-[color:var(--text-secondary)] mt-1">
+                          Packages
+                        </p>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <Clock3
+                            size={15}
+                            className="text-[color:var(--accent-primary)]"
+                          />
+                          <span className="font-bold">
+                            {host.avgResponseTime
+                              ? `${host.avgResponseTime}h`
+                              : '—'}
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-[color:var(--text-secondary)] mt-1">
+                          Response
+                        </p>
+                      </div>
+
+                    </div>
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between mt-5">
+
+                      <span className="text-sm font-bold text-[color:var(--accent-primary)]">
+                        View company
                       </span>
+
+                      <div className="flex items-center gap-1 text-xs text-[color:var(--text-secondary)]">
+                        <Users size={14} />
+                        Trusted marketplace
+                      </div>
+
                     </div>
-                    
-                    <div className="flex flex-wrap items-center gap-6 mb-2">
-                      <div className="flex items-center">
-                        <svg className="w-4 h-4 text-[color:var(--accent-primary)] mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                        <span className="text-sm">{host.avgRating?.toFixed(1) || 0} rating</span>
-                      </div>
-                      <div className="text-sm">
-                        <span className="text-[color:var(--accent-primary)] font-semibold">{host.rankingScore || 0}</span> ranking score
-                      </div>
-                      <div className="text-sm">
-                        <span className="text-[color:var(--accent-primary)] font-semibold">{host.avgResponseTime || '?'}h</span> avg response
-                      </div>
-                    </div>
-                    
-                    <p className="text-[color:var(--text-secondary)] text-sm">{host.description || 'No description available'}</p>
-                  </div>
-                </div>
-              </Link>
-            ))}
+
+                  </article>
+                </Link>
+              );
+            })}
+
           </div>
         )}
-      </div>
+
+      </section>
     </div>
   );
 };
