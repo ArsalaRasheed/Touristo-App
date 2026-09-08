@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import ReviewManager from './ReviewManager';
 import {
   Settings as SettingsIcon,
   Luggage,
@@ -292,6 +293,11 @@ const ProfileScreen = () => {
             )
           )}
         </div>
+        {/* Reviews & Ratings - Travelers Only */}
+        {!isHost && user?.id && (
+          <ReviewManager userId={user.id} />
+        )}
+
         
         {/* Account Actions */}
         <div className="bg-[color:var(--surface-primary)] rounded-2xl p-6 border border-[color:var(--border-primary)] shadow-sm">
