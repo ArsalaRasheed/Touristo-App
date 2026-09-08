@@ -1,195 +1,85 @@
-const pool = require('../config/db');
+const { query } = require('../config/database');
 
 class Review {
-  constructor(
-    id,
-    user_id,
-    package_id,
-    rating,
-    comment,
-    created_at
-  ) {
-    this.id = id;
-    this.user_id = user_id;
-    this.package_id = package_id;
-    this.rating = rating;
-    this.comment = comment;
-    this.created_at = created_at;
+  constructor(data) {
+    this.id = data.id;
+    this.user_id = data.user_id;
+    this.package_id = data.package_id;
+    this.rating = data.rating;
+    this.comment = data.comment;
+    this.created_at = data.created_at;
+    this.updated_at = data.updated_at;
   }
 
-  // Get all reviews
   static async findAll() {
-    const query = `
-      SELECT
-        r.id,
-        r.user_id,
-        r.package_id,
-        r.rating,
-        r.comment,
-        r.created_at,
-        u.name AS user_name,
-        p.title AS package_title
+    const result = await query(`
+      SELECT r.id, r.user_id, r.package_id, r.rating, r.comment, r.created_at
       FROM reviews r
-      LEFT JOIN users u
-        ON r.user_id = u.id
-      LEFT JOIN packages p
-        ON r.package_id = p.id
+      JOIN users u ON r.user_id = u.id
+      JOIN packages p ON r.package_id = p.id
       ORDER BY r.created_at DESC
-    `;
-
-    const result = await pool.query(query);
-    return result.rows;
+    `);
+    return result.rows.map(row => new Review(row));
   }
 
-  // Get review by ID
   static async findById(id) {
-    const query = `
-      SELECT
-        r.id,
-        r.user_id,
-        r.package_id,
-        r.rating,
-        r.comment,
-        r.created_at,
-        u.name AS user_name,
-        p.title AS package_title
+    const result = await query(`
+      SELECT r.id, r.user_id, r.package_id, r.rating, r.comment, r.created_at, r.updated_at
       FROM reviews r
-      LEFT JOIN users u
-        ON r.user_id = u.id
-      LEFT JOIN packages p
-        ON r.package_id = p.id
+      JOIN users u ON r.user_id = u.id
+      JOIN packages p ON r.package_id = p.id
       WHERE r.id = $1
-    `;
-
-    const result = await pool.query(query, [id]);
-
-    return result.rows[0] || null;
+    `, [id]);
+    if (result.rows.length === 0) return null;
+    return new Review(result.rows[0]);
   }
 
-  // Get reviews for a package
   static async findByPackageId(packageId) {
-    const query = `
-      SELECT
-        r.id,
-        r.user_id,
-        r.package_id,
-        r.rating,
-        r.comment,
-        r.created_at,
-        u.name AS user_name
+    const result = await query(`
+      SELECT r.id, r.user_id, r.package_id, r.rating, r.comment, r.created_at, r.updated_at
       FROM reviews r
-      LEFT JOIN users u
-        ON r.user_id = u.id
+      JOIN users u ON r.user_id = u.id
+      JOIN packages p ON r.package_id = p.id
       WHERE r.package_id = $1
       ORDER BY r.created_at DESC
-    `;
-
-    const result = await pool.query(query, [packageId]);
-
-    return result.rows;
+    `, [packageId]);
+    return result.rows.map(row => new Review(row));
   }
 
-  // Get reviews written by a user
   static async findByUserId(userId) {
-    const query = `
-      SELECT
-        r.id,
-        r.user_id,
-        r.package_id,
-        r.rating,
-        r.comment,
-        r.created_at,
-        p.title AS package_title
+    const result = await query(`
+      SELECT r.id, r.user_id, r.package_id, r.rating, r.comment, r.created_at, r.updated_at
       FROM reviews r
-      LEFT JOIN packages p
-        ON r.package_id = p.id
+      JOIN users u ON r.user_id = u.id
+      JOIN packages p ON r.package_id = p.id
       WHERE r.user_id = $1
       ORDER BY r.created_at DESC
-    `;
-
-    const result = await pool.query(query, [userId]);
-
-    return result.rows;
+    `, [userId]);
+    return result.rows.map(row => new Review(row));
   }
 
-  // Create review
   static async create(reviewData) {
-    const {
-      user_id,
-      package_id,
-      rating,
-      comment,
-    } = reviewData;
-
-    const query = `
-      INSERT INTO reviews (
-        user_id,
-        package_id,
-        rating,
-        comment
-      )
-      VALUES ($1, $2, $3, $4)
-      RETURNING
-        id,
-        user_id,
-        package_id,
-        rating,
-        comment,
-        created_at
-    `;
-
-    const result = await pool.query(query, [
-      user_id,
-      package_id,
-      rating,
-      comment || null,
-    ]);
-
-    return result.rows[0];
+    const { user_id, package_id, rating, comment } = reviewData;
+    const result = await query(
+      'INSERT INTO reviews (user_id, package_id, rating, comment) VALUES ($1, $2, $3, $4) RETURNING *',
+      [user_id, package_id, rating, comment]
+    );
+    return new Review(result.rows[0]);
   }
 
-  // Update review
   static async update(id, reviewData) {
-    const {
-      rating,
-      comment,
-    } = reviewData;
-
-    const query = `
-      UPDATE reviews
-      SET
-        rating = $1,
-        comment = $2
-      WHERE id = $3
-      RETURNING
-        id,
-        user_id,
-        package_id,
-        rating,
-        comment,
-        created_at
-    `;
-
-    const result = await pool.query(query, [
-      rating,
-      comment || null,
-      id,
-    ]);
-
-    return result.rows[0] || null;
+    const { rating, comment } = reviewData;
+    const result = await query(
+      'UPDATE reviews SET rating = $1, comment = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
+      [rating, comment, id]
+    );
+    if (result.rows.length === 0) return null;
+    return new Review(result.rows[0]);
   }
 
-  // Delete review
   static async delete(id) {
-    const query = `
-      DELETE FROM reviews
-      WHERE id = $1
-      RETURNING id
-    `;
-
-    const result = await pool.query(query, [id]);
-
-    return result.rows[0] || null;
+    const result = await query('DELETE FROM reviews WHERE id = $1 RETURNING id', [id]);
+    return result.rows.length > 0;
   }
 }
 
