@@ -13,8 +13,6 @@ const reviewController = {
         data: { reviews },
       });
     } catch (err) {
-      console.error('Error fetching reviews:', err);
-
       res.status(500).json({
         status: 'error',
         message: err.message,
@@ -25,24 +23,23 @@ const reviewController = {
   // Get reviews written by a specific user
   async getReviewsByUserId(req, res) {
     try {
-      const requestedUserId = Number(req.params.userId);
+      const { userId } = req.params;
 
-      if (!Number.isInteger(requestedUserId)) {
+      if (!userId) {
         return res.status(400).json({
           status: 'fail',
-          message: 'Invalid user ID',
+          message: 'User ID is required',
         });
       }
 
-      // Users can only access their own reviews
-      if (Number(req.user.id) !== requestedUserId) {
+      if (Number(req.user.id) !== Number(userId)) {
         return res.status(403).json({
           status: 'fail',
-          message: 'You can only access your own reviews',
+          message: 'You can only view your own reviews',
         });
       }
 
-      const reviews = await Review.findByUserId(requestedUserId);
+      const reviews = await Review.findByUserId(userId);
 
       res.status(200).json({
         status: 'success',
@@ -78,8 +75,6 @@ const reviewController = {
         data: { review },
       });
     } catch (err) {
-      console.error('Error fetching review:', err);
-
       res.status(500).json({
         status: 'error',
         message: err.message,
@@ -87,28 +82,20 @@ const reviewController = {
     }
   },
 
-  // Create a new review
+  // Create review
   async createReview(req, res) {
     try {
-      const userId = Number(req.user.id);
+      const userId = req.user.id;
       const { package_id, rating, comment } = req.body;
 
-      if (!package_id || rating === undefined || rating === null) {
+      if (!package_id || !rating) {
         return res.status(400).json({
           status: 'fail',
           message: 'Package ID and rating are required',
         });
       }
 
-      const numericPackageId = Number(package_id);
       const numericRating = Number(rating);
-
-      if (!Number.isInteger(numericPackageId)) {
-        return res.status(400).json({
-          status: 'fail',
-          message: 'Invalid package ID',
-        });
-      }
 
       if (
         !Number.isInteger(numericRating) ||
@@ -117,26 +104,28 @@ const reviewController = {
       ) {
         return res.status(400).json({
           status: 'fail',
-          message: 'Rating must be between 1 and 5',
+          message: 'Rating must be an integer between 1 and 5',
         });
       }
 
-      // Check whether the traveler actually booked this package
+      // Check whether user actually booked this package
       const bookings = await Booking.findByUserId(userId);
 
+      const cancelledStatuses = [
+        'cancelled',
+        'canceled',
+        'rejected',
+        'declined',
+      ];
+
       const completedBooking = bookings.find((booking) => {
-        if (Number(booking.package_id) !== numericPackageId) {
+        const status = String(booking.status || '').toLowerCase();
+
+        if (cancelledStatuses.includes(status)) {
           return false;
         }
 
-        const status = String(booking.status || '').toLowerCase();
-
-        if (
-          status === 'cancelled' ||
-          status === 'canceled' ||
-          status === 'rejected' ||
-          status === 'declined'
-        ) {
+        if (Number(booking.package_id) !== Number(package_id)) {
           return false;
         }
 
@@ -150,38 +139,40 @@ const reviewController = {
       if (!completedBooking) {
         return res.status(403).json({
           status: 'fail',
-          message: 'You can only review a package after completing your trip',
+          message:
+            'You can only review packages from completed trips',
         });
       }
 
-      // Prevent duplicate reviews for the same package
+      // Prevent duplicate review
       const existingReviews = await Review.findByUserId(userId);
 
       const alreadyReviewed = existingReviews.some(
-        (review) => Number(review.package_id) === numericPackageId
+        (review) =>
+          Number(review.package_id) === Number(package_id)
       );
 
       if (alreadyReviewed) {
         return res.status(409).json({
           status: 'fail',
-          message: 'You have already reviewed this package',
+          message:
+            'You have already reviewed this package',
         });
       }
 
-      const cleanComment =
-        typeof comment === 'string' ? comment.trim() : '';
-
       const newReview = await Review.create({
         user_id: userId,
-        package_id: numericPackageId,
+        package_id: Number(package_id),
         rating: numericRating,
-        comment: cleanComment || null,
+        comment: comment ? comment.trim() : null,
       });
 
       res.status(201).json({
         status: 'success',
         message: 'Review submitted successfully',
-        data: { review: newReview },
+        data: {
+          review: newReview,
+        },
       });
     } catch (err) {
       console.error('Error creating review:', err);
@@ -193,59 +184,60 @@ const reviewController = {
     }
   },
 
-  // Update review
+  // Update own review
   async updateReview(req, res) {
     try {
       const { id } = req.params;
       const { rating, comment } = req.body;
+      const userId = req.user.id;
 
-      const review = await Review.findById(id);
+      const existingReview = await Review.findById(id);
 
-      if (!review) {
+      if (!existingReview) {
         return res.status(404).json({
           status: 'fail',
           message: 'Review not found',
         });
       }
 
-      // Only the review owner can edit it
-      if (Number(review.user_id) !== Number(req.user.id)) {
+      if (Number(existingReview.user_id) !== Number(userId)) {
         return res.status(403).json({
           status: 'fail',
-          message: 'You can only edit your own reviews',
+          message: 'You can only edit your own review',
         });
       }
 
-      if (rating !== undefined && rating !== null) {
-        const numericRating = Number(rating);
-
-        if (
-          !Number.isInteger(numericRating) ||
-          numericRating < 1 ||
-          numericRating > 5
-        ) {
-          return res.status(400).json({
-            status: 'fail',
-            message: 'Rating must be between 1 and 5',
-          });
-        }
+      if (
+        rating !== undefined &&
+        (
+          !Number.isInteger(Number(rating)) ||
+          Number(rating) < 1 ||
+          Number(rating) > 5
+        )
+      ) {
+        return res.status(400).json({
+          status: 'fail',
+          message: 'Rating must be an integer between 1 and 5',
+        });
       }
-
-      const cleanComment =
-        typeof comment === 'string' ? comment.trim() : '';
 
       const updatedReview = await Review.update(id, {
         rating:
-          rating !== undefined && rating !== null
+          rating !== undefined
             ? Number(rating)
-            : review.rating,
-        comment: cleanComment || null,
+            : existingReview.rating,
+        comment:
+          comment !== undefined
+            ? comment.trim()
+            : existingReview.comment,
       });
 
       res.status(200).json({
         status: 'success',
         message: 'Review updated successfully',
-        data: { review: updatedReview },
+        data: {
+          review: updatedReview,
+        },
       });
     } catch (err) {
       console.error('Error updating review:', err);
@@ -257,25 +249,25 @@ const reviewController = {
     }
   },
 
-  // Delete review
+  // Delete own review
   async deleteReview(req, res) {
     try {
       const { id } = req.params;
+      const userId = req.user.id;
 
-      const review = await Review.findById(id);
+      const existingReview = await Review.findById(id);
 
-      if (!review) {
+      if (!existingReview) {
         return res.status(404).json({
           status: 'fail',
           message: 'Review not found',
         });
       }
 
-      // Only the review owner can delete it
-      if (Number(review.user_id) !== Number(req.user.id)) {
+      if (Number(existingReview.user_id) !== Number(userId)) {
         return res.status(403).json({
           status: 'fail',
-          message: 'You can only delete your own reviews',
+          message: 'You can only delete your own review',
         });
       }
 
