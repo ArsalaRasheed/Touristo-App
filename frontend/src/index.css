@@ -3,63 +3,112 @@
 @tailwind utilities;
 
 :root {
-  /* New Light Theme Colors */
-  --bg-primary: #F4F4F6;         /* Off-white/silver background */
-  --text-primary: #1C1C1E;       /* Rich charcoal for text */
-  --text-secondary: #5C5C5E;     /* Slightly lighter charcoal for secondary text */
-  --accent-primary: #0E4D52;     /* Deep teal accent */
-  --accent-primary-hover: #2A6D72; /* Slightly lighter teal for hover states */
-  --surface-primary: #FFFFFF;     /* Pure white surfaces */
-  --surface-secondary: #E8E8EA;   /* Light gray surfaces */
-  --border-primary: #D8D8DA;      /* Subtle border color */
-  --nav-footer-bg: #1C1C1E;       /* Charcoal for navigation and footer */
-  --nav-text: #FFFFFF;            /* White text on navigation */
-  
+  --bg-primary: #F4F4F6;
+  --text-primary: #1C1C1E;
+  --text-secondary: #5C5C5E;
+
+  --accent-primary: #0E4D52;
+  --accent-primary-hover: #2A6D72;
+
+  --surface-primary: #FFFFFF;
+  --surface-secondary: #E8E8EA;
+
+  --border-primary: #D8D8DA;
+
+  --nav-footer-bg: #1C1C1E;
+  --nav-text: #FFFFFF;
+
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
+  /* Keep the app consistently light.
+     Do not let the device/browser dark mode override the UI. */
+  color-scheme: light;
+
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  background: var(--bg-primary);
+}
+
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
   overflow-x: hidden;
-  background-color: var(--bg-primary); /* Apply the new theme background */
-  color: var(--text-primary); /* Apply the new theme text color */
+
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  margin: 0;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+img {
+  max-width: 100%;
 }
 
 #root {
   width: 1126px;
   max-width: 100%;
+  min-height: calc(100vh - 80px);
+
   margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border-primary); /* Changed from var(--border) to var(--border-primary) */
-  min-height: calc(100vh - 80px); /* Adjusted to account for bottom navigation */
+
   display: flex;
   flex-direction: column;
+
+  border-inline: 1px solid var(--border-primary);
+
   box-sizing: border-box;
 }
 
-/* Ensure proper scrolling for mobile devices */
+/* Mobile */
 @media (max-width: 768px) {
   #root {
     width: 100%;
+    min-height: calc(100vh - 64px);
     border-inline: none;
-    min-height: calc(100vh - 80px);
+  }
+
+  body {
+    width: 100%;
+    overflow-x: hidden;
   }
 }
 
-/* Typography improvements */
-h1, h2, h3, h4, h5, h6 {
+/* Typography */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin-top: 0;
   color: var(--text-primary);
   font-weight: 600;
   line-height: 1.2;
@@ -77,12 +126,32 @@ h3 {
   font-size: 1.75rem;
 }
 
-/* Consistent card styling */
+@media (max-width: 640px) {
+  h1 {
+    font-size: 2rem;
+  }
+
+  h2 {
+    font-size: 1.6rem;
+  }
+
+  h3 {
+    font-size: 1.35rem;
+  }
+}
+
+/* Cards */
+
 .card {
   background-color: var(--surface-primary);
   border: 1px solid var(--border-primary);
   border-radius: 1rem;
-  transition: all 0.3s ease;
+
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
@@ -92,19 +161,34 @@ h3 {
   border-color: var(--accent-primary);
 }
 
-/* Consistent button styling */
+/* Shared button classes */
+
 .btn {
+  min-height: 44px;
+
   border-radius: 0.75rem;
   padding: 0.75rem 1.5rem;
+
   font-size: 1rem;
   font-weight: 600;
   font-family: inherit;
+
   cursor: pointer;
-  transition: all 0.2s ease;
+
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+
   border: none;
+
   display: inline-flex;
   align-items: center;
   justify-content: center;
+
+  text-decoration: none;
 }
 
 .btn-primary {
@@ -128,24 +212,52 @@ h3 {
   color: var(--nav-text);
 }
 
-/* Consistent input styling */
+/* Inputs */
+
 .input {
+  width: 100%;
+
+  min-height: 44px;
+
   padding: 0.75rem 1rem;
+
   border-radius: 0.75rem;
   border: 1px solid var(--border-primary);
+
   background-color: var(--surface-primary);
   color: var(--text-primary);
+
   font-size: 1rem;
-  transition: all 0.2s ease;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .input:focus {
   outline: none;
+
   border-color: var(--accent-primary);
-  box-shadow: 0 0 0 3px rgba(14, 77, 82, 0.2);
+
+  box-shadow:
+    0 0 0 3px rgba(14, 77, 82, 0.15);
 }
 
-/* Smooth animations for interactive elements */
+/* Textarea / select consistency */
+
+textarea,
+select {
+  color: var(--text-primary);
+  background-color: var(--surface-primary);
+}
+
+textarea:focus,
+select:focus {
+  outline: none;
+}
+
+/* Interactive elements */
+
 .hover-lift {
   transition: transform 0.2s ease;
 }
@@ -154,10 +266,12 @@ h3 {
   transform: translateY(-4px);
 }
 
-/* Consistent link styling */
+/* Links */
+
 .link {
   color: var(--accent-primary);
   text-decoration: none;
+
   transition: color 0.2s ease;
 }
 
@@ -166,72 +280,58 @@ h3 {
   text-decoration: underline;
 }
 
-/* Loading animation */
+/* Loading */
+
 .loading-spinner {
   display: inline-block;
+
   width: 20px;
   height: 20px;
+
   border: 3px solid rgba(14, 77, 82, 0.2);
   border-radius: 50%;
+
   border-top-color: var(--accent-primary);
+
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Improved button styles */
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-  /* Added transitions for smoother interactions */
-  transition: all 0.2s ease;
-}
-button:hover {
-  border-color: var(--accent-primary);
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: var(--accent-primary);
-  }
-  button {
-    background-color: #f9f9f9;
+  to {
+    transform: rotate(360deg);
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.15);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
+/* Accessible focus */
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Prevent accidental horizontal overflow from long content */
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+span,
+a {
+  overflow-wrap: anywhere;
+}
+
+/* Mobile touch targets */
+
+@media (max-width: 640px) {
+  button,
+  .btn {
+    min-height: 44px;
   }
 }
