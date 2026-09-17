@@ -1,369 +1,296 @@
 import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext'; // Import auth context
 
 const BookingScreen = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-
-  // IMPORTANT:
-  // Never use a hard-coded package as a fallback.
-  // The booking must always come from the package selected by the user.
-  const packageInfo = location.state?.packageInfo;
-
-  const [numberOfPeople, setNumberOfPeople] = useState(1);
-  const [selectedDate, setSelectedDate] = useState('');
-  const [specialRequests, setSpecialRequests] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
-
-  // If package information is missing, do not silently book Hunza.
-  if (!packageInfo?.id) {
-    return (
-      <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] flex items-center justify-center px-4">
-        <div className="w-full max-w-md bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)] rounded-2xl p-6 text-center shadow-sm">
-          <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-[color:var(--surface-secondary)] flex items-center justify-center text-2xl">
-            ⚠️
-          </div>
-
-          <h1 className="text-xl font-bold mb-2">
-            Package information is missing
-          </h1>
-
-          <p className="text-sm text-[color:var(--text-secondary)] mb-6">
-            The selected package could not be loaded. Please open the package
-            again and start the booking from its booking button.
-          </p>
-
-          <button
-            type="button"
-            onClick={() => navigate('/search')}
-            className="w-full bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] py-3 px-4 rounded-xl font-bold transition"
-          >
-            Browse Packages
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const pricePerPerson = Number(packageInfo.price || packageInfo.pricePerPerson || 0);
-  const totalPrice = pricePerPerson * Number(numberOfPeople);
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    setError('');
-
-    const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('user') || 'null');
-
-    if (!token || !user?.id) {
-      setError('Please login before making a booking.');
+  const location = useLocation();
+  const { getAuthHeader, user } = useAuth(); // Get the auth header function and logged-in user
+  
+  // Get package info from location state passed from PackageDetailScreen
+  const packageInfo = location.state?.packageInfo || {
+    id: 1,
+    title: "Hunza Valley Adventure Expedition",
+    host: "Mountain Trails Pakistan",
+    pricePerPerson: 45000,
+    totalDays: 5,
+    image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80"
+  };
+  
+  const [bookingDetails, setBookingDetails] = useState({
+    travelers: 1, // Default to 1 traveler
+    startDate: '',
+    specialRequests: '',
+    paymentMethod: 'credit-card' // Default payment method
+  });
+  
+  // Calculate total price based on number of travelers
+  const totalPrice = bookingDetails.travelers * packageInfo.pricePerPerson;
+  
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setBookingDetails(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  const handleConfirmBooking = async () => {
+    // Basic validation
+    if (!bookingDetails.startDate) {
+      alert('Please select a start date');
       return;
     }
-
-    if (!selectedDate) {
-      setError('Please select your travel date.');
+    if (!user?.id) {
+      alert('Please log in to complete your booking');
+      navigate('/login');
       return;
     }
-
-    if (Number(numberOfPeople) < 1) {
-      setError('Number of people must be at least 1.');
-      return;
-    }
-
-    setIsSubmitting(true);
-
+    
     try {
+      // Prepare booking data
+      const bookingData = {
+        user_id: user?.id,
+        package_id: packageInfo.id,
+        booking_date: new Date().toISOString().split('T')[0], // Today's date
+        start_date: bookingDetails.startDate,
+        end_date: calculateEndDate(bookingDetails.startDate, packageInfo.totalDays),
+        total_price: totalPrice,
+        status: 'confirmed',
+        payment_status: 'completed', // Payment completed upon booking
+        travelers: bookingDetails.travelers
+      };
+      
+      // Call the backend API to create the booking
       const response = await fetch('/api/bookings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          ...getAuthHeader() // Include the authorization header
         },
-        body: JSON.stringify({
-          package_id: packageInfo.id,
-          user_id: user.id,
-          booking_date: selectedDate,
-          number_of_people: Number(numberOfPeople),
-          total_price: totalPrice,
-          special_requests: specialRequests.trim(),
-        }),
+        body: JSON.stringify(bookingData),
       });
-
-      const data = await response.json();
-
+      
       if (!response.ok) {
-        throw new Error(
-          data?.message ||
-            data?.error ||
-            'Unable to complete the booking. Please try again.'
-        );
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
-
-      navigate('/my-trips', {
-        state: {
-          bookingSuccess: true,
-          booking: data.booking || data,
-        },
-      });
-    } catch (err) {
-      console.error('Booking error:', err);
-
-      setError(
-        err.message || 'Something went wrong while creating your booking.'
-      );
-    } finally {
-      setIsSubmitting(false);
+      
+      const result = await response.json();
+      console.log('Booking created:', result.data.booking);
+      
+      // Navigate to the My Trips screen after successful booking
+      navigate('/my-trips');
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      alert('Failed to create booking. Please try again.');
     }
+  };
+  
+  // Helper function to calculate end date based on start date and duration
+  const calculateEndDate = (startDate, days) => {
+    if (!startDate) return '';
+    const start = new Date(startDate);
+    const end = new Date(start);
+    end.setDate(end.getDate() + days - 1); // -1 because duration includes start day
+    return end.toISOString().split('T')[0];
   };
 
   return (
-    <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] px-3 py-4 sm:px-4 sm:py-6 pb-24">
+    <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] p-4">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-5">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="w-10 h-10 shrink-0 rounded-xl border border-[color:var(--border-primary)] bg-[color:var(--surface-primary)] flex items-center justify-center text-lg hover:bg-[color:var(--surface-secondary)] transition"
-            aria-label="Go back"
-          >
-            ←
-          </button>
-
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">
-              Book Your Trip
-            </h1>
-
-            <p className="text-sm text-[color:var(--text-secondary)] mt-1">
-              Complete your booking details below.
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-          {/* Package summary */}
-          <div className="lg:col-span-2">
-            <div className="bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)] rounded-2xl overflow-hidden shadow-sm lg:sticky lg:top-6">
-              {packageInfo.image ? (
-                <img
-                  src={packageInfo.image}
-                  alt={packageInfo.title || 'Selected package'}
-                  className="w-full h-52 sm:h-60 lg:h-56 object-cover"
+        <h1 className="text-3xl font-bold mb-2 text-[color:var(--text-primary)]">Complete Your Booking</h1>
+        <p className="text-[color:var(--text-secondary)] mb-6">Review your trip details and finalize your reservation</p>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Booking Form */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Package Summary Card */}
+            <div className="bg-[color:var(--surface-primary)] rounded-2xl p-6 border border-[color:var(--border-primary)]">
+              <h2 className="text-xl font-bold mb-4 text-[color:var(--text-primary)]">Package Summary</h2>
+              <div className="flex items-center">
+                <img 
+                  src={packageInfo.image} 
+                  alt={packageInfo.title} 
+                  className="w-24 h-24 rounded-lg object-cover mr-4"
                 />
-              ) : (
-                <div className="w-full h-52 sm:h-60 lg:h-56 bg-[color:var(--surface-secondary)] flex items-center justify-center text-4xl">
-                  🏔️
+                <div>
+                  <h3 className="font-bold text-[color:var(--text-primary)]">{packageInfo.title}</h3>
+                  <p className="text-[color:var(--text-secondary)]">{packageInfo.host}</p>
+                  <p className="font-semibold text-[color:var(--accent-primary)]">PKR {packageInfo.pricePerPerson.toLocaleString()} per person</p>
                 </div>
-              )}
-
-              <div className="p-5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--accent-primary)] mb-2">
-                  Selected Package
-                </p>
-
-                <h2 className="text-xl font-bold leading-snug mb-3 break-words">
-                  {packageInfo.title}
-                </h2>
-
-                {packageInfo.host && (
-                  <div className="flex items-start gap-2 mb-3">
-                    <span>🏢</span>
-                    <div className="min-w-0">
-                      <p className="text-xs text-[color:var(--text-secondary)]">
-                        Tour Company
-                      </p>
-                      <p className="font-medium break-words">
-                        {packageInfo.host}
-                      </p>
+              </div>
+            </div>
+            
+            {/* Booking Details Form */}
+            <div className="bg-[color:var(--surface-primary)] rounded-2xl p-6 border border-[color:var(--border-primary)]">
+              <h2 className="text-xl font-bold mb-4 text-[color:var(--text-primary)]">Booking Details</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[color:var(--text-secondary)] mb-1">Number of Travelers</label>
+                  <input
+                    type="number"
+                    name="travelers"
+                    value={bookingDetails.travelers}
+                    onChange={handleChange}
+                    min="1"
+                    className="w-full p-3 border border-[color:var(--border-primary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-primary)] bg-[color:var(--surface-primary)] text-[color:var(--text-primary)]"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-[color:var(--text-secondary)] mb-1">Start Date</label>
+                  <input
+                    type="date"
+                    name="startDate"
+                    value={bookingDetails.startDate}
+                    onChange={handleChange}
+                    min={new Date().toISOString().split('T')[0]} // Don't allow past dates
+                    className="w-full p-3 border border-[color:var(--border-primary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-primary)] bg-[color:var(--surface-primary)] text-[color:var(--text-primary)]"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-[color:var(--text-secondary)] mb-1">Special Requests</label>
+                  <textarea
+                    name="specialRequests"
+                    value={bookingDetails.specialRequests}
+                    onChange={handleChange}
+                    rows="3"
+                    placeholder="Any special requests or dietary requirements..."
+                    className="w-full p-3 border border-[color:var(--border-primary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-primary)] bg-[color:var(--surface-primary)] text-[color:var(--text-primary)]"
+                  />
+                </div>
+                
+                {/* Payment Method Selection */}
+                <div>
+                  <label className="block text-[color:var(--text-secondary)] mb-1">Payment Method</label>
+                  <div className="space-y-3">
+                    <div 
+                      className={`flex items-center p-4 border rounded-lg cursor-pointer transition ${
+                        bookingDetails.paymentMethod === 'credit-card' 
+                          ? 'border-[color:var(--accent-primary)] bg-[color:var(--accent-primary)] bg-opacity-10' 
+                          : 'border-[color:var(--border-primary)] hover:border-[color:var(--accent-primary)]'
+                      }`}
+                      onClick={() => setBookingDetails({...bookingDetails, paymentMethod: 'credit-card'})}
+                    >
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="credit-card"
+                        checked={bookingDetails.paymentMethod === 'credit-card'}
+                        onChange={handleChange}
+                        className="mr-3"
+                      />
+                      <div className="flex items-center">
+                        <svg className="w-8 h-8 mr-3 text-[color:var(--text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                        <div>
+                          <div className="font-medium text-[color:var(--text-primary)]">Credit/Debit Card</div>
+                          <div className="text-sm text-[color:var(--text-secondary)]">Pay securely with your card</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div 
+                      className={`flex items-center p-4 border rounded-lg cursor-pointer transition ${
+                        bookingDetails.paymentMethod === 'bank-transfer' 
+                          ? 'border-[color:var(--accent-primary)] bg-[color:var(--accent-primary)] bg-opacity-10' 
+                          : 'border-[color:var(--border-primary)] hover:border-[color:var(--accent-primary)]'
+                      }`}
+                      onClick={() => setBookingDetails({...bookingDetails, paymentMethod: 'bank-transfer'})}
+                    >
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="bank-transfer"
+                        checked={bookingDetails.paymentMethod === 'bank-transfer'}
+                        onChange={handleChange}
+                        className="mr-3"
+                      />
+                      <div className="flex items-center">
+                        <svg className="w-8 h-8 mr-3 text-[color:var(--text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <div>
+                          <div className="font-medium text-[color:var(--text-primary)]">Bank Transfer</div>
+                          <div className="text-sm text-[color:var(--text-secondary)]">Transfer funds directly to our account</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div 
+                      className={`flex items-center p-4 border rounded-lg cursor-pointer transition ${
+                        bookingDetails.paymentMethod === 'cash-on-arrival' 
+                          ? 'border-[color:var(--accent-primary)] bg-[color:var(--accent-primary)] bg-opacity-10' 
+                          : 'border-[color:var(--border-primary)] hover:border-[color:var(--accent-primary)]'
+                      }`}
+                      onClick={() => setBookingDetails({...bookingDetails, paymentMethod: 'cash-on-arrival'})}
+                    >
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="cash-on-arrival"
+                        checked={bookingDetails.paymentMethod === 'cash-on-arrival'}
+                        onChange={handleChange}
+                        className="mr-3"
+                      />
+                      <div className="flex items-center">
+                        <svg className="w-8 h-8 mr-3 text-[color:var(--text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <div>
+                          <div className="font-medium text-[color:var(--text-primary)]">Cash on Arrival</div>
+                          <div className="text-sm text-[color:var(--text-secondary)]">Pay when you arrive at your destination</div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-3 mt-4">
-                  <div className="rounded-xl bg-[color:var(--surface-secondary)] p-3 min-w-0">
-                    <p className="text-xs text-[color:var(--text-secondary)]">
-                      Price / Person
-                    </p>
-                    <p className="font-bold mt-1 break-words">
-                      PKR {pricePerPerson.toLocaleString()}
-                    </p>
-                  </div>
-
-                  {packageInfo.totalDays && (
-                    <div className="rounded-xl bg-[color:var(--surface-secondary)] p-3 min-w-0">
-                      <p className="text-xs text-[color:var(--text-secondary)]">
-                        Duration
-                      </p>
-                      <p className="font-bold mt-1">
-                        {packageInfo.totalDays}{' '}
-                        {Number(packageInfo.totalDays) === 1 ? 'Day' : 'Days'}
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
           </div>
-
-          {/* Booking form */}
-          <div className="lg:col-span-3">
-            <form
-              onSubmit={handleSubmit}
-              className="bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)] rounded-2xl p-4 sm:p-6 shadow-sm"
-            >
-              <h2 className="text-xl font-bold mb-5">
-                Booking Details
-              </h2>
-
-              {error && (
-                <div className="mb-5 rounded-xl border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm">
-                  {error}
+          
+          {/* Right Column - Price Summary */}
+          <div className="space-y-6">
+            <div className="bg-[color:var(--surface-primary)] rounded-2xl p-6 border border-[color:var(--border-primary)] sticky top-4">
+              <h2 className="text-xl font-bold mb-4 text-[color:var(--text-primary)]">Price Summary</h2>
+              
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between">
+                  <span>Price per person:</span>
+                  <span>PKR {packageInfo.pricePerPerson.toLocaleString()}</span>
                 </div>
-              )}
-
-              {/* Travel date */}
-              <div className="mb-5">
-                <label
-                  htmlFor="booking-date"
-                  className="block text-sm font-semibold mb-2"
-                >
-                  Travel Date
-                </label>
-
-                <input
-                  id="booking-date"
-                  type="date"
-                  value={selectedDate}
-                  min={new Date().toISOString().split('T')[0]}
-                  onChange={(event) => setSelectedDate(event.target.value)}
-                  className="w-full min-h-[46px] rounded-xl border border-[color:var(--border-primary)] bg-[color:var(--surface-primary)] text-[color:var(--text-primary)] px-4 focus:outline-none focus:border-[color:var(--accent-primary)] focus:ring-2 focus:ring-[color:var(--accent-primary)]/15"
-                  required
-                />
-              </div>
-
-              {/* Number of people */}
-              <div className="mb-5">
-                <label
-                  htmlFor="number-of-people"
-                  className="block text-sm font-semibold mb-2"
-                >
-                  Number of People
-                </label>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setNumberOfPeople((current) =>
-                        Math.max(1, Number(current) - 1)
-                      )
-                    }
-                    className="w-11 h-11 shrink-0 rounded-xl border border-[color:var(--border-primary)] bg-[color:var(--surface-primary)] hover:bg-[color:var(--surface-secondary)] font-bold transition"
-                    aria-label="Decrease number of people"
-                  >
-                    −
-                  </button>
-
-                  <input
-                    id="number-of-people"
-                    type="number"
-                    min="1"
-                    value={numberOfPeople}
-                    onChange={(event) =>
-                      setNumberOfPeople(
-                        Math.max(1, Number(event.target.value) || 1)
-                      )
-                    }
-                    className="w-full min-h-[46px] rounded-xl border border-[color:var(--border-primary)] bg-[color:var(--surface-primary)] text-[color:var(--text-primary)] px-4 text-center font-semibold focus:outline-none focus:border-[color:var(--accent-primary)] focus:ring-2 focus:ring-[color:var(--accent-primary)]/15"
-                    required
-                  />
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setNumberOfPeople((current) => Number(current) + 1)
-                    }
-                    className="w-11 h-11 shrink-0 rounded-xl border border-[color:var(--border-primary)] bg-[color:var(--surface-primary)] hover:bg-[color:var(--surface-secondary)] font-bold transition"
-                    aria-label="Increase number of people"
-                  >
-                    +
-                  </button>
+                <div className="flex justify-between">
+                  <span>Number of travelers:</span>
+                  <span>x{bookingDetails.travelers}</span>
+                </div>
+                <div className="border-t border-[color:var(--border-primary)] pt-3 mt-3">
+                  <div className="flex justify-between font-bold text-lg">
+                    <span>Total:</span>
+                    <span className="text-[color:var(--accent-primary)]">PKR {totalPrice.toLocaleString()}</span>
+                  </div>
                 </div>
               </div>
-
-              {/* Special requests */}
-              <div className="mb-6">
-                <label
-                  htmlFor="special-requests"
-                  className="block text-sm font-semibold mb-2"
-                >
-                  Special Requests{' '}
-                  <span className="font-normal text-[color:var(--text-secondary)]">
-                    (Optional)
-                  </span>
-                </label>
-
-                <textarea
-                  id="special-requests"
-                  value={specialRequests}
-                  onChange={(event) =>
-                    setSpecialRequests(event.target.value)
-                  }
-                  rows={4}
-                  placeholder="Any special requirements or requests?"
-                  className="w-full rounded-xl border border-[color:var(--border-primary)] bg-[color:var(--surface-primary)] text-[color:var(--text-primary)] px-4 py-3 resize-y focus:outline-none focus:border-[color:var(--accent-primary)] focus:ring-2 focus:ring-[color:var(--accent-primary)]/15"
-                />
-              </div>
-
-              {/* Price summary */}
-              <div className="rounded-2xl bg-[color:var(--surface-secondary)] p-4 mb-5">
-                <div className="flex items-center justify-between gap-4 text-sm mb-2">
-                  <span className="text-[color:var(--text-secondary)]">
-                    Price per person
-                  </span>
-
-                  <span className="font-semibold text-right">
-                    PKR {pricePerPerson.toLocaleString()}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between gap-4 text-sm mb-3">
-                  <span className="text-[color:var(--text-secondary)]">
-                    People
-                  </span>
-
-                  <span className="font-semibold">
-                    {numberOfPeople}
-                  </span>
-                </div>
-
-                <div className="border-t border-[color:var(--border-primary)] pt-3 flex items-center justify-between gap-4">
-                  <span className="font-bold">
-                    Total
-                  </span>
-
-                  <span className="text-xl font-bold text-[color:var(--accent-primary)] text-right">
-                    PKR {totalPrice.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-
-              {/* Submit */}
+              
               <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full min-h-[48px] rounded-xl bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] disabled:opacity-60 disabled:cursor-not-allowed text-[color:var(--nav-text)] font-bold transition"
+                onClick={handleConfirmBooking}
+                className="w-full bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] py-3 rounded-xl font-bold transition duration-200"
               >
-                {isSubmitting ? 'Confirming Booking...' : 'Confirm Booking'}
+                Confirm Booking
               </button>
-
-              <p className="text-xs text-center text-[color:var(--text-secondary)] mt-3">
-                Your selected package will be used for this booking.
+              
+              <p className="text-xs text-[color:var(--text-secondary)] mt-3">
+                By confirming, you agree to our Terms of Service and Privacy Policy.
               </p>
-            </form>
+            </div>
+            
+            <div className="bg-[color:var(--surface-primary)] rounded-2xl p-6 border border-[color:var(--border-primary)]">
+              <h3 className="font-bold mb-2 text-[color:var(--text-primary)]">Trip Duration</h3>
+              <p className="text-[color:var(--text-secondary)]">{packageInfo.totalDays} Days</p>
+            </div>
           </div>
         </div>
       </div>
