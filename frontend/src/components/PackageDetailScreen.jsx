@@ -550,6 +550,7 @@ const PackageDetailScreen = () => {
               <Link
                 to={{
                   pathname: '/booking',
+                  search: `?packageId=${packageData.id}`,
                   state: {
                     packageInfo: {
                       id: packageData.id,
@@ -1291,6 +1292,7 @@ const PackageDetailScreen = () => {
               <Link
                 to={{
                   pathname: '/booking',
+                  search: `?packageId=${packageData.id}`,
                   state: {
                     packageInfo: {
                       id: packageData.id,
