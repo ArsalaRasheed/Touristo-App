@@ -1,165 +1,415 @@
 const axios = require('axios');
 
-/**
- * Get weather data for a location
- * @param {number} lat - Latitude
- * @param {number} lon - Longitude
- * @returns {object} Weather data
- */
-async function getWeatherData(lat, lon) {
+const OPENWEATHER_BASE_URL =
+  'https://api.openweathermap.org/data/2.5';
+
+const WEATHER_TIMEOUT = 10000;
+
+function validateCoordinates(lat, lon) {
+  const latitude = Number(lat);
+  const longitude = Number(lon);
+
+  if (
+    !Number.isFinite(latitude) ||
+    !Number.isFinite(longitude)
+  ) {
+    throw new Error(
+      'Invalid destination coordinates'
+    );
+  }
+
+  if (
+    latitude < -90 ||
+    latitude > 90 ||
+    longitude < -180 ||
+    longitude > 180
+  ) {
+    throw new Error(
+      'Destination coordinates are outside valid range'
+    );
+  }
+
+  return {
+    latitude,
+    longitude
+  };
+}
+
+function getOpenWeatherError(error) {
+  const status = error?.response?.status;
+  const apiMessage =
+    error?.response?.data?.message;
+
+  if (status === 401) {
+    return new Error(
+      'OpenWeather API key is invalid or not activated.'
+    );
+  }
+
+  if (status === 404) {
+    return new Error(
+      'OpenWeather could not find weather data for these coordinates.'
+    );
+  }
+
+  if (status === 429) {
+    return new Error(
+      'OpenWeather API rate limit has been reached.'
+    );
+  }
+
+  if (status >= 500) {
+    return new Error(
+      'OpenWeather weather service is temporarily unavailable.'
+    );
+  }
+
+  if (apiMessage) {
+    return new Error(apiMessage);
+  }
+
+  if (error.code === 'ECONNABORTED') {
+    return new Error(
+      'OpenWeather request timed out.'
+    );
+  }
+
+  if (
+    error.code === 'ENOTFOUND' ||
+    error.code === 'ECONNREFUSED'
+  ) {
+    return new Error(
+      'Server could not connect to OpenWeather.'
+    );
+  }
+
+  return new Error(
+    error.message ||
+    'Unable to connect to OpenWeather.'
+  );
+}
+
+async function requestOpenWeather(
+  endpoint,
+  params
+) {
   if (!process.env.OPENWEATHER_API_KEY) {
-    console.warn('OpenWeatherMap API key not configured. Returning mock data.');
-    // Return mock data when API key is not configured
-    return {
-      temperature: 25,
-      description: 'Partly cloudy',
-      icon: '02d',
-      humidity: 65,
-      windSpeed: 10,
-      feelsLike: 27,
-      forecast: [
-        { day: 'Mon', condition: 'sunny', high: 28, low: 18, icon: '01d' },
-        { day: 'Tue', condition: 'cloudy', high: 26, low: 17, icon: '03d' },
-        { day: 'Wed', condition: 'rainy', high: 24, low: 16, icon: '10d' },
-        { day: 'Thu', condition: 'partly-cloudy', high: 27, low: 19, icon: '02d' },
-        { day: 'Fri', condition: 'sunny', high: 29, low: 20, icon: '01d' }
-      ]
-    };
+    throw new Error(
+      'OPENWEATHER_API_KEY is missing from server environment variables.'
+    );
   }
 
   try {
-    // Fetch current weather
-    const currentWeatherResponse = await axios.get(
-      `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${process.env.OPENWEATHER_API_KEY}&units=metric`
+    const response = await axios.get(
+      `${OPENWEATHER_BASE_URL}/${endpoint}`,
+      {
+        params: {
+          ...params,
+          appid:
+            process.env.OPENWEATHER_API_KEY,
+          units: 'metric'
+        },
+        timeout: WEATHER_TIMEOUT
+      }
     );
-    
-    // Fetch 5-day forecast
-    const forecastResponse = await axios.get(
-      `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${process.env.OPENWEATHER_API_KEY}&units=metric`
-    );
-    
-    // Process forecast data to get daily forecasts
-    const dailyForecasts = processForecastData(forecastResponse.data.list);
-    
-    return {
-      temperature: Math.round(currentWeatherResponse.data.main.temp),
-      description: currentWeatherResponse.data.weather[0].description,
-      icon: currentWeatherResponse.data.weather[0].icon,
-      humidity: currentWeatherResponse.data.main.humidity,
-      windSpeed: currentWeatherResponse.data.wind.speed,
-      feelsLike: Math.round(currentWeatherResponse.data.main.feels_like),
-      forecast: dailyForecasts
-    };
+
+    if (!response.data) {
+      throw new Error(
+        'OpenWeather returned an empty response.'
+      );
+    }
+
+    return response.data;
   } catch (error) {
-    console.error('Error fetching weather data:', error);
-    // Return mock data when API call fails
-    return {
-      temperature: 25,
-      description: 'Weather service temporarily unavailable',
-      icon: '01d',
-      humidity: 65,
-      windSpeed: 10,
-      feelsLike: 27,
-      forecast: [
-        { day: 'Mon', condition: 'sunny', high: 28, low: 18, icon: '01d' },
-        { day: 'Tue', condition: 'cloudy', high: 26, low: 17, icon: '03d' },
-        { day: 'Wed', condition: 'rainy', high: 24, low: 16, icon: '10d' },
-        { day: 'Thu', condition: 'partly-cloudy', high: 27, low: 19, icon: '02d' },
-        { day: 'Fri', condition: 'sunny', high: 29, low: 20, icon: '01d' }
-      ]
-    };
+    console.error(
+      'OpenWeather request failed:',
+      {
+        endpoint,
+        status: error?.response?.status,
+        response:
+          error?.response?.data,
+        message: error?.message
+      }
+    );
+
+    throw getOpenWeatherError(error);
   }
 }
 
-/**
- * Process the 5-day forecast data to get daily summaries
- * @param {Array} forecastList - List of forecast data points
- * @returns {Array} Daily forecasts
- */
-function processForecastData(forecastList) {
-  // Group forecasts by date
-  const groupedByDate = {};
-  
-  forecastList.forEach(item => {
-    const date = new Date(item.dt * 1000).toISOString().split('T')[0]; // Get YYYY-MM-DD
-    
-    if (!groupedByDate[date]) {
-      groupedByDate[date] = {
-        temps: [],
-        conditions: [],
-        icons: [],
-        date: date
-      };
-    }
-    
-    groupedByDate[date].temps.push(item.main.temp_max, item.main.temp_min);
-    groupedByDate[date].conditions.push(item.weather[0].main);
-    groupedByDate[date].icons.push(item.weather[0].icon);
-  });
-  
-  // Convert to array and take only first 5 days
-  const dailyData = Object.values(groupedByDate).slice(0, 5);
-  
-  // Format the data
-  return dailyData.map(dayData => {
-    const date = new Date(dayData.date);
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const day = dayNames[date.getDay()];
-    
-    // Find max and min temperatures
-    const temps = dayData.temps;
-    const maxTemp = Math.max(...temps);
-    const minTemp = Math.min(...temps);
-    
-    // Get the most common condition
-    const conditionCounts = {};
-    dayData.conditions.forEach(condition => {
-      conditionCounts[condition] = (conditionCounts[condition] || 0) + 1;
-    });
-    
-    let dominantCondition = dayData.conditions[0];
-    let maxCount = 0;
-    for (const [condition, count] of Object.entries(conditionCounts)) {
-      if (count > maxCount) {
-        maxCount = count;
-        dominantCondition = condition;
-      }
-    }
-    
-    // Use the first icon for simplicity
-    const icon = dayData.icons[0];
-    
-    return {
-      day,
-      condition: dominantCondition.toLowerCase(),
-      high: Math.round(maxTemp),
-      low: Math.round(minTemp),
-      icon
-    };
-  });
+async function getWeatherData(lat, lon) {
+  const {
+    latitude,
+    longitude
+  } = validateCoordinates(lat, lon);
+
+  const [current, forecast] =
+    await Promise.all([
+      requestOpenWeather(
+        'weather',
+        {
+          lat: latitude,
+          lon: longitude
+        }
+      ),
+
+      requestOpenWeather(
+        'forecast',
+        {
+          lat: latitude,
+          lon: longitude
+        }
+      )
+    ]);
+
+  if (
+    !current.main ||
+    typeof current.main.temp !== 'number'
+  ) {
+    throw new Error(
+      'OpenWeather returned invalid current temperature data.'
+    );
+  }
+
+  return {
+    location: {
+      name: current.name || null,
+      latitude,
+      longitude
+    },
+
+    temperature: Math.round(
+      current.main.temp
+    ),
+
+    feelsLike: Math.round(
+      current.main.feels_like
+    ),
+
+    humidity:
+      current.main.humidity,
+
+    pressure:
+      current.main.pressure,
+
+    windSpeed:
+      typeof current.wind?.speed === 'number'
+        ? Math.round(
+            current.wind.speed * 3.6
+          )
+        : null,
+
+    description:
+      current.weather?.[0]?.description ||
+      'Unknown',
+
+    condition:
+      current.weather?.[0]?.main ||
+      'Unknown',
+
+    icon:
+      current.weather?.[0]?.icon ||
+      '01d',
+
+    observedAt:
+      current.dt
+        ? new Date(
+            current.dt * 1000
+          ).toISOString()
+        : new Date().toISOString(),
+
+    timezoneOffset:
+      current.timezone || 0,
+
+    forecast:
+      processForecastData(
+        forecast.list || []
+      )
+  };
 }
 
-/**
- * Determine road status based on weather conditions
- * @param {string} weatherDescription - Weather description
- * @returns {string} Road status
- */
-function getRoadStatus(weatherDescription) {
+function processForecastData(
+  forecastList
+) {
+  const grouped = {};
+
+  for (const item of forecastList) {
+    if (
+      !item ||
+      !item.dt ||
+      !item.main
+    ) {
+      continue;
+    }
+
+    /*
+     * OpenWeather provides dt_txt in the
+     * location's forecast time context.
+     *
+     * Keep this value instead of converting
+     * it through the server's timezone.
+     */
+    const date =
+      typeof item.dt_txt === 'string'
+        ? item.dt_txt.substring(0, 10)
+        : new Date(
+            item.dt * 1000
+          ).toISOString().substring(0, 10);
+
+    if (!grouped[date]) {
+      grouped[date] = {
+        date,
+        temperatures: [],
+        conditions: [],
+        icons: []
+      };
+    }
+
+    if (
+      typeof item.main.temp ===
+      'number'
+    ) {
+      grouped[
+        date
+      ].temperatures.push(
+        item.main.temp
+      );
+    }
+
+    if (
+      item.weather?.[0]?.main
+    ) {
+      grouped[
+        date
+      ].conditions.push(
+        item.weather[0].main
+      );
+    }
+
+    if (
+      item.weather?.[0]?.icon
+    ) {
+      grouped[
+        date
+      ].icons.push(
+        item.weather[0].icon
+      );
+    }
+  }
+
+  return Object.values(grouped)
+    .slice(0, 5)
+    .map(day => {
+      const temps =
+        day.temperatures;
+
+      const high =
+        temps.length
+          ? Math.round(
+              Math.max(...temps)
+            )
+          : null;
+
+      const low =
+        temps.length
+          ? Math.round(
+              Math.min(...temps)
+            )
+          : null;
+
+      const conditionCounts = {};
+
+      day.conditions.forEach(
+        condition => {
+          conditionCounts[
+            condition
+          ] =
+            (conditionCounts[
+              condition
+            ] || 0) + 1;
+        }
+      );
+
+      let condition =
+        day.conditions[0] ||
+        'Unknown';
+
+      let highestCount = 0;
+
+      Object.entries(
+        conditionCounts
+      ).forEach(
+        ([name, count]) => {
+          if (
+            count >
+            highestCount
+          ) {
+            highestCount =
+              count;
+
+            condition =
+              name;
+          }
+        }
+      );
+
+      return {
+        date: day.date,
+        high,
+        low,
+        condition:
+          condition.toLowerCase(),
+        icon:
+          day.icons[0] ||
+          '01d'
+      };
+    });
+}
+
+function getRoadStatus(
+  weatherDescription
+) {
   if (!weatherDescription) {
     return 'Unknown';
   }
-  
-  const desc = weatherDescription.toLowerCase();
-  
-  if (desc.includes('rain') || desc.includes('storm') || desc.includes('thunder')) {
+
+  const description =
+    weatherDescription.toLowerCase();
+
+  if (
+    description.includes(
+      'thunder'
+    ) ||
+    description.includes(
+      'storm'
+    ) ||
+    description.includes(
+      'heavy rain'
+    ) ||
+    description.includes(
+      'snow'
+    ) ||
+    description.includes(
+      'sleet'
+    ) ||
+    description.includes(
+      'ice'
+    )
+  ) {
     return 'Caution';
-  } else if (desc.includes('snow') || desc.includes('ice') || desc.includes('sleet')) {
-    return 'Caution';
-  } else if (desc.includes('fog') || desc.includes('mist')) {
-    return 'Caution';
-  } else {
-    return 'Clear';
   }
+
+  if (
+    description.includes(
+      'fog'
+    ) ||
+    description.includes(
+      'mist'
+    )
+  ) {
+    return 'Caution';
+  }
+
+  return 'Clear';
 }
 
 module.exports = {
