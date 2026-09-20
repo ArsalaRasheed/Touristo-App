@@ -1,11 +1,13 @@
 const axios = require('axios');
 
-const OPENWEATHER_BASE_URL =
-  'https://api.openweathermap.org/data/2.5';
-
-const WEATHER_TIMEOUT = 10000;
-
-function validateCoordinates(lat, lon) {
+/**
+ * Get live weather data from OpenWeather.
+ *
+ * @param {number} lat
+ * @param {number} lon
+ * @returns {object}
+ */
+async function getWeatherData(lat, lon) {
   const latitude = Number(lat);
   const longitude = Number(lon);
 
@@ -14,7 +16,7 @@ function validateCoordinates(lat, lon) {
     !Number.isFinite(longitude)
   ) {
     throw new Error(
-      'Invalid destination coordinates'
+      'Invalid weather coordinates.'
     );
   }
 
@@ -25,300 +27,314 @@ function validateCoordinates(lat, lon) {
     longitude > 180
   ) {
     throw new Error(
-      'Destination coordinates are outside valid range'
+      'Weather coordinates are outside valid geographic ranges.'
     );
   }
 
-  return {
-    latitude,
-    longitude
-  };
-}
+  const apiKey =
+    process.env.OPENWEATHER_API_KEY;
 
-function getOpenWeatherError(error) {
-  const status = error?.response?.status;
-  const apiMessage =
-    error?.response?.data?.message;
-
-  if (status === 401) {
-    return new Error(
-      'OpenWeather API key is invalid or not activated.'
-    );
-  }
-
-  if (status === 404) {
-    return new Error(
-      'OpenWeather could not find weather data for these coordinates.'
-    );
-  }
-
-  if (status === 429) {
-    return new Error(
-      'OpenWeather API rate limit has been reached.'
-    );
-  }
-
-  if (status >= 500) {
-    return new Error(
-      'OpenWeather weather service is temporarily unavailable.'
-    );
-  }
-
-  if (apiMessage) {
-    return new Error(apiMessage);
-  }
-
-  if (error.code === 'ECONNABORTED') {
-    return new Error(
-      'OpenWeather request timed out.'
-    );
-  }
-
-  if (
-    error.code === 'ENOTFOUND' ||
-    error.code === 'ECONNREFUSED'
-  ) {
-    return new Error(
-      'Server could not connect to OpenWeather.'
-    );
-  }
-
-  return new Error(
-    error.message ||
-    'Unable to connect to OpenWeather.'
-  );
-}
-
-async function requestOpenWeather(
-  endpoint,
-  params
-) {
-  if (!process.env.OPENWEATHER_API_KEY) {
+  if (!apiKey || !apiKey.trim()) {
     throw new Error(
-      'OPENWEATHER_API_KEY is missing from server environment variables.'
+      'OpenWeather API key is not configured on the server.'
     );
   }
 
   try {
-    const response = await axios.get(
-      `${OPENWEATHER_BASE_URL}/${endpoint}`,
-      {
-        params: {
-          ...params,
-          appid:
-            process.env.OPENWEATHER_API_KEY,
-          units: 'metric'
-        },
-        timeout: WEATHER_TIMEOUT
-      }
-    );
+    const currentWeatherResponse =
+      await axios.get(
+        'https://api.openweathermap.org/data/2.5/weather',
+        {
+          params: {
+            lat: latitude,
+            lon: longitude,
+            appid: apiKey,
+            units: 'metric'
+          },
+          timeout: 10000
+        }
+      );
 
-    if (!response.data) {
+    const current =
+      currentWeatherResponse.data;
+
+    if (
+      !current ||
+      !current.main ||
+      !current.weather ||
+      !current.weather[0]
+    ) {
       throw new Error(
-        'OpenWeather returned an empty response.'
+        'OpenWeather returned an invalid current-weather response.'
       );
     }
 
-    return response.data;
+    let dailyForecasts = [];
+
+    try {
+      const forecastResponse =
+        await axios.get(
+          'https://api.openweathermap.org/data/2.5/forecast',
+          {
+            params: {
+              lat: latitude,
+              lon: longitude,
+              appid: apiKey,
+              units: 'metric'
+            },
+            timeout: 10000
+          }
+        );
+
+      if (
+        forecastResponse.data &&
+        Array.isArray(
+          forecastResponse.data.list
+        )
+      ) {
+        dailyForecasts =
+          processForecastData(
+            forecastResponse.data.list
+          );
+      }
+    } catch (forecastError) {
+      /*
+       * Current weather is still valid even if
+       * the forecast request fails.
+       */
+      console.error(
+        'OpenWeather forecast request failed:',
+        {
+          status:
+            forecastError.response?.status,
+          message:
+            forecastError.response?.data?.message ||
+            forecastError.message
+        }
+      );
+    }
+
+    return {
+      temperature: Math.round(
+        current.main.temp
+      ),
+
+      description:
+        current.weather[0].description,
+
+      icon:
+        current.weather[0].icon,
+
+      humidity:
+        current.main.humidity,
+
+      windSpeed:
+        current.wind?.speed ?? 0,
+
+      feelsLike: Math.round(
+        current.main.feels_like
+      ),
+
+      forecast: dailyForecasts,
+
+      /*
+       * Actual OpenWeather observation timestamp.
+       * This lets the frontend know when the data
+       * was actually observed by the API.
+       */
+      observedAt:
+        current.dt
+          ? new Date(
+              current.dt * 1000
+            ).toISOString()
+          : null,
+
+      timezoneOffset:
+        current.timezone ?? 0,
+
+      locationName:
+        current.name || null
+    };
   } catch (error) {
+    const status =
+      error.response?.status;
+
+    const apiMessage =
+      error.response?.data?.message;
+
     console.error(
-      'OpenWeather request failed:',
+      'OpenWeather current-weather request failed:',
       {
-        endpoint,
-        status: error?.response?.status,
-        response:
-          error?.response?.data,
-        message: error?.message
+        status,
+        message:
+          apiMessage || error.message,
+        latitude,
+        longitude
       }
     );
 
-    throw getOpenWeatherError(error);
-  }
-}
+    if (status === 401) {
+      throw new Error(
+        'OpenWeather rejected the API key. Check the OPENWEATHER_API_KEY value in Vercel.'
+      );
+    }
 
-async function getWeatherData(lat, lon) {
-  const {
-    latitude,
-    longitude
-  } = validateCoordinates(lat, lon);
+    if (status === 404) {
+      throw new Error(
+        'OpenWeather could not find weather data for these coordinates.'
+      );
+    }
 
-  const [current, forecast] =
-    await Promise.all([
-      requestOpenWeather(
-        'weather',
-        {
-          lat: latitude,
-          lon: longitude
-        }
-      ),
+    if (status === 429) {
+      throw new Error(
+        'OpenWeather rate limit reached. Please try again shortly.'
+      );
+    }
 
-      requestOpenWeather(
-        'forecast',
-        {
-          lat: latitude,
-          lon: longitude
-        }
-      )
-    ]);
+    if (status >= 500) {
+      throw new Error(
+        'OpenWeather service is temporarily unavailable.'
+      );
+    }
 
-  if (
-    !current.main ||
-    typeof current.main.temp !== 'number'
-  ) {
+    if (
+      error.code === 'ECONNABORTED' ||
+      error.code === 'ETIMEDOUT'
+    ) {
+      throw new Error(
+        'OpenWeather request timed out.'
+      );
+    }
+
     throw new Error(
-      'OpenWeather returned invalid current temperature data.'
+      apiMessage ||
+      error.message ||
+      'Unable to retrieve live weather data.'
     );
   }
-
-  return {
-    location: {
-      name: current.name || null,
-      latitude,
-      longitude
-    },
-
-    temperature: Math.round(
-      current.main.temp
-    ),
-
-    feelsLike: Math.round(
-      current.main.feels_like
-    ),
-
-    humidity:
-      current.main.humidity,
-
-    pressure:
-      current.main.pressure,
-
-    windSpeed:
-      typeof current.wind?.speed === 'number'
-        ? Math.round(
-            current.wind.speed * 3.6
-          )
-        : null,
-
-    description:
-      current.weather?.[0]?.description ||
-      'Unknown',
-
-    condition:
-      current.weather?.[0]?.main ||
-      'Unknown',
-
-    icon:
-      current.weather?.[0]?.icon ||
-      '01d',
-
-    observedAt:
-      current.dt
-        ? new Date(
-            current.dt * 1000
-          ).toISOString()
-        : new Date().toISOString(),
-
-    timezoneOffset:
-      current.timezone || 0,
-
-    forecast:
-      processForecastData(
-        forecast.list || []
-      )
-  };
 }
 
+/**
+ * Convert OpenWeather 3-hour forecast data
+ * into daily high/low summaries.
+ */
 function processForecastData(
   forecastList
 ) {
-  const grouped = {};
+  if (
+    !Array.isArray(forecastList) ||
+    forecastList.length === 0
+  ) {
+    return [];
+  }
 
-  for (const item of forecastList) {
+  const groupedByDate = {};
+
+  forecastList.forEach(item => {
     if (
       !item ||
       !item.dt ||
       !item.main
     ) {
-      continue;
+      return;
     }
 
-    /*
-     * OpenWeather provides dt_txt in the
-     * location's forecast time context.
-     *
-     * Keep this value instead of converting
-     * it through the server's timezone.
-     */
     const date =
-      typeof item.dt_txt === 'string'
-        ? item.dt_txt.substring(0, 10)
-        : new Date(
-            item.dt * 1000
-          ).toISOString().substring(0, 10);
+      new Date(
+        item.dt * 1000
+      )
+        .toISOString()
+        .split('T')[0];
 
-    if (!grouped[date]) {
-      grouped[date] = {
-        date,
-        temperatures: [],
+    if (!groupedByDate[date]) {
+      groupedByDate[date] = {
+        temps: [],
         conditions: [],
-        icons: []
+        icons: [],
+        date
       };
     }
 
     if (
-      typeof item.main.temp ===
-      'number'
+      Number.isFinite(
+        Number(item.main.temp_max)
+      )
     ) {
-      grouped[
+      groupedByDate[
         date
-      ].temperatures.push(
-        item.main.temp
+      ].temps.push(
+        Number(item.main.temp_max)
       );
     }
 
     if (
-      item.weather?.[0]?.main
+      Number.isFinite(
+        Number(item.main.temp_min)
+      )
     ) {
-      grouped[
+      groupedByDate[
+        date
+      ].temps.push(
+        Number(item.main.temp_min)
+      );
+    }
+
+    if (
+      item.weather &&
+      item.weather[0]
+    ) {
+      groupedByDate[
         date
       ].conditions.push(
         item.weather[0].main
       );
-    }
 
-    if (
-      item.weather?.[0]?.icon
-    ) {
-      grouped[
+      groupedByDate[
         date
       ].icons.push(
         item.weather[0].icon
       );
     }
-  }
+  });
 
-  return Object.values(grouped)
-    .slice(0, 5)
-    .map(day => {
+  const dailyData =
+    Object.values(
+      groupedByDate
+    ).slice(0, 5);
+
+  return dailyData.map(
+    dayData => {
+      const date =
+        new Date(
+          `${dayData.date}T00:00:00`
+        );
+
+      const dayNames = [
+        'Sun',
+        'Mon',
+        'Tue',
+        'Wed',
+        'Thu',
+        'Fri',
+        'Sat'
+      ];
+
       const temps =
-        day.temperatures;
+        dayData.temps;
 
-      const high =
+      const maxTemp =
         temps.length
-          ? Math.round(
-              Math.max(...temps)
-            )
+          ? Math.max(...temps)
           : null;
 
-      const low =
+      const minTemp =
         temps.length
-          ? Math.round(
-              Math.min(...temps)
-            )
+          ? Math.min(...temps)
           : null;
 
       const conditionCounts = {};
 
-      day.conditions.forEach(
+      dayData.conditions.forEach(
         condition => {
           conditionCounts[
             condition
@@ -329,42 +345,59 @@ function processForecastData(
         }
       );
 
-      let condition =
-        day.conditions[0] ||
+      let dominantCondition =
+        dayData.conditions[0] ||
         'Unknown';
 
-      let highestCount = 0;
+      let maxCount = 0;
 
-      Object.entries(
-        conditionCounts
-      ).forEach(
-        ([name, count]) => {
-          if (
-            count >
-            highestCount
-          ) {
-            highestCount =
-              count;
-
-            condition =
-              name;
-          }
+      for (
+        const [
+          condition,
+          count
+        ] of Object.entries(
+          conditionCounts
+        )
+      ) {
+        if (
+          count > maxCount
+        ) {
+          maxCount = count;
+          dominantCondition =
+            condition;
         }
-      );
+      }
 
       return {
-        date: day.date,
-        high,
-        low,
+        day:
+          dayNames[
+            date.getDay()
+          ],
+
         condition:
-          condition.toLowerCase(),
+          dominantCondition.toLowerCase(),
+
+        high:
+          maxTemp !== null
+            ? Math.round(maxTemp)
+            : null,
+
+        low:
+          minTemp !== null
+            ? Math.round(minTemp)
+            : null,
+
         icon:
-          day.icons[0] ||
-          '01d'
+          dayData.icons[0] ||
+          null
       };
-    });
+    }
+  );
 }
 
+/**
+ * Determine road status from weather.
+ */
 function getRoadStatus(
   weatherDescription
 ) {
@@ -372,39 +405,28 @@ function getRoadStatus(
     return 'Unknown';
   }
 
-  const description =
+  const desc =
     weatherDescription.toLowerCase();
 
   if (
-    description.includes(
-      'thunder'
-    ) ||
-    description.includes(
-      'storm'
-    ) ||
-    description.includes(
-      'heavy rain'
-    ) ||
-    description.includes(
-      'snow'
-    ) ||
-    description.includes(
-      'sleet'
-    ) ||
-    description.includes(
-      'ice'
-    )
+    desc.includes('rain') ||
+    desc.includes('storm') ||
+    desc.includes('thunder')
   ) {
     return 'Caution';
   }
 
   if (
-    description.includes(
-      'fog'
-    ) ||
-    description.includes(
-      'mist'
-    )
+    desc.includes('snow') ||
+    desc.includes('ice') ||
+    desc.includes('sleet')
+  ) {
+    return 'Caution';
+  }
+
+  if (
+    desc.includes('fog') ||
+    desc.includes('mist')
   ) {
     return 'Caution';
   }

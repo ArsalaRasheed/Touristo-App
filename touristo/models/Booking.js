@@ -19,11 +19,11 @@ class Booking {
     this.package_image = data.package_image;
     this.destination = data.destination;
 
-    // Destination coordinates
+    // Destination coordinates for live weather
     this.latitude = data.latitude;
     this.longitude = data.longitude;
 
-    // Travelers
+    // Travelers count
     this.travelers = data.travelers;
 
     // User information
@@ -416,11 +416,7 @@ class Booking {
 
   static async delete(id) {
     const result = await query(
-      `
-        DELETE FROM bookings
-        WHERE id = $1
-        RETURNING id
-      `,
+      'DELETE FROM bookings WHERE id = $1 RETURNING id',
       [id]
     );
 
