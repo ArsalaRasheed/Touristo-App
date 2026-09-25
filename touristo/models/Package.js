@@ -63,7 +63,9 @@ class Package {
       ORDER BY p.created_at DESC
     `);
 
-    return result.rows.map(row => new Package(row));
+    return result.rows.map(
+      row => new Package(row)
+    );
   }
 
   static async findByDestinationId(destinationId) {
@@ -101,7 +103,9 @@ class Package {
       ORDER BY p.created_at DESC
     `, [destinationId]);
 
-    return result.rows.map(row => new Package(row));
+    return result.rows.map(
+      row => new Package(row)
+    );
   }
 
   static async findById(id) {
@@ -180,7 +184,9 @@ class Package {
       ORDER BY p.created_at DESC
     `, [hostId]);
 
-    return result.rows.map(row => new Package(row));
+    return result.rows.map(
+      row => new Package(row)
+    );
   }
 
   static async create(packageData) {
@@ -202,6 +208,23 @@ class Package {
       availability_end
     } = packageData;
 
+    /*
+     * JSONB requires valid JSON text.
+     *
+     * The controller gives us a JavaScript
+     * array/object, so stringify it before
+     * sending it to PostgreSQL.
+     */
+    let itineraryJson = null;
+
+    if (
+      itinerary !== undefined &&
+      itinerary !== null
+    ) {
+      itineraryJson =
+        JSON.stringify(itinerary);
+    }
+
     const result = await query(
       `
         INSERT INTO packages (
@@ -222,9 +245,21 @@ class Package {
           availability_end
         )
         VALUES (
-          $1, $2, $3, $4, $5,
-          $6, $7, $8, $9, $10,
-          $11, $12, $13, $14, $15
+          $1,
+          $2,
+          $3,
+          $4,
+          $5,
+          $6,
+          $7,
+          $8,
+          $9,
+          $10,
+          $11,
+          $12,
+          $13,
+          $14,
+          $15
         )
         RETURNING *
       `,
@@ -240,14 +275,16 @@ class Package {
         destination,
         inclusions,
         exclusions,
-        itinerary,
+        itineraryJson,
         group_size,
         availability_start,
         availability_end
       ]
     );
 
-    return new Package(result.rows[0]);
+    return new Package(
+      result.rows[0]
+    );
   }
 
   static async update(id, packageData) {
@@ -267,6 +304,16 @@ class Package {
       availability_start,
       availability_end
     } = packageData;
+
+    let itineraryJson = null;
+
+    if (
+      itinerary !== undefined &&
+      itinerary !== null
+    ) {
+      itineraryJson =
+        JSON.stringify(itinerary);
+    }
 
     const result = await query(
       `
@@ -301,7 +348,7 @@ class Package {
         destination,
         inclusions,
         exclusions,
-        itinerary,
+        itineraryJson,
         group_size,
         availability_start,
         availability_end,
@@ -313,7 +360,9 @@ class Package {
       return null;
     }
 
-    return new Package(result.rows[0]);
+    return new Package(
+      result.rows[0]
+    );
   }
 
   static async delete(id) {
