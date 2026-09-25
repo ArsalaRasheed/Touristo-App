@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 const API_BASE = '';
 
+
 export default function InboxScreen() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -21,6 +22,59 @@ export default function InboxScreen() {
     const messagesEndRef = useRef(null);
 
     const token = localStorage.getItem('touristo_token');
+    const storedUser = JSON.parse(
+        localStorage.getItem('touristo_user') || '{}'
+    );
+
+    const isHost = storedUser?.role === 'host';
+
+    const messagingText = {
+        headerTitle: isHost
+            ? 'Customer Inquiries'
+            : 'Messages',
+
+        headerSubtitle: isHost
+            ? 'Connect directly with your travelers'
+            : 'Connect directly with your tour hosts',
+
+        emptyTitle: isHost
+            ? 'No customer inquiries yet'
+            : 'No conversations yet',
+
+        emptyDescription: isHost
+            ? 'When a traveler contacts you about a package, your conversation will appear here.'
+            : 'When you contact a host about a package, your conversation will appear here.',
+
+        emptyButton: isHost
+            ? 'View My Packages'
+            : 'Explore Destinations',
+
+        emptyButtonRoute: isHost
+            ? '/my-packages'
+            : '/destinations',
+
+        panelTitle: isHost
+            ? 'Your inquiries'
+            : 'Your messages',
+
+        panelDescription: isHost
+            ? 'Select a conversation to chat with a traveler about their travel plans, packages and questions.'
+            : 'Select a conversation to chat with a host about your travel plans, packages and questions.',
+
+        otherPartyLabel: isHost
+            ? 'Traveler'
+            : 'Tour Host',
+
+        conversationFallback: isHost
+            ? 'Start a conversation with this traveler'
+            : 'Start a conversation with this host',
+
+        startTitle: 'Start the conversation',
+
+        startDescription: isHost
+            ? 'Reply to the traveler about availability, itinerary, pricing or anything else about their trip.'
+            : 'Ask the host about availability, itinerary, pricing or anything else about your trip.'
+    };
 
     // =====================================================
     // AUTH HEADERS
@@ -446,11 +500,11 @@ export default function InboxScreen() {
                             </button>
 
                             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                                Messages
+                                {messagingText.headerTitle}
                             </h1>
 
                             <p className="text-sm text-gray-500 mt-1">
-                                Connect directly with your tour hosts
+                                {messagingText.headerSubtitle}
                             </p>
 
                         </div>
@@ -533,21 +587,20 @@ export default function InboxScreen() {
                                         </div>
 
                                         <h3 className="font-semibold text-gray-900">
-                                            No conversations yet
+                                            {messagingText.emptyTitle}
                                         </h3>
 
                                         <p className="text-sm text-gray-500 mt-2 leading-6">
-                                            When you contact a host about a package,
-                                            your conversation will appear here.
+                                            {messagingText.emptyDescription}
                                         </p>
 
                                         <button
                                             onClick={() =>
-                                                navigate('/destinations')
+                                                navigate(messagingText.emptyButtonRoute)
                                             }
                                             className="mt-5 px-5 py-2.5 rounded-xl bg-[#436e0c] text-white text-sm font-semibold hover:opacity-90 transition"
                                         >
-                                            Explore Destinations
+                                            {messagingText.emptyButton}
                                         </button>
 
                                     </div>
@@ -677,7 +730,7 @@ export default function InboxScreen() {
                                                                 `}
                                                             >
                                                                 {conversation.last_message_snippet ||
-                                                                    'Start a conversation with this host'}
+                                                                    messagingText.conversationFallback}
                                                             </p>
 
 
@@ -741,13 +794,11 @@ export default function InboxScreen() {
                                         </div>
 
                                         <h2 className="text-xl font-bold text-gray-900">
-                                            Your messages
+                                            {messagingText.panelTitle}
                                         </h2>
 
                                         <p className="text-sm text-gray-500 mt-2 leading-6">
-                                            Select a conversation to chat with
-                                            a host about your travel plans,
-                                            packages and questions.
+                                            {messagingText.panelDescription}
                                         </p>
 
                                     </div>
@@ -808,7 +859,7 @@ export default function InboxScreen() {
                                                 </div>
 
                                                 <p className="text-xs text-gray-500">
-                                                    Tour Host
+                                                    {messagingText.otherPartyLabel}
                                                     {activeConversation.rating_score
                                                         ? ` • ★ ${Number(
                                                             activeConversation.rating_score
@@ -899,13 +950,11 @@ export default function InboxScreen() {
                                                     </div>
 
                                                     <h3 className="font-semibold text-gray-900">
-                                                        Start the conversation
+                                                        {messagingText.startTitle}
                                                     </h3>
 
                                                     <p className="text-sm text-gray-500 mt-1">
-                                                        Ask the host about availability,
-                                                        itinerary, pricing or anything
-                                                        else about your trip.
+                                                        {messagingText.startDescription}
                                                     </p>
 
                                                 </div>
