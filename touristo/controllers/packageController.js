@@ -1,64 +1,309 @@
 const Package = require('../models/Package');
 const { query } = require('../config/database');
 
+/*
+|--------------------------------------------------------------------------
+| Helpers
+|--------------------------------------------------------------------------
+*/
+
+function normalizeText(value) {
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  const trimmed = value.trim();
+
+  return trimmed || null;
+}
+
+function normalizeArray(value) {
+  if (Array.isArray(value)) {
+    return value
+      .map(item =>
+        typeof item === 'string'
+          ? item.trim()
+          : item
+      )
+      .filter(item => item !== '');
+  }
+
+  if (typeof value === 'string') {
+    return value
+      .split(/\r?\n/)
+      .map(item => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
+/*
+|--------------------------------------------------------------------------
+| Convert itinerary input into JSONB-safe structure
+|--------------------------------------------------------------------------
+|
+| Accepts:
+|
+| 1. Already-valid JSON
+| 2. JSON string
+| 3. Normal textarea text
+|
+| Example normal text:
+|
+| Day 1: Arrival in Islamabad
+| Visit Faisal Mosque.
+|
+| Day 2: Islamabad Tour
+| Visit Daman-e-Koh.
+|
+|--------------------------------------------------------------------------
+*/
+
+function normalizeItinerary(value) {
+  if (
+    value === undefined ||
+    value === null ||
+    value === ''
+  ) {
+    return [];
+  }
+
+  // Already an array/object
+  if (
+    Array.isArray(value) ||
+    typeof value === 'object'
+  ) {
+    return value;
+  }
+
+  if (typeof value !== 'string') {
+    return [];
+  }
+
+  const text = value.trim();
+
+  if (!text) {
+    return [];
+  }
+
+  /*
+   * First try proper JSON.
+   */
+  try {
+    const parsed = JSON.parse(text);
+
+    if (
+      Array.isArray(parsed) ||
+      typeof parsed === 'object'
+    ) {
+      return parsed;
+    }
+  } catch {
+    // Not JSON.
+    // Continue and convert normal text.
+  }
+
+  /*
+   * Convert normal textarea content into
+   * day-by-day itinerary objects.
+   */
+
+  const lines = text
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean);
+
+  if (lines.length === 0) {
+    return [];
+  }
+
+  const days = [];
+
+  let currentDay = null;
+
+  for (const line of lines) {
+
+    /*
+     * Recognize:
+     *
+     * Day 1
+     * Day 1:
+     * Day 1 - Arrival
+     * Day 1: Arrival
+     * day 2 - Islamabad Tour
+     */
+    const dayMatch = line.match(
+      /^day\s*(\d+)\s*(?:[:\-–—]\s*(.*))?$/i
+    );
+
+    if (dayMatch) {
+
+      if (currentDay) {
+        days.push(currentDay);
+      }
+
+      const dayNumber =
+        Number(dayMatch[1]);
+
+      const heading =
+        dayMatch[2]?.trim() || '';
+
+      currentDay = {
+        day: dayNumber,
+        title:
+          heading ||
+          `Day ${dayNumber}`,
+        description: ''
+      };
+
+      continue;
+    }
+
+    /*
+     * If no "Day X" heading exists yet,
+     * put the content into Day 1.
+     */
+    if (!currentDay) {
+      currentDay = {
+        day: 1,
+        title: 'Itinerary',
+        description: line
+      };
+
+      continue;
+    }
+
+    /*
+     * Add subsequent lines to the
+     * current day's description.
+     */
+    currentDay.description =
+      currentDay.description
+        ? `${currentDay.description} ${line}`
+        : line;
+  }
+
+  if (currentDay) {
+    days.push(currentDay);
+  }
+
+  /*
+   * If the parser somehow produced nothing,
+   * preserve the text rather than losing it.
+   */
+  if (days.length === 0) {
+    return [
+      {
+        day: 1,
+        title: 'Itinerary',
+        description: text
+      }
+    ];
+  }
+
+  return days;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Package Controller
+|--------------------------------------------------------------------------
+*/
+
 const packageController = {
 
-  // Get all packages
+  /*
+  |--------------------------------------------------------------------------
+  | Get all packages
+  |--------------------------------------------------------------------------
+  */
+
   async getAllPackages(req, res) {
     try {
-      const packages = await Package.findAll();
+
+      const packages =
+        await Package.findAll();
 
       res.status(200).json({
         status: 'success',
         results: packages.length,
-        data: { packages },
+        data: {
+          packages
+        }
       });
+
     } catch (err) {
-      console.error('Error in getAllPackages:', err);
+
+      console.error(
+        'Error in getAllPackages:',
+        err
+      );
 
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: err.message
       });
     }
   },
 
-  // Get package by ID
+  /*
+  |--------------------------------------------------------------------------
+  | Get package by ID
+  |--------------------------------------------------------------------------
+  */
+
   async getPackageById(req, res) {
     try {
+
       const { id } = req.params;
 
-      const pkg = await Package.findById(id);
+      const pkg =
+        await Package.findById(id);
 
       if (!pkg) {
         return res.status(404).json({
           status: 'fail',
-          message: 'Package not found',
+          message: 'Package not found'
         });
       }
 
-      const reviewsResult = await query(`
-        SELECT
-          r.id,
-          r.user_id,
-          r.rating,
-          r.comment,
-          r.created_at,
-          u.name AS reviewer_name
-        FROM reviews r
-        JOIN users u
-          ON r.user_id = u.id
-        WHERE package_id = $1
-        ORDER BY created_at DESC
-      `, [id]);
+      /*
+       * Reviews
+       */
+      const reviewsResult =
+        await query(
+          `
+            SELECT
+              r.id,
+              r.user_id,
+              r.rating,
+              r.comment,
+              r.created_at,
+              u.name AS reviewer_name
+            FROM reviews r
+            JOIN users u
+              ON r.user_id = u.id
+            WHERE r.package_id = $1
+            ORDER BY r.created_at DESC
+          `,
+          [id]
+        );
 
-      const ratingsResult = await query(`
-        SELECT
-          AVG(rating) AS avg_rating,
-          COUNT(*) AS total_reviews
-        FROM reviews
-        WHERE package_id = $1
-      `, [id]);
+      /*
+       * Rating summary
+       */
+      const ratingsResult =
+        await query(
+          `
+            SELECT
+              AVG(rating) AS avg_rating,
+              COUNT(*) AS total_reviews
+            FROM reviews
+            WHERE package_id = $1
+          `,
+          [id]
+        );
 
       const avgRating =
         parseFloat(
@@ -70,6 +315,9 @@ const packageController = {
           ratingsResult.rows[0]?.total_reviews
         ) || 0;
 
+      /*
+       * AI review summary
+       */
       const {
         generateAndCacheSummary,
         getCachedSummary
@@ -78,6 +326,7 @@ const packageController = {
       let reviewSummary = null;
 
       try {
+
         reviewSummary =
           await getCachedSummary(id);
 
@@ -85,7 +334,9 @@ const packageController = {
           reviewSummary =
             await generateAndCacheSummary(id);
         }
+
       } catch (summaryErr) {
+
         console.error(
           'Error getting review summary:',
           summaryErr
@@ -94,21 +345,27 @@ const packageController = {
 
       const packageWithData = {
         ...pkg,
-        reviews: reviewsResult.rows,
-        avg_rating: avgRating,
-        total_reviews: totalReviews,
-        group_size: pkg.group_size
+        reviews:
+          reviewsResult.rows,
+        avg_rating:
+          avgRating,
+        total_reviews:
+          totalReviews,
+        group_size:
+          pkg.group_size
       };
 
       res.status(200).json({
         status: 'success',
         data: {
-          package: packageWithData,
+          package:
+            packageWithData,
           reviewSummary
-        },
+        }
       });
 
     } catch (err) {
+
       console.error(
         'Error in getPackageById:',
         err
@@ -116,51 +373,67 @@ const packageController = {
 
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: err.message
       });
     }
   },
 
-  // Get packages by host ID
+  /*
+  |--------------------------------------------------------------------------
+  | Get packages by host
+  |--------------------------------------------------------------------------
+  */
+
   async getPackagesByHostId(req, res) {
     try {
-      const { hostId } = req.params;
+
+      const { hostId } =
+        req.params;
 
       const packages =
-        await Package.findByHostId(hostId);
+        await Package.findByHostId(
+          hostId
+        );
 
       const packagesWithBookings =
         await Promise.all(
-          packages.map(async pkg => {
-            const bookingCountResult =
-              await query(
-                `
-                  SELECT COUNT(*) AS count
-                  FROM bookings
-                  WHERE package_id = $1
-                `,
-                [pkg.id]
-              );
+          packages.map(
+            async pkg => {
 
-            return {
-              ...pkg,
-              booking_count:
-                parseInt(
-                  bookingCountResult.rows[0]?.count
-                ) || 0
-            };
-          })
+              const bookingCountResult =
+                await query(
+                  `
+                    SELECT COUNT(*) AS count
+                    FROM bookings
+                    WHERE package_id = $1
+                  `,
+                  [pkg.id]
+                );
+
+              return {
+                ...pkg,
+                booking_count:
+                  parseInt(
+                    bookingCountResult
+                      .rows[0]?.count
+                  ) || 0
+              };
+            }
+          )
         );
 
       res.status(200).json({
         status: 'success',
-        results: packagesWithBookings.length,
+        results:
+          packagesWithBookings.length,
         data: {
-          packages: packagesWithBookings
-        },
+          packages:
+            packagesWithBookings
+        }
       });
 
     } catch (err) {
+
       console.error(
         'Error in getPackagesByHostId:',
         err
@@ -168,15 +441,25 @@ const packageController = {
 
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: err.message
       });
     }
   },
 
-  // Get packages by destination ID
-  async getPackagesByDestinationId(req, res) {
+  /*
+  |--------------------------------------------------------------------------
+  | Get packages by destination
+  |--------------------------------------------------------------------------
+  */
+
+  async getPackagesByDestinationId(
+    req,
+    res
+  ) {
     try {
-      const { destinationId } = req.params;
+
+      const { destinationId } =
+        req.params;
 
       const packages =
         await Package.findByDestinationId(
@@ -185,11 +468,15 @@ const packageController = {
 
       res.status(200).json({
         status: 'success',
-        results: packages.length,
-        data: { packages },
+        results:
+          packages.length,
+        data: {
+          packages
+        }
       });
 
     } catch (err) {
+
       console.error(
         'Error in getPackagesByDestinationId:',
         err
@@ -197,14 +484,21 @@ const packageController = {
 
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: err.message
       });
     }
   },
 
-  // Create a new package
+  /*
+  |--------------------------------------------------------------------------
+  | Create Package
+  |--------------------------------------------------------------------------
+  */
+
   async createPackage(req, res) {
+
     try {
+
       const {
         host_id,
         destination_id,
@@ -223,61 +517,86 @@ const packageController = {
         availability_end
       } = req.body;
 
-      // --------------------------------------------------
-      // BASIC VALIDATION
-      // --------------------------------------------------
+      /*
+       * ------------------------------------------------------
+       * HOST
+       * ------------------------------------------------------
+       */
 
       const parsedHostId =
         Number(host_id);
 
       if (
-        !Number.isInteger(parsedHostId) ||
+        !Number.isInteger(
+          parsedHostId
+        ) ||
         parsedHostId <= 0
       ) {
         return res.status(400).json({
           status: 'fail',
           message:
-            'Host ID must be a positive integer',
+            'Host ID must be a positive integer'
         });
       }
 
+      /*
+       * ------------------------------------------------------
+       * TITLE
+       * ------------------------------------------------------
+       */
+
       if (
-        !title ||
         typeof title !== 'string' ||
         !title.trim()
       ) {
         return res.status(400).json({
           status: 'fail',
           message:
-            'Package title is required',
+            'Package title is required'
         });
       }
+
+      const sanitizedTitle =
+        title.trim();
+
+      /*
+       * ------------------------------------------------------
+       * PRICE
+       * ------------------------------------------------------
+       */
 
       const parsedPrice =
         Number(price);
 
       if (
-        !Number.isFinite(parsedPrice) ||
+        !Number.isFinite(
+          parsedPrice
+        ) ||
         parsedPrice < 0
       ) {
         return res.status(400).json({
           status: 'fail',
           message:
-            'Price must be a valid non-negative number',
+            'Price must be a valid non-negative number'
         });
       }
 
-      // --------------------------------------------------
-      // DURATION
-      // --------------------------------------------------
+      /*
+       * ------------------------------------------------------
+       * DURATION
+       * ------------------------------------------------------
+       */
 
       let sanitizedDuration = null;
 
       if (
-        duration_days !== undefined &&
-        duration_days !== null &&
+        duration_days !==
+          undefined &&
+        duration_days !==
+          null &&
         duration_days !== ''
       ) {
+
         sanitizedDuration =
           Number(duration_days);
 
@@ -290,20 +609,16 @@ const packageController = {
           return res.status(400).json({
             status: 'fail',
             message:
-              'Duration must be a positive integer',
+              'Duration must be a positive integer'
           });
         }
       }
 
-      // --------------------------------------------------
-      // DESTINATION
-      //
-      // If frontend sends destination_id,
-      // use it.
-      //
-      // Otherwise find/create destination
-      // using the destination text.
-      // --------------------------------------------------
+      /*
+       * ------------------------------------------------------
+       * DESTINATION
+       * ------------------------------------------------------
+       */
 
       let resolvedDestinationId =
         destination_id
@@ -311,81 +626,31 @@ const packageController = {
           : null;
 
       let destinationName =
-        typeof destination === 'string'
+        typeof destination ===
+        'string'
           ? destination.trim()
           : '';
 
-      if (
-        resolvedDestinationId &&
-        !Number.isInteger(
-          resolvedDestinationId
-        )
-      ) {
-        return res.status(400).json({
-          status: 'fail',
-          message:
-            'Destination ID must be a valid integer',
-        });
-      }
+      /*
+       * If destination_id was supplied,
+       * verify it exists.
+       */
 
-      if (!resolvedDestinationId) {
+      if (resolvedDestinationId) {
 
-        if (!destinationName) {
+        if (
+          !Number.isInteger(
+            resolvedDestinationId
+          ) ||
+          resolvedDestinationId <= 0
+        ) {
           return res.status(400).json({
             status: 'fail',
             message:
-              'Destination is required',
+              'Destination ID must be a valid integer'
           });
         }
 
-        // Find existing destination
-        const existingDestination =
-          await query(
-            `
-              SELECT id, name
-              FROM destinations
-              WHERE LOWER(TRIM(name))
-                    = LOWER(TRIM($1))
-              LIMIT 1
-            `,
-            [destinationName]
-          );
-
-        if (
-          existingDestination.rows.length > 0
-        ) {
-          resolvedDestinationId =
-            existingDestination.rows[0].id;
-
-          destinationName =
-            existingDestination.rows[0].name;
-        } else {
-
-          // Create destination if it doesn't exist.
-          // Coordinates remain NULL until the
-          // destination is properly geo-located.
-          const newDestination =
-            await query(
-              `
-                INSERT INTO destinations (
-                  name
-                )
-                VALUES ($1)
-                RETURNING id, name
-              `,
-              [destinationName]
-            );
-
-          resolvedDestinationId =
-            newDestination.rows[0].id;
-
-          destinationName =
-            newDestination.rows[0].name;
-        }
-
-      } else {
-
-        // Verify destination ID exists
         const destinationResult =
           await query(
             `
@@ -403,110 +668,185 @@ const packageController = {
           return res.status(400).json({
             status: 'fail',
             message:
-              'Selected destination does not exist',
+              'Selected destination does not exist'
           });
         }
 
         if (!destinationName) {
           destinationName =
-            destinationResult.rows[0].name;
+            destinationResult.rows[0]
+              .name;
+        }
+
+      } else {
+
+        /*
+         * No destination_id.
+         * Resolve it using the destination text.
+         */
+
+        if (!destinationName) {
+          return res.status(400).json({
+            status: 'fail',
+            message:
+              'Destination is required'
+          });
+        }
+
+        const existingDestination =
+          await query(
+            `
+              SELECT id, name
+              FROM destinations
+              WHERE LOWER(TRIM(name))
+                    =
+                    LOWER(TRIM($1))
+              LIMIT 1
+            `,
+            [destinationName]
+          );
+
+        if (
+          existingDestination.rows
+            .length > 0
+        ) {
+
+          resolvedDestinationId =
+            existingDestination
+              .rows[0]
+              .id;
+
+          destinationName =
+            existingDestination
+              .rows[0]
+              .name;
+
+        } else {
+
+          /*
+           * Create new destination.
+           *
+           * Coordinates are nullable in the
+           * existing destinations schema.
+           */
+          const newDestination =
+            await query(
+              `
+                INSERT INTO destinations (
+                  name
+                )
+                VALUES ($1)
+                RETURNING id, name
+              `,
+              [destinationName]
+            );
+
+          resolvedDestinationId =
+            newDestination
+              .rows[0]
+              .id;
+
+          destinationName =
+            newDestination
+              .rows[0]
+              .name;
         }
       }
 
-      // --------------------------------------------------
-      // SANITIZE OTHER FIELDS
-      // --------------------------------------------------
-
-      const sanitizedTitle =
-        title.trim();
+      /*
+       * ------------------------------------------------------
+       * DESCRIPTION
+       * ------------------------------------------------------
+       */
 
       const sanitizedDescription =
-        typeof description === 'string'
-          ? description.trim().substring(0, 5000)
+        typeof description ===
+        'string'
+          ? description
+              .trim()
+              .substring(0, 5000)
           : null;
 
+      /*
+       * ------------------------------------------------------
+       * LOCATION
+       * ------------------------------------------------------
+       */
+
       const sanitizedLocation =
-        typeof location === 'string'
+        typeof location ===
+        'string' &&
+        location.trim()
           ? location.trim()
           : destinationName;
 
+      /*
+       * ------------------------------------------------------
+       * IMAGE
+       * ------------------------------------------------------
+       */
+
       const sanitizedImage =
-        typeof image === 'string' &&
+        typeof image ===
+          'string' &&
         image.trim()
           ? image.trim()
           : null;
 
-      // --------------------------------------------------
-      // ARRAY FIELDS
-      // --------------------------------------------------
+      /*
+       * ------------------------------------------------------
+       * INCLUSIONS / EXCLUSIONS
+       * ------------------------------------------------------
+       */
 
-      let sanitizedInclusions = [];
-
-      if (Array.isArray(inclusions)) {
-        sanitizedInclusions =
+      const sanitizedInclusions =
+        normalizeArray(
           inclusions
-            .map(item =>
-              typeof item === 'string'
-                ? item.trim()
-                : String(item)
-            )
-            .filter(Boolean);
-      }
+        );
 
-      let sanitizedExclusions = [];
-
-      if (Array.isArray(exclusions)) {
-        sanitizedExclusions =
+      const sanitizedExclusions =
+        normalizeArray(
           exclusions
-            .map(item =>
-              typeof item === 'string'
-                ? item.trim()
-                : String(item)
-            )
-            .filter(Boolean);
-      }
+        );
 
-      // --------------------------------------------------
-      // ITINERARY
-      // --------------------------------------------------
+      /*
+       * ------------------------------------------------------
+       * ITINERARY
+       *
+       * IMPORTANT:
+       * Normal textarea text is now accepted.
+       * It does NOT have to be JSON.
+       * ------------------------------------------------------
+       */
 
-      let sanitizedItinerary =
-        itinerary ?? null;
+      const sanitizedItinerary =
+        normalizeItinerary(
+          itinerary
+        );
 
-      if (
-        typeof sanitizedItinerary === 'string' &&
-        sanitizedItinerary.trim()
-      ) {
-        try {
-          sanitizedItinerary =
-            JSON.parse(
-              sanitizedItinerary
-            );
-        } catch (parseError) {
-          return res.status(400).json({
-            status: 'fail',
-            message:
-              'Itinerary must contain valid JSON',
-          });
-        }
-      }
-
-      // --------------------------------------------------
-      // GROUP SIZE
-      // --------------------------------------------------
+      /*
+       * ------------------------------------------------------
+       * GROUP SIZE
+       * ------------------------------------------------------
+       */
 
       const sanitizedGroupSize =
-        typeof group_size === 'string'
+        typeof group_size ===
+        'string'
           ? group_size.trim()
-          : group_size ?? null;
+          : group_size ??
+            null;
 
-      // --------------------------------------------------
-      // CREATE PACKAGE
-      // --------------------------------------------------
+      /*
+       * ------------------------------------------------------
+       * CREATE
+       * ------------------------------------------------------
+       */
 
       const newPackage =
         await Package.create({
-          host_id: parsedHostId,
+          host_id:
+            parsedHostId,
 
           destination_id:
             resolvedDestinationId,
@@ -551,8 +891,9 @@ const packageController = {
       res.status(201).json({
         status: 'success',
         data: {
-          package: newPackage
-        },
+          package:
+            newPackage
+        }
       });
 
     } catch (err) {
@@ -564,15 +905,24 @@ const packageController = {
 
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message:
+          err.message
       });
     }
   },
 
-  // Update package
+  /*
+  |--------------------------------------------------------------------------
+  | Update Package
+  |--------------------------------------------------------------------------
+  */
+
   async updatePackage(req, res) {
+
     try {
-      const { id } = req.params;
+
+      const { id } =
+        req.params;
 
       const {
         title,
@@ -591,18 +941,30 @@ const packageController = {
         availability_end
       } = req.body;
 
+      /*
+       * Destination
+       */
+
       let resolvedDestinationId =
         destination_id
           ? Number(destination_id)
           : null;
 
       let destinationName =
-        typeof destination === 'string'
+        typeof destination ===
+        'string'
           ? destination.trim()
           : '';
 
-      // Resolve destination for update
-      if (!resolvedDestinationId && destinationName) {
+      if (!resolvedDestinationId) {
+
+        if (!destinationName) {
+          return res.status(400).json({
+            status: 'fail',
+            message:
+              'Destination is required'
+          });
+        }
 
         const existingDestination =
           await query(
@@ -610,26 +972,36 @@ const packageController = {
               SELECT id, name
               FROM destinations
               WHERE LOWER(TRIM(name))
-                    = LOWER(TRIM($1))
+                    =
+                    LOWER(TRIM($1))
               LIMIT 1
             `,
             [destinationName]
           );
 
         if (
-          existingDestination.rows.length > 0
+          existingDestination.rows
+            .length > 0
         ) {
+
           resolvedDestinationId =
-            existingDestination.rows[0].id;
+            existingDestination
+              .rows[0]
+              .id;
 
           destinationName =
-            existingDestination.rows[0].name;
+            existingDestination
+              .rows[0]
+              .name;
+
         } else {
 
           const newDestination =
             await query(
               `
-                INSERT INTO destinations (name)
+                INSERT INTO destinations (
+                  name
+                )
                 VALUES ($1)
                 RETURNING id, name
               `,
@@ -637,35 +1009,81 @@ const packageController = {
             );
 
           resolvedDestinationId =
-            newDestination.rows[0].id;
+            newDestination
+              .rows[0]
+              .id;
 
           destinationName =
-            newDestination.rows[0].name;
+            newDestination
+              .rows[0]
+              .name;
         }
+
+      } else {
+
+        const destinationResult =
+          await query(
+            `
+              SELECT id, name
+              FROM destinations
+              WHERE id = $1
+              LIMIT 1
+            `,
+            [resolvedDestinationId]
+          );
+
+        if (
+          destinationResult.rows.length === 0
+        ) {
+          return res.status(400).json({
+            status: 'fail',
+            message:
+              'Selected destination does not exist'
+          });
+        }
+
+        destinationName =
+          destinationName ||
+          destinationResult
+            .rows[0]
+            .name;
       }
 
-      let parsedPrice =
+      /*
+       * Price
+       */
+
+      const parsedPrice =
         Number(price);
 
       if (
-        !Number.isFinite(parsedPrice) ||
+        !Number.isFinite(
+          parsedPrice
+        ) ||
         parsedPrice < 0
       ) {
         return res.status(400).json({
           status: 'fail',
           message:
-            'Price must be a valid non-negative number',
+            'Price must be a valid non-negative number'
         });
       }
+
+      /*
+       * Duration
+       */
 
       let parsedDuration =
         duration_days;
 
       if (
-        duration_days !== undefined &&
-        duration_days !== null &&
+        duration_days !==
+          undefined &&
+        duration_days !==
+          null &&
         duration_days !== ''
       ) {
+
         parsedDuration =
           Number(duration_days);
 
@@ -678,100 +1096,102 @@ const packageController = {
           return res.status(400).json({
             status: 'fail',
             message:
-              'Duration must be a positive integer',
+              'Duration must be a positive integer'
           });
         }
       }
 
-      let parsedItinerary =
-        itinerary ?? null;
+      /*
+       * Itinerary
+       */
 
-      if (
-        typeof parsedItinerary === 'string' &&
-        parsedItinerary.trim()
-      ) {
-        try {
-          parsedItinerary =
-            JSON.parse(parsedItinerary);
-        } catch {
-          return res.status(400).json({
-            status: 'fail',
-            message:
-              'Itinerary must contain valid JSON',
-          });
-        }
-      }
+      const sanitizedItinerary =
+        normalizeItinerary(
+          itinerary
+        );
+
+      /*
+       * Update
+       */
 
       const updatedPackage =
-        await Package.update(id, {
-          title:
-            typeof title === 'string'
-              ? title.trim()
-              : title,
+        await Package.update(
+          id,
+          {
+            title:
+              typeof title ===
+              'string'
+                ? title.trim()
+                : title,
 
-          description:
-            typeof description === 'string'
-              ? description.trim()
-              : description,
+            description:
+              typeof description ===
+              'string'
+                ? description.trim()
+                : description,
 
-          price:
-            parsedPrice,
+            price:
+              parsedPrice,
 
-          duration_days:
-            parsedDuration,
+            duration_days:
+              parsedDuration,
 
-          location:
-            typeof location === 'string'
-              ? location.trim()
-              : location,
+            location:
+              typeof location ===
+              'string'
+                ? location.trim()
+                : location,
 
-          image:
-            typeof image === 'string'
-              ? image.trim()
-              : image,
+            image:
+              typeof image ===
+              'string'
+                ? image.trim()
+                : image,
 
-          destination_id:
-            resolvedDestinationId,
+            destination_id:
+              resolvedDestinationId,
 
-          destination:
-            destinationName ||
-            destination,
+            destination:
+              destinationName,
 
-          inclusions:
-            Array.isArray(inclusions)
-              ? inclusions
-              : [],
+            inclusions:
+              normalizeArray(
+                inclusions
+              ),
 
-          exclusions:
-            Array.isArray(exclusions)
-              ? exclusions
-              : [],
+            exclusions:
+              normalizeArray(
+                exclusions
+              ),
 
-          itinerary:
-            parsedItinerary,
+            itinerary:
+              sanitizedItinerary,
 
-          group_size:
-            typeof group_size === 'string'
-              ? group_size.trim()
-              : group_size,
+            group_size:
+              typeof group_size ===
+              'string'
+                ? group_size.trim()
+                : group_size,
 
-          availability_start,
-          availability_end
-        });
+            availability_start,
+            availability_end
+          }
+        );
 
       if (!updatedPackage) {
         return res.status(404).json({
           status: 'fail',
           message:
-            'Package not found',
+            'Package not found'
         });
       }
 
       res.status(200).json({
         status: 'success',
         data: {
-          package: updatedPackage
-        },
+          package:
+            updatedPackage
+        }
       });
 
     } catch (err) {
@@ -783,15 +1203,24 @@ const packageController = {
 
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message:
+          err.message
       });
     }
   },
 
-  // Delete package
+  /*
+  |--------------------------------------------------------------------------
+  | Delete Package
+  |--------------------------------------------------------------------------
+  */
+
   async deletePackage(req, res) {
+
     try {
-      const { id } = req.params;
+
+      const { id } =
+        req.params;
 
       const deleted =
         await Package.delete(id);
@@ -800,13 +1229,13 @@ const packageController = {
         return res.status(404).json({
           status: 'fail',
           message:
-            'Package not found',
+            'Package not found'
         });
       }
 
       res.status(204).json({
         status: 'success',
-        data: null,
+        data: null
       });
 
     } catch (err) {
@@ -818,10 +1247,12 @@ const packageController = {
 
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message:
+          err.message
       });
     }
   }
 };
 
-module.exports = packageController;
+module.exports =
+  packageController;
