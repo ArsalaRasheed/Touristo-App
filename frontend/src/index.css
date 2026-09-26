@@ -2,29 +2,87 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =========================================================
+   TOURISTO — PREMIUM DESIGN SYSTEM
+   ========================================================= */
+
 :root {
-  --bg-primary: #F4F4F6;
-  --text-primary: #1C1C1E;
-  --text-secondary: #5C5C5E;
+  /* ---------- Brand ---------- */
+  --brand-primary: #163B2F;
+  --brand-primary-hover: #1E5140;
+  --brand-primary-soft: #EAF0EC;
 
-  --accent-primary: #0E4D52;
-  --accent-primary-hover: #2A6D72;
+  --brand-gold: #C8A45D;
+  --brand-gold-light: #E7D3A3;
+  --brand-gold-soft: #F5EFE1;
 
+  /* ---------- Backgrounds ---------- */
+  --bg-primary: #F7F5EF;
+  --bg-secondary: #F1EFE8;
+
+  /* ---------- Surfaces ---------- */
   --surface-primary: #FFFFFF;
-  --surface-secondary: #E8E8EA;
+  --surface-secondary: #F8F7F3;
 
-  --border-primary: #D8D8DA;
+  /* ---------- Typography ---------- */
+  --text-primary: #17221D;
+  --text-secondary: #66716B;
+  --text-muted: #8A928D;
+  --text-inverse: #FFFFFF;
 
-  --nav-footer-bg: #1C1C1E;
-  --nav-text: #FFFFFF;
+  /* ---------- Borders ---------- */
+  --border-primary: #E3E0D7;
+  --border-light: #ECEAE3;
 
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  /* ---------- Semantic ---------- */
+  --success: #2F7655;
+  --success-soft: #EAF4EE;
+
+  --warning: #B9852E;
+  --warning-soft: #FBF3DF;
+
+  --danger: #B84C4C;
+  --danger-soft: #F9EAEA;
+
+  /* ---------- Navigation ---------- */
+  --nav-bg: #FFFFFF;
+  --nav-text: #17221D;
+  --nav-active: #163B2F;
+
+  /* ---------- Shadows ---------- */
+  --shadow-xs:
+    0 1px 2px rgba(23, 34, 29, 0.04);
+
+  --shadow-sm:
+    0 4px 14px rgba(23, 34, 29, 0.06);
+
+  --shadow-md:
+    0 10px 30px rgba(23, 34, 29, 0.08);
+
+  --shadow-lg:
+    0 20px 50px rgba(23, 34, 29, 0.12);
+
+  /* ---------- Radius ---------- */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  /* ---------- Typography ---------- */
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
   line-height: 1.5;
   font-weight: 400;
 
-  /* Keep the app consistently light.
-     Do not let the device/browser dark mode override the UI. */
-  color-scheme: light;
+  color: var(--text-primary);
+  background: var(--bg-primary);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -32,75 +90,41 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-* {
-  box-sizing: border-box;
-}
+/* =========================================================
+   BASE
+   ========================================================= */
 
 html {
-  min-width: 320px;
   background: var(--bg-primary);
+  scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  overflow-x: hidden;
 
-  background-color: var(--bg-primary);
+  background: var(--bg-primary);
   color: var(--text-primary);
-}
 
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
-
-button {
-  margin: 0;
-  cursor: pointer;
-}
-
-button:disabled {
-  cursor: not-allowed;
-}
-
-img {
-  max-width: 100%;
+  overflow-x: hidden;
 }
 
 #root {
-  width: 1126px;
-  max-width: 100%;
-  min-height: calc(100vh - 80px);
+  width: 100%;
+  max-width: 1126px;
+  min-height: 100vh;
 
   margin: 0 auto;
 
-  display: flex;
-  flex-direction: column;
-
-  border-inline: 1px solid var(--border-primary);
+  background: var(--bg-primary);
 
   box-sizing: border-box;
 }
 
-/* Mobile */
-@media (max-width: 768px) {
-  #root {
-    width: 100%;
-    min-height: calc(100vh - 64px);
-    border-inline: none;
-  }
-
-  body {
-    width: 100%;
-    overflow-x: hidden;
-  }
-}
-
-/* Typography */
+/* =========================================================
+   TYPOGRAPHY
+   ========================================================= */
 
 h1,
 h2,
@@ -109,178 +133,334 @@ h4,
 h5,
 h6 {
   margin-top: 0;
+
   color: var(--text-primary);
-  font-weight: 600;
-  line-height: 1.2;
+
+  font-weight: 650;
+  line-height: 1.18;
+  letter-spacing: -0.02em;
 }
 
 h1 {
-  font-size: 2.5rem;
+  font-size: clamp(2rem, 4vw, 3rem);
 }
 
 h2 {
-  font-size: 2rem;
+  font-size: clamp(1.65rem, 3vw, 2.25rem);
 }
 
 h3 {
-  font-size: 1.75rem;
+  font-size: clamp(1.3rem, 2.5vw, 1.65rem);
 }
 
-@media (max-width: 640px) {
-  h1 {
-    font-size: 2rem;
-  }
-
-  h2 {
-    font-size: 1.6rem;
-  }
-
-  h3 {
-    font-size: 1.35rem;
-  }
+p {
+  color: var(--text-secondary);
 }
 
-/* Cards */
+/* =========================================================
+   LINKS
+   ========================================================= */
 
-.card {
-  background-color: var(--surface-primary);
-  border: 1px solid var(--border-primary);
-  border-radius: 1rem;
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.link {
+  color: var(--brand-primary);
+  text-decoration: none;
 
   transition:
-    transform 0.3s ease,
-    box-shadow 0.3s ease,
-    border-color 0.3s ease;
+    color 180ms ease,
+    opacity 180ms ease;
+}
 
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+.link:hover {
+  color: var(--brand-primary-hover);
+}
+
+/* =========================================================
+   PREMIUM CARD SYSTEM
+   ========================================================= */
+
+.card {
+  background: var(--surface-primary);
+
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+
+  box-shadow: var(--shadow-sm);
+
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease,
+    border-color 220ms ease;
 }
 
 .card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  border-color: var(--accent-primary);
+  transform: translateY(-3px);
+
+  border-color: rgba(200, 164, 93, 0.45);
+
+  box-shadow: var(--shadow-md);
 }
 
-/* Shared button classes */
+/* Prevent hover movement on explicitly static cards */
+.card-static:hover {
+  transform: none;
+}
+
+/* =========================================================
+   BUTTON SYSTEM
+   ========================================================= */
 
 .btn {
   min-height: 44px;
 
-  border-radius: 0.75rem;
-  padding: 0.75rem 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 
-  font-size: 1rem;
-  font-weight: 600;
+  padding: 0.7rem 1.15rem;
+
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+
   font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
 
   cursor: pointer;
 
   transition:
-    background-color 0.2s ease,
-    color 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+    transform 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    color 180ms ease;
 
-  border: none;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+/* Primary */
+
 .btn-primary {
-  background-color: var(--accent-primary);
-  color: var(--nav-text);
+  background: var(--brand-primary);
+  color: var(--text-inverse);
+
+  box-shadow:
+    0 4px 12px rgba(22, 59, 47, 0.16);
 }
 
 .btn-primary:hover {
-  background-color: var(--accent-primary-hover);
-  transform: translateY(-2px);
+  background: var(--brand-primary-hover);
+
+  box-shadow:
+    0 7px 18px rgba(22, 59, 47, 0.2);
 }
 
+/* Gold */
+
+.btn-gold {
+  background: var(--brand-gold);
+  color: #1E241F;
+
+  box-shadow:
+    0 4px 12px rgba(200, 164, 93, 0.18);
+}
+
+.btn-gold:hover {
+  background: #B8924D;
+}
+
+/* Secondary */
+
 .btn-secondary {
-  background-color: transparent;
-  color: var(--accent-primary);
-  border: 2px solid var(--accent-primary);
+  background: transparent;
+  color: var(--brand-primary);
+
+  border-color: var(--brand-primary);
 }
 
 .btn-secondary:hover {
-  background-color: var(--accent-primary);
-  color: var(--nav-text);
+  background: var(--brand-primary-soft);
 }
 
-/* Inputs */
+/* Ghost */
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.btn-ghost:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* =========================================================
+   INPUT SYSTEM
+   ========================================================= */
 
 .input {
   width: 100%;
+  min-height: 46px;
 
-  min-height: 44px;
+  box-sizing: border-box;
 
-  padding: 0.75rem 1rem;
+  padding: 0.7rem 0.9rem;
 
-  border-radius: 0.75rem;
   border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
 
-  background-color: var(--surface-primary);
+  background: var(--surface-primary);
   color: var(--text-primary);
 
-  font-size: 1rem;
+  font-family: inherit;
+  font-size: 0.95rem;
 
   transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+.input:hover {
+  border-color: #CBC7BD;
 }
 
 .input:focus {
   outline: none;
 
-  border-color: var(--accent-primary);
+  border-color: var(--brand-primary);
 
   box-shadow:
-    0 0 0 3px rgba(14, 77, 82, 0.15);
+    0 0 0 3px rgba(22, 59, 47, 0.1);
 }
 
-/* Textarea / select consistency */
+/* =========================================================
+   PREMIUM SURFACES
+   ========================================================= */
 
-textarea,
-select {
-  color: var(--text-primary);
-  background-color: var(--surface-primary);
+.surface {
+  background: var(--surface-primary);
 }
 
-textarea:focus,
-select:focus {
-  outline: none;
+.surface-soft {
+  background: var(--surface-secondary);
 }
 
-/* Interactive elements */
-
-.hover-lift {
-  transition: transform 0.2s ease;
+.brand-surface {
+  background: var(--brand-primary);
+  color: var(--text-inverse);
 }
 
-.hover-lift:hover {
-  transform: translateY(-4px);
+.gold-surface {
+  background: var(--brand-gold-soft);
 }
 
-/* Links */
+/* =========================================================
+   BADGES
+   ========================================================= */
 
-.link {
-  color: var(--accent-primary);
-  text-decoration: none;
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 
-  transition: color 0.2s ease;
+  min-height: 28px;
+
+  padding: 0.25rem 0.65rem;
+
+  border-radius: 999px;
+
+  font-size: 0.75rem;
+  font-weight: 650;
+
+  white-space: nowrap;
 }
 
-.link:hover {
-  color: var(--accent-primary-hover);
-  text-decoration: underline;
+.badge-primary {
+  background: var(--brand-primary-soft);
+  color: var(--brand-primary);
 }
 
-/* Loading */
+.badge-gold {
+  background: var(--brand-gold-soft);
+  color: #866828;
+}
+
+.badge-success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.badge-warning {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.badge-danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+/* =========================================================
+   IMAGE / MEDIA
+   ========================================================= */
+
+img {
+  max-width: 100%;
+}
+
+.image-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-premium {
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+}
+
+.image-premium img {
+  transition: transform 500ms cubic-bezier(0.2, 0.65, 0.3, 1);
+}
+
+.image-premium:hover img {
+  transform: scale(1.035);
+}
+
+/* =========================================================
+   FOCUS / ACCESSIBILITY
+   ========================================================= */
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--brand-gold);
+  outline-offset: 3px;
+}
+
+/* =========================================================
+   LOADING
+   ========================================================= */
 
 .loading-spinner {
   display: inline-block;
@@ -288,50 +468,149 @@ select:focus {
   width: 20px;
   height: 20px;
 
-  border: 3px solid rgba(14, 77, 82, 0.2);
+  border: 2px solid rgba(22, 59, 47, 0.14);
+  border-top-color: var(--brand-primary);
+
   border-radius: 50%;
 
-  border-top-color: var(--accent-primary);
-
-  animation: spin 1s linear infinite;
+  animation: touristo-spin 0.8s linear infinite;
 }
 
-@keyframes spin {
+@keyframes touristo-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-/* Accessible focus */
+/* =========================================================
+   SKELETON
+   ========================================================= */
 
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible {
-  outline: 2px solid var(--accent-primary);
-  outline-offset: 2px;
+.skeleton {
+  position: relative;
+
+  overflow: hidden;
+
+  background: #ECEAE3;
 }
 
-/* Prevent accidental horizontal overflow from long content */
+.skeleton::after {
+  content: "";
 
-p,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-span,
-a {
-  overflow-wrap: anywhere;
+  position: absolute;
+  inset: 0;
+
+  transform: translateX(-100%);
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.55),
+      transparent
+    );
+
+  animation: touristo-skeleton 1.5s infinite;
 }
 
-/* Mobile touch targets */
+@keyframes touristo-skeleton {
+  100% {
+    transform: translateX(100%);
+  }
+}
 
-@media (max-width: 640px) {
-  button,
-  .btn {
-    min-height: 44px;
+/* =========================================================
+   PREMIUM MOTION
+   ========================================================= */
+
+.hover-lift {
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-3px);
+}
+
+.fade-in {
+  animation: touristo-fade-in 350ms ease both;
+}
+
+@keyframes touristo-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================================================
+   SCROLLBAR
+   ========================================================= */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #C9C7BF transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #C9C7BF;
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #AAA79D;
+}
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* =========================================================
+   RESPONSIVE ROOT
+   ========================================================= */
+
+@media (max-width: 768px) {
+  #root {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* =========================================================
+   LARGE DESKTOP
+   ========================================================= */
+
+@media (min-width: 1440px) {
+  #root {
+    max-width: 1280px;
   }
 }
