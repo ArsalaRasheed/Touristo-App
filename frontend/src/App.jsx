@@ -112,7 +112,7 @@ const ProtectedRoute = ({
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[color:var(--bg-primary)]">
-        <div className="w-10 h-10 rounded-full border-4 border-[color:var(--accent-primary)]/20 border-t-[color:var(--accent-primary)] animate-spin" />
+        <div className="w-10 h-10 rounded-full border-4 border-[color:var(--brand-primary-soft)] border-t-[color:var(--brand-primary)] animate-spin" />
       </div>
     );
   }

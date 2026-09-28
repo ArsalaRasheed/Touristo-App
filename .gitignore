@@ -30,5 +30,3 @@ Thumbs.db
 # Coverage
 coverage/
 
-# Accidental nested/duplicate local folder
-Users/

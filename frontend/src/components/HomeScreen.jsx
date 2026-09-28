@@ -15,10 +15,7 @@ const HomeScreen = () => {
   const heroImage =
     'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=2200&q=85';
 
-  const fallbackImage =
-    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&q=80';
-
-  // Handle search submission
+   // Handle search submission
   const handleSearch = (e) => {
     e.preventDefault();
 
@@ -441,7 +438,7 @@ const HomeScreen = () => {
                     <div className="relative h-52 overflow-hidden">
 
                       <img
-                        src={pkg.image || fallbackImage}
+                        src={pkg.image}
                         alt={pkg.title || 'Tour package'}
                         className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
                         loading="lazy"
@@ -552,8 +549,7 @@ const HomeScreen = () => {
 
                     <img
                       src={
-                        destination.packages?.[0]?.image ||
-                        fallbackImage
+                        destination.packages?.[0]?.image
                       }
                       alt={destination.name}
                       className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-700"
@@ -653,7 +649,7 @@ const HomeScreen = () => {
                     <div className="relative h-56 overflow-hidden">
 
                       <img
-                        src={pkg.image || fallbackImage}
+                        src={pkg.image}
                         alt={pkg.title || 'Featured experience'}
                         className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
                         loading="lazy"
@@ -750,7 +746,7 @@ const HomeScreen = () => {
             </Link>
 
             <Link
-              to="/ai-planner"
+              to="/trip-planner"
               className="inline-flex items-center justify-center min-h-12 px-7 rounded-full border border-white/25 text-white font-semibold hover:bg-white/10 transition-colors"
             >
               Plan with AI
