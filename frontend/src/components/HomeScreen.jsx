@@ -132,7 +132,7 @@ const HomeScreen = () => {
           <img
             src={heroImage}
             alt="Mountain landscape in Pakistan"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain p-1.5"
           />
 
           <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/20 to-black/65" />
