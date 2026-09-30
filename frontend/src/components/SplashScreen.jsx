@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import logo from '../assets/touristo_logo.png';
+import logo from '../assets/logo_touristo.png';
 const SplashScreen = () => {
   const navigate = useNavigate();
 

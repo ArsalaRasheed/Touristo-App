@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import logo from '../assets/touristo_logo.png';
+import logo from '../assets/logo_touristo.png';
 
 const HomeScreen = () => {
   const [recommendedPackages, setRecommendedPackages] = useState([]);
