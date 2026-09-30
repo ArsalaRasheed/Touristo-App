@@ -19,7 +19,7 @@ const OnboardingScreen = () => {
     {
       title: "Seamless Booking Experience",
       description: "Book your perfect trip with confidence using our secure and easy-to-use platform.",
-      image: "https://images.unsplash.com/photo-1543429776-2782fc586c3f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80"
+      image:  "https://images.unsplash.com/photo-1741795854922-87217b375e79?auto=format&fit=crop&w=1200&q=85"
     }
   ];
 
