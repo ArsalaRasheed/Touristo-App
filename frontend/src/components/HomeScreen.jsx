@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import logo from '../assets/touristo_logo.png';
 
 const HomeScreen = () => {
   const [recommendedPackages, setRecommendedPackages] = useState([]);
@@ -153,10 +154,12 @@ const HomeScreen = () => {
                 to="/"
                 className="flex items-center gap-3 group"
               >
-                <div className="w-10 h-10 rounded-full bg-[color:var(--brand-gold)] flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                  <span className="text-lg font-bold text-[#1E241F]">
-                    T
-                  </span>
+                <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg group-hover:scale-105 transition-transform">
+                  <img
+                    src={logo}
+                    alt="Touristo"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
 
                 <div>

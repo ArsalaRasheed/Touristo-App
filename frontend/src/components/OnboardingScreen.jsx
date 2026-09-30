@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import logo from '../assets/touristo_logo.png';
 
 const OnboardingScreen = () => {
   const navigate = useNavigate();
@@ -53,8 +54,12 @@ const OnboardingScreen = () => {
     <div className="min-h-screen flex flex-col bg-[color:var(--bg-primary)] text-[color:var(--text-primary)]">
       <div className="flex-grow flex flex-col items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-[color:var(--accent-primary)] flex items-center justify-center">
-            <span className="text-2xl font-bold text-[color:var(--nav-text)]">T</span>
+          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl overflow-hidden shadow-md">
+            <img
+              src={logo}
+              alt="Touristo"
+              className="w-full h-full object-cover"
+           />
           </div>
           
           <div className="mb-8">

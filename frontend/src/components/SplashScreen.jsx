@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Compass } from 'lucide-react';
-
+import logo from '../assets/touristo_logo.png';
 const SplashScreen = () => {
   const navigate = useNavigate();
 
@@ -31,14 +30,11 @@ const SplashScreen = () => {
 
             <div className="w-24 h-24 rounded-[28px] bg-[color:var(--brand-primary)] flex items-center justify-center shadow-[var(--shadow-lg)]">
 
-              <div className="w-16 h-16 rounded-full border border-[color:var(--brand-gold-light)] flex items-center justify-center">
-
-                <Compass
-                  className="w-8 h-8 text-[color:var(--brand-gold-light)]"
-                  strokeWidth={1.7}
-                />
-
-              </div>
+              <img
+                src={logo}
+                alt="Touristo"
+                className="w-full h-full object-cover"
+              />
 
             </div>
 
