@@ -14,6 +14,7 @@ import {
   Compass
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import logo from '../assets/logo_touristo.png';
 
 /*
  * IMPORTANT:
@@ -414,7 +415,7 @@ const LoginSignupScreen = () => {
             {/* Logo */}
             <div className="w-16 h-16 rounded-[20px] bg-white/10 border border-white/15 backdrop-blur-sm flex items-center justify-center p-2 mb-8">
               <img
-                src="/logo_touristo.png"
+                src={logo}
                 alt="Touristo"
                 className="w-full h-full object-contain"
               />
@@ -478,7 +479,7 @@ const LoginSignupScreen = () => {
           <div className="lg:hidden flex justify-center mb-7">
             <div className="w-14 h-14 rounded-[18px] bg-[color:var(--brand-primary)] flex items-center justify-center p-2 shadow-[var(--shadow-md)]">
               <img
-                src="/logo_touristo.png"
+                src={logo}
                 alt="Touristo"
                 className="w-full h-full object-contain"
               />
