@@ -30,6 +30,9 @@ import WeatherScreen from './components/WeatherScreen';
 import MyTripsScreen from './components/MyTripsScreen';
 
 import ProfileScreen from './components/ProfileScreen';
+import EditProfileScreen from './components/EditProfileScreen';
+import PrivacySecurityScreen from './components/PrivacySecurityScreen';
+import PaymentMethodsScreen from './components/PaymentMethodsScreen';
 import HostProfileScreen from './components/HostProfileScreen';
 
 import HostDashboardScreen from './components/HostDashboardScreen';
@@ -448,6 +451,48 @@ const AppContent = () => {
                   ]}
                 >
                   <ProfileScreen />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/profile/edit"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    'traveler',
+                    'host'
+                  ]}
+                >
+                  <EditProfileScreen />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/privacy-security"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    'traveler',
+                    'host'
+                  ]}
+                >
+                  <PrivacySecurityScreen />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/payment-methods"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    'traveler',
+                    'host'
+                  ]}
+                >
+                  <PaymentMethodsScreen />
                 </ProtectedRoute>
               }
             />

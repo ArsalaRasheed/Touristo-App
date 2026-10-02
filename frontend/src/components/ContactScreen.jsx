@@ -1,4 +1,99 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+
+import {
+  ArrowLeft,
+  Mail,
+  MapPin,
+  Phone,
+  Send,
+  MessageCircle,
+  CheckCircle2
+} from 'lucide-react';
+
+
+/* ============================================================
+   CONTACT INFO ITEM
+============================================================ */
+
+const ContactInfo = ({
+  icon: Icon,
+  title,
+  value,
+  description
+}) => {
+  return (
+    <div className="flex items-start gap-4">
+
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[color:var(--brand-primary-soft)] text-[color:var(--brand-primary)]">
+        <Icon className="h-5 w-5" />
+      </div>
+
+      <div className="min-w-0">
+
+        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[color:var(--brand-gold)]">
+          {title}
+        </p>
+
+        <p className="mt-1 break-words text-sm font-semibold text-[color:var(--text-primary)]">
+          {value}
+        </p>
+
+        {description && (
+          <p className="mt-1 text-xs leading-5 text-[color:var(--text-secondary)]">
+            {description}
+          </p>
+        )}
+
+      </div>
+
+    </div>
+  );
+};
+
+
+/* ============================================================
+   FORM FIELD
+============================================================ */
+
+const FormField = ({
+  label,
+  name,
+  value,
+  onChange,
+  placeholder,
+  type = 'text',
+  required = true
+}) => {
+  return (
+    <div>
+
+      <label
+        htmlFor={name}
+        className="mb-2 block text-xs font-semibold text-[color:var(--text-primary)]"
+      >
+        {label}
+      </label>
+
+      <input
+        type={type}
+        id={name}
+        name={name}
+        value={value}
+        onChange={onChange}
+        required={required}
+        placeholder={placeholder}
+        className="w-full rounded-xl border border-[color:var(--border-light)] bg-[color:var(--surface-secondary)] px-4 py-3 text-sm text-[color:var(--text-primary)] outline-none transition-all placeholder:text-[color:var(--text-muted)] focus:border-[color:var(--brand-gold)] focus:bg-[color:var(--surface-primary)] focus:ring-2 focus:ring-[color:var(--brand-gold)]/15"
+      />
+
+    </div>
+  );
+};
+
+
+/* ============================================================
+   CONTACT SCREEN
+============================================================ */
 
 const ContactScreen = () => {
   const [formData, setFormData] = useState({
@@ -8,145 +103,297 @@ const ContactScreen = () => {
     message: ''
   });
 
+  const [submitted, setSubmitted] = useState(false);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+
+    setFormData((prev) => ({
       ...prev,
       [name]: value
     }));
+
+    if (submitted) {
+      setSubmitted(false);
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Handle form submission
+
     console.log('Form submitted:', formData);
-    alert('Thank you for contacting us! We will get back to you soon.');
-    setFormData({ name: '', email: '', subject: '', message: '' });
+
+    setSubmitted(true);
+
+    setFormData({
+      name: '',
+      email: '',
+      subject: '',
+      message: ''
+    });
   };
 
   return (
-    <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] p-4">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-2 text-center text-[color:var(--text-primary)]">Contact Us</h1>
-        <p className="text-[color:var(--text-secondary)] mb-8 text-center">Have questions? We'd love to hear from you.</p>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <h2 className="text-xl font-bold mb-4 text-[color:var(--text-primary)]">Get in Touch</h2>
-            <p className="text-[color:var(--text-secondary)] mb-6">
-              Our team is here to assist you with any inquiries regarding bookings, partnerships, 
-              or general questions about our services.
-            </p>
-            
-            <div className="space-y-4">
-              <div className="flex items-start">
-                <div className="mr-4 text-[color:var(--accent-primary)]">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="font-bold text-[color:var(--text-primary)]">Phone</h3>
-                  <p className="text-[color:var(--text-secondary)]">+92 300 1234567</p>
-                </div>
+    <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)]">
+
+      <div className="mx-auto w-full max-w-5xl px-4 py-6 pb-12 sm:px-6 sm:py-9">
+
+        {/* ====================================================
+            HEADER
+        ==================================================== */}
+
+        <header className="mb-8">
+
+          <Link
+            to="/profile"
+            className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-[color:var(--text-secondary)] transition-colors hover:text-[color:var(--brand-primary)]"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Profile
+          </Link>
+
+
+          <div className="relative overflow-hidden rounded-[32px] bg-[color:var(--brand-primary)] px-6 py-9 text-white shadow-[var(--shadow-lg)] sm:px-10 sm:py-12">
+
+            <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[color:var(--brand-gold)] opacity-15 blur-3xl" />
+
+            <div className="pointer-events-none absolute -bottom-24 -left-20 h-60 w-60 rounded-full bg-white opacity-5 blur-3xl" />
+
+            <div className="relative flex items-start gap-4">
+
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-[color:var(--brand-gold-light)] backdrop-blur-sm">
+                <MessageCircle className="h-7 w-7" />
               </div>
-              
-              <div className="flex items-start">
-                <div className="mr-4 text-[color:var(--accent-primary)]">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="font-bold text-[color:var(--text-primary)]">Email</h3>
-                  <p className="text-[color:var(--text-secondary)]">support@touristo.pk</p>
-                </div>
+
+              <div>
+
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[color:var(--brand-gold-light)]">
+                  Get in touch
+                </p>
+
+                <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-5xl">
+                  How can we help?
+                </h1>
+
+                <p className="mt-4 max-w-2xl text-sm leading-7 text-white/75 sm:text-base">
+                  Have a question about bookings, partnerships or
+                  Touristo? Send us a message and we'll be happy to hear
+                  from you.
+                </p>
+
               </div>
-              
-              <div className="flex items-start">
-                <div className="mr-4 text-[color:var(--accent-primary)]">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="font-bold text-[color:var(--text-primary)]">Office</h3>
-                  <p className="text-[color:var(--text-secondary)]">Blue Area, Islamabad, Pakistan</p>
-                </div>
-              </div>
+
             </div>
+
           </div>
-          
-          <div>
-            <h2 className="text-xl font-bold mb-4 text-[color:var(--text-primary)]">Send us a Message</h2>
-            <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label htmlFor="name" className="block text-[color:var(--text-secondary)] mb-1">Your Name</label>
-                <input
-                  type="text"
-                  id="name"
+
+        </header>
+
+
+        {/* ====================================================
+            CONTENT
+        ==================================================== */}
+
+        <div className="grid gap-5 lg:grid-cols-[0.75fr_1.25fr]">
+
+
+          {/* ==================================================
+              CONTACT DETAILS
+          ================================================== */}
+
+          <section className="rounded-[28px] border border-[color:var(--border-light)] bg-[color:var(--surface-primary)] p-6 shadow-[var(--shadow-sm)] sm:p-7">
+
+            <div className="mb-7">
+
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--brand-gold)]">
+                Contact details
+              </p>
+
+              <h2 className="mt-1 text-2xl font-semibold">
+                Let's connect.
+              </h2>
+
+              <p className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">
+                Our team is here to assist with bookings, partnerships
+                and general questions about Touristo.
+              </p>
+
+            </div>
+
+
+            <div className="space-y-6">
+
+              <ContactInfo
+                icon={Phone}
+                title="Phone"
+                value="+92 300 1234567"
+                description="Available for general enquiries"
+              />
+
+              <ContactInfo
+                icon={Mail}
+                title="Email"
+                value="support@touristo.pk"
+                description="Send us your questions anytime"
+              />
+
+              <ContactInfo
+                icon={MapPin}
+                title="Office"
+                value="Blue Area, Islamabad, Pakistan"
+                description="Touristo support office"
+              />
+
+            </div>
+
+
+            <div className="mt-8 rounded-2xl bg-[color:var(--brand-gold-soft)] p-4">
+
+              <p className="text-sm font-semibold text-[color:var(--brand-primary)]">
+                Planning a trip?
+              </p>
+
+              <p className="mt-1 text-xs leading-5 text-[color:var(--text-secondary)]">
+                Explore destinations and packages before getting in
+                touch with a host.
+              </p>
+
+              <Link
+                to="/destinations"
+                className="mt-3 inline-flex items-center text-xs font-semibold text-[color:var(--brand-primary)] hover:underline"
+              >
+                Explore destinations
+              </Link>
+
+            </div>
+
+          </section>
+
+
+          {/* ==================================================
+              MESSAGE FORM
+          ================================================== */}
+
+          <section className="rounded-[28px] border border-[color:var(--border-light)] bg-[color:var(--surface-primary)] p-6 shadow-[var(--shadow-md)] sm:p-7">
+
+            <div className="mb-6">
+
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--brand-gold)]">
+                Message
+              </p>
+
+              <h2 className="mt-1 text-2xl font-semibold">
+                Send us a message
+              </h2>
+
+            </div>
+
+
+            {submitted && (
+              <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[color:var(--success)]/20 bg-[color:var(--success-soft)] p-4">
+
+                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[color:var(--success)]" />
+
+                <div>
+
+                  <p className="text-sm font-semibold text-[color:var(--success)]">
+                    Message received
+                  </p>
+
+                  <p className="mt-1 text-xs leading-5 text-[color:var(--text-secondary)]">
+                    Thank you for contacting us. We'll get back to you soon.
+                  </p>
+
+                </div>
+
+              </div>
+            )}
+
+
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-5"
+            >
+
+              <div className="grid gap-5 sm:grid-cols-2">
+
+                <FormField
+                  label="Your Name"
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  required
-                  className="w-full p-3 border border-[color:var(--border-primary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-primary)] bg-[color:var(--surface-primary)] text-[color:var(--text-primary)]"
-                  placeholder="John Doe"
+                  placeholder="Your name"
                 />
-              </div>
-              
-              <div className="mb-4">
-                <label htmlFor="email" className="block text-[color:var(--text-secondary)] mb-1">Email Address</label>
-                <input
-                  type="email"
-                  id="email"
+
+                <FormField
+                  label="Email Address"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  required
-                  className="w-full p-3 border border-[color:var(--border-primary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-primary)] bg-[color:var(--surface-primary)] text-[color:var(--text-primary)]"
-                  placeholder="john@example.com"
+                  placeholder="you@example.com"
+                  type="email"
                 />
+
               </div>
-              
-              <div className="mb-4">
-                <label htmlFor="subject" className="block text-[color:var(--text-secondary)] mb-1">Subject</label>
-                <input
-                  type="text"
-                  id="subject"
-                  name="subject"
-                  value={formData.subject}
-                  onChange={handleChange}
-                  required
-                  className="w-full p-3 border border-[color:var(--border-primary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-primary)] bg-[color:var(--surface-primary)] text-[color:var(--text-primary)]"
-                  placeholder="How can we help?"
-                />
-              </div>
-              
-              <div className="mb-6">
-                <label htmlFor="message" className="block text-[color:var(--text-secondary)] mb-1">Message</label>
+
+
+              <FormField
+                label="Subject"
+                name="subject"
+                value={formData.subject}
+                onChange={handleChange}
+                placeholder="How can we help?"
+              />
+
+
+              <div>
+
+                <label
+                  htmlFor="message"
+                  className="mb-2 block text-xs font-semibold text-[color:var(--text-primary)]"
+                >
+                  Message
+                </label>
+
                 <textarea
                   id="message"
                   name="message"
                   value={formData.message}
                   onChange={handleChange}
                   required
-                  rows="5"
-                  className="w-full p-3 border border-[color:var(--border-primary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-primary)] bg-[color:var(--surface-primary)] text-[color:var(--text-primary)]"
-                  placeholder="Your message here..."
-                ></textarea>
+                  rows={6}
+                  placeholder="Tell us how we can help..."
+                  className="w-full resize-none rounded-xl border border-[color:var(--border-light)] bg-[color:var(--surface-secondary)] px-4 py-3 text-sm leading-6 text-[color:var(--text-primary)] outline-none transition-all placeholder:text-[color:var(--text-muted)] focus:border-[color:var(--brand-gold)] focus:bg-[color:var(--surface-primary)] focus:ring-2 focus:ring-[color:var(--brand-gold)]/15"
+                />
+
               </div>
-              
+
+
               <button
                 type="submit"
-                className="w-full bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] py-3 rounded-lg font-semibold transition duration-200"
+                className="group inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[color:var(--brand-primary)] px-5 py-3.5 text-sm font-semibold text-white shadow-[var(--shadow-sm)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[color:var(--brand-primary-hover)] hover:shadow-[var(--shadow-md)]"
               >
+                <Send className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 Send Message
               </button>
+
             </form>
-          </div>
+
+          </section>
+
         </div>
+
+
+        {/* ====================================================
+            FOOTER NOTE
+        ==================================================== */}
+
+        <div className="mt-5 text-center text-xs text-[color:var(--text-muted)]">
+          We appreciate your feedback and questions about Touristo.
+        </div>
+
       </div>
+
     </div>
   );
 };

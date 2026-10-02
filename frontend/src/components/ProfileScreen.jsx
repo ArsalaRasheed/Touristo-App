@@ -679,14 +679,14 @@ const ProfileScreen = () => {
           <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2">
 
             <SettingLink
-              to="/settings"
+              to="/privacy-security"
               icon={Shield}
               title="Privacy & Security"
               description="Manage profile visibility and privacy"
             />
 
             <SettingLink
-              to="/settings"
+              to="/payment-methods"
               icon={WalletCards}
               title="Payment Methods"
               description="Manage your payment preferences"
