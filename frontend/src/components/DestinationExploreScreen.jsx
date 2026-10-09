@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -13,14 +13,11 @@ import {
   Heart,
   ShieldCheck,
   Compass,
+  Sparkles,
 } from 'lucide-react';
 
 const FALLBACK_IMAGE =
-  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1400&q=85';
-
-// =========================================================
-// ACTUAL DESTINATION IMAGE LIBRARY
-// =========================================================
+  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1600&q=85';
 
 const destinationImages = {
   'hunza valley':
@@ -48,32 +45,15 @@ const destinationImages = {
     'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=90',
 };
 
-// =========================================================
-// IMAGE HELPER
-// =========================================================
-
 const getDestinationImage = (name) => {
   const key = String(name || '')
     .trim()
     .toLowerCase();
 
-  return (
-    destinationImages[key] ||
-    FALLBACK_IMAGE
-  );
+  return destinationImages[key] || FALLBACK_IMAGE;
 };
 
-// =========================================================
-// PACKAGE IMAGE
-// IMPORTANT:
-// Package's own image comes FIRST.
-// Destination image is only fallback.
-// =========================================================
-
-const getPackageImage = (
-  pkg,
-  destinationName
-) => {
+const getPackageImage = (pkg, destinationName) => {
   return (
     pkg?.image ||
     pkg?.image_url ||
@@ -81,10 +61,6 @@ const getPackageImage = (
     getDestinationImage(destinationName)
   );
 };
-
-// =========================================================
-// NORMALIZE POSTGRES ARRAYS / STRINGS
-// =========================================================
 
 const normalizeList = (value) => {
   if (Array.isArray(value)) {
@@ -103,7 +79,7 @@ const normalizeList = (value) => {
         return parsed.filter(Boolean);
       }
     } catch {
-      // normal comma-separated text
+      // Continue with comma-separated text.
     }
 
     return value
@@ -115,9 +91,36 @@ const normalizeList = (value) => {
   return [];
 };
 
-// =========================================================
-// COMPONENT
-// =========================================================
+const InfoCard = ({
+  icon,
+  title,
+  subtitle,
+  children,
+}) => {
+  const Icon = icon;
+
+  return (
+    <div className="h-full rounded-[24px] border border-[color:var(--border-light)] bg-[color:var(--surface-primary)] p-5 sm:p-6 shadow-[var(--shadow-sm)]">
+      <div className="flex items-start gap-3.5 mb-5">
+        <div className="w-11 h-11 shrink-0 rounded-2xl bg-[color:var(--brand-primary-soft)] flex items-center justify-center">
+          <Icon className="w-5 h-5 text-[color:var(--brand-primary)]" />
+        </div>
+
+        <div>
+          <h3 className="text-base sm:text-lg">
+            {title}
+          </h3>
+
+          <p className="text-xs text-[color:var(--text-muted)] mt-0.5">
+            {subtitle}
+          </p>
+        </div>
+      </div>
+
+      {children}
+    </div>
+  );
+};
 
 const DestinationExploreScreen = () => {
   const { destination } = useParams();
@@ -131,10 +134,6 @@ const DestinationExploreScreen = () => {
   const [loading, setLoading] = useState(true);
 
   const [error, setError] = useState('');
-
-  // =========================================================
-  // FETCH DESTINATION BY DATABASE ID
-  // =========================================================
 
   useEffect(() => {
     const fetchDestination = async () => {
@@ -198,67 +197,58 @@ const DestinationExploreScreen = () => {
     }
   }, [destination]);
 
-  // =========================================================
-  // LOADING
-  // =========================================================
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-[color:var(--bg-primary)] flex items-center justify-center pb-24">
+      <div className="min-h-screen bg-[color:var(--bg-primary)] pb-28">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
 
-        <div className="text-center">
+          <div className="h-10 w-40 bg-[color:var(--surface-secondary)] rounded-full animate-pulse mb-5" />
 
-          <div className="w-11 h-11 border-4 border-[color:var(--accent-primary)] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <div className="h-[360px] sm:h-[460px] rounded-[30px] bg-[color:var(--surface-secondary)] animate-pulse mb-8" />
 
-          <p className="text-[color:var(--text-secondary)]">
-            Loading destination...
-          </p>
+          <div className="max-w-3xl">
+            <div className="h-4 w-36 bg-[color:var(--surface-secondary)] rounded-full animate-pulse mb-3" />
+            <div className="h-8 w-80 bg-[color:var(--surface-secondary)] rounded-xl animate-pulse mb-4" />
+            <div className="h-4 w-full bg-[color:var(--surface-secondary)] rounded-full animate-pulse mb-2" />
+            <div className="h-4 w-4/5 bg-[color:var(--surface-secondary)] rounded-full animate-pulse" />
+          </div>
 
         </div>
-
       </div>
     );
   }
 
-  // =========================================================
-  // ERROR
-  // =========================================================
-
   if (error || !destinationData) {
     return (
-      <div className="min-h-screen bg-[color:var(--bg-primary)] flex items-center justify-center px-5 pb-24">
+      <div className="min-h-screen bg-[color:var(--bg-primary)] flex items-center justify-center px-5 pb-28">
 
-        <div className="max-w-md w-full text-center bg-[color:var(--surface-primary)] rounded-2xl border border-[color:var(--border-primary)] p-8 shadow-sm">
+        <div className="max-w-md w-full text-center rounded-[28px] border border-[color:var(--border-light)] bg-[color:var(--surface-primary)] p-8 shadow-[var(--shadow-md)]">
 
-          <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
-            <MapPin className="w-7 h-7 text-red-500" />
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-[color:var(--brand-primary-soft)] flex items-center justify-center mb-5">
+            <MapPin className="w-7 h-7 text-[color:var(--brand-primary)]" />
           </div>
 
-          <h2 className="text-xl font-bold mb-2">
+          <h2 className="text-xl mb-2">
             Destination Not Found
           </h2>
 
-          <p className="text-[color:var(--text-secondary)] mb-6">
+          <p role="alert" className="text-sm leading-6 text-[color:var(--text-secondary)] mb-6">
             {error ||
               "We couldn't load this destination."}
           </p>
 
           <button
             onClick={() => navigate(-1)}
-            className="px-5 py-2.5 rounded-xl bg-[color:var(--accent-primary)] text-white font-semibold hover:opacity-90 transition"
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[color:var(--brand-primary)] text-white font-semibold hover:bg-[color:var(--brand-primary-hover)] transition-colors"
           >
+            <ArrowLeft className="w-4 h-4" />
             Go Back
           </button>
 
         </div>
-
       </div>
     );
   }
-
-  // =========================================================
-  // DATA
-  // =========================================================
 
   const destinationName =
     destinationData.name;
@@ -277,10 +267,6 @@ const DestinationExploreScreen = () => {
     normalizeList(
       destinationData.famous_food
     );
-
-  // =========================================================
-  // PACKAGE HELPERS
-  // =========================================================
 
   const getPackageName = (pkg) =>
     pkg?.title ||
@@ -307,40 +293,35 @@ const DestinationExploreScreen = () => {
       : rating.toFixed(1);
   };
 
-  // =========================================================
-  // MAIN
-  // =========================================================
-
   return (
-    <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] pb-24">
+    <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] pb-28">
 
       {/* =====================================================
           TOP BAR
       ====================================================== */}
 
-      <div className="sticky top-0 z-40 bg-[color:var(--surface-primary)]/95 backdrop-blur-md border-b border-[color:var(--border-primary)]">
+      <div className="sticky top-0 z-40 bg-[color:var(--surface-primary)]/90 backdrop-blur-xl border-b border-[color:var(--border-light)]">
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
 
           <button
             onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--text-secondary)] hover:text-[color:var(--accent-primary)] transition"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-secondary)] hover:text-[color:var(--brand-primary)] transition-all"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
             Back to Destinations
           </button>
 
         </div>
-
       </div>
 
       {/* =====================================================
           HERO
       ====================================================== */}
 
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-5">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6">
 
-        <div className="relative h-[320px] sm:h-[400px] lg:h-[470px] rounded-3xl overflow-hidden shadow-xl">
+        <div className="relative h-[330px] sm:h-[430px] lg:h-[500px] overflow-hidden rounded-[28px] sm:rounded-[34px] shadow-[var(--shadow-lg)]">
 
           <img
             src={heroImage}
@@ -352,235 +333,162 @@ const DestinationExploreScreen = () => {
             }}
           />
 
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/5" />
 
-          {/* LOCATION */}
+          {/* Top location badge */}
 
-          <div className="absolute top-5 left-5">
+          <div className="absolute top-5 left-5 right-5 flex items-start justify-between">
 
-            <span className="inline-flex items-center gap-2 bg-black/35 backdrop-blur-md text-white px-4 py-2 rounded-full text-sm">
-
-              <MapPin className="w-4 h-4" />
-
+            <span className="inline-flex items-center gap-2 rounded-full bg-black/30 backdrop-blur-md border border-white/15 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white">
+              <MapPin className="w-4 h-4 text-[color:var(--brand-gold-light)]" />
               Pakistan
+            </span>
 
+            <span className="w-10 h-10 rounded-full bg-black/25 backdrop-blur-md border border-white/15 flex items-center justify-center">
+              <Heart className="w-4.5 h-4.5 text-white" />
             </span>
 
           </div>
 
-          {/* HERO TEXT */}
+          {/* Hero content */}
 
-          <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10">
+          <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10 lg:p-12">
 
-            <div className="flex items-center gap-2 text-white/80 text-sm mb-2">
-              <Compass className="w-4 h-4" />
+            <div className="inline-flex items-center gap-2 text-white/75 text-xs sm:text-sm font-medium mb-3">
+              <Compass className="w-4 h-4 text-[color:var(--brand-gold-light)]" />
               Explore Destination
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white drop-shadow-lg mb-3">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl tracking-tight text-white leading-none drop-shadow-lg mb-4">
               {destinationName}
             </h1>
 
-            {destinationData.category && (
-              <span className="inline-block bg-white/15 backdrop-blur-md border border-white/20 text-white px-3 py-1.5 rounded-full text-sm capitalize">
-                {destinationData.category}
+            <div className="flex flex-wrap items-center gap-2">
+
+              {destinationData.category && (
+                <span className="inline-flex items-center rounded-full bg-white/12 backdrop-blur-md border border-white/20 text-white px-3.5 py-1.5 text-xs sm:text-sm font-medium capitalize">
+                  {destinationData.category}
+                </span>
+              )}
+
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/12 backdrop-blur-md border border-white/20 text-white px-3.5 py-1.5 text-xs sm:text-sm">
+                <Sparkles className="w-3.5 h-3.5 text-[color:var(--brand-gold-light)]" />
+                {packages.length} travel {packages.length === 1 ? 'package' : 'packages'}
               </span>
-            )}
+
+            </div>
 
           </div>
 
         </div>
-
       </section>
 
       {/* =====================================================
-          DESTINATION CONTENT
+          CONTENT
       ====================================================== */}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-9 sm:py-12">
 
-        {/* ===================================================
-            INTRO / HISTORY
-        ==================================================== */}
+        {/* INTRO */}
 
-        <section className="mb-10 max-w-4xl">
+        <section className="max-w-4xl mb-10 sm:mb-12">
 
-          <p className="text-sm font-semibold text-[color:var(--accent-primary)] uppercase tracking-wide mb-2">
+          <p className="text-xs sm:text-sm uppercase tracking-[0.18em] font-bold text-[color:var(--brand-gold-ink)] mb-2">
             About {destinationName}
           </p>
 
-          <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+          <h2 className="text-2xl sm:text-3xl tracking-tight mb-4">
             Discover {destinationName}
           </h2>
 
-          <p className="text-[color:var(--text-secondary)] leading-7">
+          <p className="text-sm sm:text-base text-[color:var(--text-secondary)] leading-7">
             {destinationData.history ||
-              `Discover the beauty and heritage of ${destinationName}.`}
+              `Discover the beauty, culture and heritage of ${destinationName}.`}
           </p>
 
         </section>
 
-        {/* ===================================================
-            HISTORY + CULTURE
-        ==================================================== */}
+        {/* HISTORY + CULTURE */}
 
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-10">
 
-          {/* HISTORY */}
-
-          <div className="bg-[color:var(--surface-primary)] rounded-2xl border border-[color:var(--border-primary)] p-6 shadow-sm">
-
-            <div className="flex items-center gap-3 mb-4">
-
-              <div className="w-11 h-11 rounded-xl bg-[color:var(--surface-secondary)] flex items-center justify-center">
-                <Landmark className="w-5 h-5 text-[color:var(--accent-primary)]" />
-              </div>
-
-              <div>
-                <h3 className="font-bold text-lg">
-                  History
-                </h3>
-
-                <p className="text-xs text-[color:var(--text-secondary)]">
-                  Heritage & background
-                </p>
-              </div>
-
-            </div>
-
+          <InfoCard
+            icon={Landmark}
+            title="History"
+            subtitle="Heritage & background"
+          >
             <p className="text-sm text-[color:var(--text-secondary)] leading-7">
               {destinationData.history ||
                 'Historical information will be available soon.'}
             </p>
+          </InfoCard>
 
-          </div>
-
-          {/* CULTURE */}
-
-          <div className="bg-[color:var(--surface-primary)] rounded-2xl border border-[color:var(--border-primary)] p-6 shadow-sm">
-
-            <div className="flex items-center gap-3 mb-4">
-
-              <div className="w-11 h-11 rounded-xl bg-[color:var(--surface-secondary)] flex items-center justify-center">
-                <Heart className="w-5 h-5 text-[color:var(--accent-primary)]" />
-              </div>
-
-              <div>
-                <h3 className="font-bold text-lg">
-                  Culture & Traditions
-                </h3>
-
-                <p className="text-xs text-[color:var(--text-secondary)]">
-                  Local life & traditions
-                </p>
-              </div>
-
-            </div>
-
+          <InfoCard
+            icon={Heart}
+            title="Culture & Traditions"
+            subtitle="Local life & traditions"
+          >
             <p className="text-sm text-[color:var(--text-secondary)] leading-7">
               {destinationData.culture ||
                 'Cultural information will be available soon.'}
             </p>
-
-          </div>
+          </InfoCard>
 
         </section>
 
-        {/* ===================================================
-            PLACES + FOOD
-        ==================================================== */}
+        {/* PLACES + FOOD */}
 
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-12">
 
-          {/* PLACES */}
-
-          <div className="bg-[color:var(--surface-primary)] rounded-2xl border border-[color:var(--border-primary)] p-6 shadow-sm">
-
-            <div className="flex items-center gap-3 mb-5">
-
-              <div className="w-11 h-11 rounded-xl bg-[color:var(--surface-secondary)] flex items-center justify-center">
-                <Mountain className="w-5 h-5 text-[color:var(--accent-primary)]" />
-              </div>
-
-              <div>
-                <h3 className="font-bold text-lg">
-                  Places to Visit
-                </h3>
-
-                <p className="text-xs text-[color:var(--text-secondary)]">
-                  Must-see attractions
-                </p>
-              </div>
-
-            </div>
-
+          <InfoCard
+            icon={Mountain}
+            title="Places to Visit"
+            subtitle="Must-see attractions"
+          >
             {famousSpots.length > 0 ? (
               <div className="flex flex-wrap gap-2">
-
                 {famousSpots.map(
                   (spot, index) => (
                     <span
                       key={index}
-                      className="px-3 py-2 rounded-xl bg-[color:var(--surface-secondary)] text-sm"
+                      className="px-3 py-2 rounded-xl bg-[color:var(--surface-secondary)] border border-[color:var(--border-light)] text-sm text-[color:var(--text-secondary)]"
                     >
                       {spot}
                     </span>
                   )
                 )}
-
               </div>
             ) : (
               <p className="text-sm text-[color:var(--text-secondary)]">
                 Attraction information will be available soon.
               </p>
             )}
+          </InfoCard>
 
-          </div>
-
-          {/* FOOD */}
-
-          <div className="bg-[color:var(--surface-primary)] rounded-2xl border border-[color:var(--border-primary)] p-6 shadow-sm">
-
-            <div className="flex items-center gap-3 mb-5">
-
-              <div className="w-11 h-11 rounded-xl bg-[color:var(--surface-secondary)] flex items-center justify-center">
-                <Utensils className="w-5 h-5 text-[color:var(--accent-primary)]" />
-              </div>
-
-              <div>
-                <h3 className="font-bold text-lg">
-                  Local Food
-                </h3>
-
-                <p className="text-xs text-[color:var(--text-secondary)]">
-                  Taste the destination
-                </p>
-              </div>
-
-            </div>
-
+          <InfoCard
+            icon={Utensils}
+            title="Local Food"
+            subtitle="Taste the destination"
+          >
             {famousFood.length > 0 ? (
               <div className="flex flex-wrap gap-2">
-
                 {famousFood.map(
                   (food, index) => (
                     <span
                       key={index}
-                      className="px-3 py-2 rounded-xl bg-[color:var(--surface-secondary)] text-sm"
+                      className="px-3 py-2 rounded-xl bg-[color:var(--surface-secondary)] border border-[color:var(--border-light)] text-sm text-[color:var(--text-secondary)]"
                     >
                       {food}
                     </span>
                   )
                 )}
-
               </div>
             ) : (
               <p className="text-sm text-[color:var(--text-secondary)]">
                 Local food information will be available soon.
               </p>
             )}
-
-          </div>
+          </InfoCard>
 
         </section>
 
@@ -590,29 +498,29 @@ const DestinationExploreScreen = () => {
 
         <section>
 
-          <div className="flex items-end justify-between gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
 
             <div>
 
-              <div className="flex items-center gap-2 mb-1">
-                <Package className="w-5 h-5 text-[color:var(--accent-primary)]" />
+              <div className="flex items-center gap-2 mb-2">
+                <Package className="w-4.5 h-4.5 text-[color:var(--brand-gold-ink)]" />
 
-                <span className="text-sm font-semibold text-[color:var(--accent-primary)]">
+                <span className="text-xs sm:text-sm font-bold uppercase tracking-[0.14em] text-[color:var(--brand-gold-ink)]">
                   Travel Packages
                 </span>
               </div>
 
-              <h2 className="text-2xl sm:text-3xl font-bold">
+              <h2 className="text-2xl sm:text-3xl tracking-tight">
                 Tours in {destinationName}
               </h2>
 
-              <p className="text-sm text-[color:var(--text-secondary)] mt-1">
+              <p className="text-sm text-[color:var(--text-secondary)] mt-1.5">
                 Compare packages from different tour companies.
               </p>
 
             </div>
 
-            <span className="hidden sm:block text-sm text-[color:var(--text-secondary)]">
+            <span className="inline-flex w-fit px-3 py-1.5 rounded-full bg-[color:var(--brand-primary-soft)] text-[color:var(--brand-primary)] text-xs font-semibold">
               {packages.length}{' '}
               {packages.length === 1
                 ? 'package'
@@ -621,21 +529,19 @@ const DestinationExploreScreen = () => {
 
           </div>
 
-          {/* ===================================================
-              PACKAGES
-          ==================================================== */}
-
           {packages.length === 0 ? (
 
-            <div className="bg-[color:var(--surface-primary)] rounded-2xl border border-[color:var(--border-primary)] p-10 text-center">
+            <div className="rounded-[26px] border border-[color:var(--border-light)] bg-[color:var(--surface-primary)] p-10 sm:p-14 text-center shadow-[var(--shadow-sm)]">
 
-              <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+              <div className="w-14 h-14 mx-auto rounded-2xl bg-[color:var(--brand-primary-soft)] flex items-center justify-center mb-4">
+                <Package className="w-6 h-6 text-[color:var(--brand-primary)]" />
+              </div>
 
-              <h3 className="font-bold text-lg mb-2">
+              <h3 className="text-lg mb-2">
                 No Packages Available Yet
               </h3>
 
-              <p className="text-sm text-[color:var(--text-secondary)]">
+              <p className="text-sm text-[color:var(--text-secondary)] max-w-md mx-auto leading-6">
                 Tour companies have not added packages for this destination yet.
               </p>
 
@@ -643,7 +549,7 @@ const DestinationExploreScreen = () => {
 
           ) : (
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
 
               {packages.map(
                 (pkg, index) => {
@@ -663,17 +569,17 @@ const DestinationExploreScreen = () => {
                         pkg?.id ||
                         index
                       }
-                      className="bg-[color:var(--surface-primary)] rounded-2xl overflow-hidden border border-[color:var(--border-primary)] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
+                      className="group overflow-hidden rounded-[26px] bg-[color:var(--surface-primary)] border border-[color:var(--border-light)] shadow-[var(--shadow-sm)] hover:-translate-y-1.5 hover:shadow-[var(--shadow-md)] transition-all duration-300"
                     >
 
-                      {/* IMAGE */}
+                      {/* PACKAGE IMAGE */}
 
-                      <div className="relative h-52 overflow-hidden bg-[color:var(--surface-secondary)]">
+                      <div className="relative h-52 sm:h-56 overflow-hidden bg-[color:var(--surface-secondary)]">
 
                         <img
                           src={image}
                           alt={getPackageName(pkg)}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                           onError={(event) => {
                             event.currentTarget.src =
                               getDestinationImage(
@@ -682,37 +588,30 @@ const DestinationExploreScreen = () => {
                           }}
                         />
 
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
 
                         {pkg?.host_verified && (
-                          <div className="absolute top-3 right-3">
-
-                            <span className="inline-flex items-center gap-1 bg-white/95 text-green-700 px-2.5 py-1.5 rounded-full text-xs font-semibold shadow">
-
+                          <div className="absolute top-3.5 right-3.5">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1.5 text-xs font-bold text-[color:var(--brand-primary)] shadow-[var(--shadow-sm)]">
                               <ShieldCheck className="w-3.5 h-3.5" />
-
                               Verified
-
                             </span>
-
                           </div>
                         )}
 
-                        <div className="absolute bottom-3 left-4 right-4">
-
-                          <h3 className="text-lg font-bold text-white line-clamp-2 drop-shadow-lg">
+                        <div className="absolute bottom-4 left-4 right-4">
+                          <h3 className="text-lg sm:text-xl text-white leading-snug line-clamp-2 drop-shadow-lg">
                             {getPackageName(pkg)}
                           </h3>
-
                         </div>
 
                       </div>
 
-                      {/* CONTENT */}
+                      {/* PACKAGE CONTENT */}
 
                       <div className="p-5">
 
-                        <p className="text-xs text-[color:var(--text-secondary)] mb-1">
+                        <p className="text-[11px] uppercase tracking-[0.12em] font-semibold text-[color:var(--text-muted)] mb-1">
                           Offered by
                         </p>
 
@@ -721,23 +620,22 @@ const DestinationExploreScreen = () => {
                             'Tour Company'}
                         </p>
 
-                        <div className="flex items-center gap-4 mb-4">
+                        <div className="flex flex-wrap items-center gap-3.5 mb-4">
 
                           {rating && (
-                            <div className="flex items-center gap-1">
-
-                              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                            <div className="inline-flex items-center gap-1.5">
+                              <span className="w-7 h-7 rounded-lg bg-[color:var(--brand-gold-soft)] flex items-center justify-center">
+                                <Star className="w-3.5 h-3.5 fill-[color:var(--brand-gold-ink)] text-[color:var(--brand-gold-ink)]" />
+                              </span>
 
                               <span className="text-sm font-semibold">
                                 {rating}
                               </span>
-
                             </div>
                           )}
 
                           {pkg?.duration_days && (
-                            <div className="flex items-center gap-1 text-[color:var(--text-secondary)]">
-
+                            <div className="inline-flex items-center gap-1.5 text-[color:var(--text-secondary)]">
                               <Clock className="w-4 h-4" />
 
                               <span className="text-sm">
@@ -748,30 +646,27 @@ const DestinationExploreScreen = () => {
                                   ? 'Day'
                                   : 'Days'}
                               </span>
-
                             </div>
                           )}
 
                         </div>
 
                         {pkg?.description && (
-                          <p className="text-sm text-[color:var(--text-secondary)] line-clamp-2 leading-6 mb-5">
+                          <p className="text-sm text-[color:var(--text-secondary)] leading-6 line-clamp-2 mb-5">
                             {pkg.description}
                           </p>
                         )}
 
-                        <div className="flex items-end justify-between gap-3 pt-4 border-t border-[color:var(--border-primary)]">
+                        <div className="flex items-end justify-between gap-3 pt-4 border-t border-[color:var(--border-light)]">
 
-                          <div>
-
-                            <p className="text-xs text-[color:var(--text-secondary)] mb-1">
+                          <div className="min-w-0">
+                            <p className="text-[11px] uppercase tracking-wide text-[color:var(--text-muted)] mb-1">
                               Starting from
                             </p>
 
-                            <p className="text-lg font-bold text-[color:var(--accent-primary)]">
+                            <p className="text-lg font-bold text-[color:var(--brand-primary)]">
                               {getPrice(pkg)}
                             </p>
-
                           </div>
 
                           <button
@@ -780,12 +675,10 @@ const DestinationExploreScreen = () => {
                                 `/package/${pkg.id}`
                               )
                             }
-                            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[color:var(--accent-primary)] text-white text-sm font-semibold hover:opacity-90 transition"
+                            className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[color:var(--brand-primary)] text-white text-sm font-semibold hover:bg-[color:var(--brand-primary-hover)] transition-colors"
                           >
                             View Package
-
                             <ChevronRight className="w-4 h-4" />
-
                           </button>
 
                         </div>
@@ -798,13 +691,11 @@ const DestinationExploreScreen = () => {
               )}
 
             </div>
-
           )}
 
         </section>
 
       </main>
-
     </div>
   );
 };

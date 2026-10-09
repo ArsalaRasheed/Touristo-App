@@ -19,7 +19,7 @@ const destinationController = {
       console.error('Error in getAllDestinations:', err);
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: 'Something went wrong. Please try again.',
       });
     }
   },
@@ -64,7 +64,7 @@ const destinationController = {
       console.error('Error in getDestinationById:', err);
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: 'Something went wrong. Please try again.',
       });
     }
   },
@@ -109,7 +109,7 @@ const destinationController = {
       console.error('Error in getDestinationByName:', err);
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: 'Something went wrong. Please try again.',
       });
     }
   }

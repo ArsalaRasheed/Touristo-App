@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowRight,
@@ -20,9 +20,24 @@ const FALLBACK_IMAGE =
 const SearchScreen = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [searchQuery, setSearchQuery] = useState(
-    searchParams.get('q') || ''
-  );
+  const urlQuery = searchParams.get('q') || '';
+
+  const [searchQuery, setSearchQuery] = useState(urlQuery);
+  const [prevUrlQuery, setPrevUrlQuery] = useState(urlQuery);
+
+  /*
+   * Keep the search field synced with the URL while
+   * avoiding an extra render pass.
+   *
+   * Example:
+   * /search?q=Hunza
+   *
+   * will automatically show "Hunza" in the search field.
+   */
+  if (prevUrlQuery !== urlQuery) {
+    setPrevUrlQuery(urlQuery);
+    setSearchQuery(urlQuery);
+  }
 
   const [activeFilter, setActiveFilter] = useState(null);
 
@@ -39,22 +54,6 @@ const SearchScreen = () => {
   const [error, setError] = useState(null);
 
   const filters = ['Price', 'Region', 'Category', 'Duration'];
-
-  /*
-   * Keep the search field synced with the URL.
-   *
-   * Example:
-   * /search?q=Hunza
-   *
-   * will automatically show "Hunza" in the search field.
-   */
-  useEffect(() => {
-    const urlQuery = searchParams.get('q') || '';
-
-    setSearchQuery((current) =>
-      current === urlQuery ? current : urlQuery
-    );
-  }, [searchParams]);
 
   /*
    * Fetch packages + hosts
@@ -442,7 +441,7 @@ const SearchScreen = () => {
   const getBadgeClass = (badge) => {
     switch (badge) {
       case 'Top Rated':
-        return 'bg-[color:var(--brand-gold-soft)] text-[color:var(--brand-gold)] border-[color:var(--brand-gold-light)]';
+        return 'bg-[color:var(--brand-gold-soft)] text-[color:var(--brand-gold-ink)] border-[color:var(--brand-gold-light)]';
 
       case 'Highly Recommended':
         return 'bg-[color:var(--brand-primary-soft)] text-[color:var(--brand-primary)] border-[color:var(--brand-primary-soft)]';
@@ -585,7 +584,7 @@ const SearchScreen = () => {
             Unable to Load Search
           </h2>
 
-          <p className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">
+          <p role="alert" className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">
             {error}
           </p>
 
@@ -608,7 +607,7 @@ const SearchScreen = () => {
 
         {/* HEADER */}
         <header className="mb-7">
-          <p className="text-xs uppercase tracking-[0.22em] font-semibold text-[color:var(--brand-gold)]">
+          <p className="text-xs uppercase tracking-[0.22em] font-semibold text-[color:var(--brand-gold-ink)]">
             Discover
           </p>
 
@@ -628,6 +627,7 @@ const SearchScreen = () => {
           </div>
 
           <input
+          aria-label="Search destinations, packages, or experiences"
             type="text"
             value={searchQuery}
             onChange={(e) =>
@@ -780,7 +780,7 @@ const SearchScreen = () => {
         <section className="mb-14">
           <div className="flex items-end justify-between gap-4 mb-5">
             <div>
-              <p className="text-xs uppercase tracking-[0.18em] font-semibold text-[color:var(--brand-gold)]">
+              <p className="text-xs uppercase tracking-[0.18em] font-semibold text-[color:var(--brand-gold-ink)]">
                 Experiences
               </p>
 
@@ -926,7 +926,7 @@ const SearchScreen = () => {
         <section>
           <div className="flex items-end justify-between gap-4 mb-5">
             <div>
-              <p className="text-xs uppercase tracking-[0.18em] font-semibold text-[color:var(--brand-gold)]">
+              <p className="text-xs uppercase tracking-[0.18em] font-semibold text-[color:var(--brand-gold-ink)]">
                 Trusted partners
               </p>
 
@@ -993,7 +993,7 @@ const SearchScreen = () => {
                               {host.verified && (
                                 <BadgeCheck
                                   size={18}
-                                  className="text-[color:var(--brand-gold)] shrink-0"
+                                  className="text-[color:var(--brand-gold-ink)] shrink-0"
                                   fill="currentColor"
                                   strokeWidth={
                                     1.5
@@ -1048,7 +1048,7 @@ const SearchScreen = () => {
                             <div className="flex items-center gap-1.5">
                               <Star
                                 size={14}
-                                className="text-[color:var(--brand-gold)]"
+                                className="text-[color:var(--brand-gold-ink)]"
                                 fill="currentColor"
                               />
 

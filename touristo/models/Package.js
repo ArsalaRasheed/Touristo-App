@@ -124,6 +124,27 @@ class Package {
     this.group_size =
       data.group_size;
 
+    this.highlights =
+      data.highlights;
+
+    this.activities =
+      data.activities;
+
+    this.tags =
+      data.tags;
+
+    this.target_traveler_type =
+      data.target_traveler_type;
+
+    this.best_season =
+      data.best_season;
+
+    this.safety_notes =
+      data.safety_notes;
+
+    this.seo_description =
+      data.seo_description;
+
     this.availability_start =
       data.availability_start;
 
@@ -172,6 +193,13 @@ class Package {
           p.exclusions,
           p.itinerary,
           p.group_size,
+          p.highlights,
+          p.activities,
+          p.tags,
+          p.target_traveler_type,
+          p.best_season,
+          p.safety_notes,
+          p.seo_description,
           p.availability_start,
           p.availability_end,
           p.created_at,
@@ -218,6 +246,13 @@ class Package {
             p.exclusions,
             p.itinerary,
             p.group_size,
+            p.highlights,
+            p.activities,
+            p.tags,
+            p.target_traveler_type,
+            p.best_season,
+            p.safety_notes,
+            p.seo_description,
             p.availability_start,
             p.availability_end,
             p.created_at,
@@ -265,6 +300,13 @@ class Package {
             p.exclusions,
             p.itinerary,
             p.group_size,
+            p.highlights,
+            p.activities,
+            p.tags,
+            p.target_traveler_type,
+            p.best_season,
+            p.safety_notes,
+            p.seo_description,
             p.availability_start,
             p.availability_end,
             p.created_at,
@@ -318,6 +360,13 @@ class Package {
             p.exclusions,
             p.itinerary,
             p.group_size,
+            p.highlights,
+            p.activities,
+            p.tags,
+            p.target_traveler_type,
+            p.best_season,
+            p.safety_notes,
+            p.seo_description,
             p.availability_start,
             p.availability_end,
             p.created_at,
@@ -363,6 +412,13 @@ class Package {
       exclusions,
       itinerary,
       group_size,
+      highlights,
+      activities,
+      tags,
+      target_traveler_type,
+      best_season,
+      safety_notes,
+      seo_description,
       availability_start,
       availability_end
     } = packageData;
@@ -399,6 +455,13 @@ class Package {
             exclusions,
             itinerary,
             group_size,
+            highlights,
+            activities,
+            tags,
+            target_traveler_type,
+            best_season,
+            safety_notes,
+            seo_description,
             availability_start,
             availability_end
           )
@@ -417,7 +480,14 @@ class Package {
             $12,
             $13,
             $14,
-            $15
+            $15,
+            $16,
+            $17,
+            $18,
+            $19,
+            $20,
+            $21,
+            $22
           )
           RETURNING *
         `,
@@ -435,6 +505,13 @@ class Package {
           exclusions,
           itineraryJson,
           group_size,
+          highlights,
+          activities,
+          tags,
+          target_traveler_type,
+          best_season,
+          safety_notes,
+          seo_description,
           availability_start,
           availability_end
         ]
@@ -465,6 +542,13 @@ class Package {
       exclusions,
       itinerary,
       group_size,
+      highlights,
+      activities,
+      tags,
+      target_traveler_type,
+      best_season,
+      safety_notes,
+      seo_description,
       availability_start,
       availability_end
     } = packageData;
@@ -501,10 +585,17 @@ class Package {
             exclusions = $10,
             itinerary = $11,
             group_size = $12,
-            availability_start = $13,
-            availability_end = $14,
+            highlights = $13,
+            activities = $14,
+            tags = $15,
+            target_traveler_type = $16,
+            best_season = $17,
+            safety_notes = $18,
+            seo_description = $19,
+            availability_start = $20,
+            availability_end = $21,
             updated_at = NOW()
-          WHERE id = $15
+          WHERE id = $22
           RETURNING *
         `,
         [
@@ -520,6 +611,13 @@ class Package {
           exclusions,
           itineraryJson,
           group_size,
+          highlights,
+          activities,
+          tags,
+          target_traveler_type,
+          best_season,
+          safety_notes,
+          seo_description,
           availability_start,
           availability_end,
           id

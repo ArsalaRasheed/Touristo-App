@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -404,7 +404,7 @@ const EditProfileScreen = () => {
             Back to Profile
           </Link>
 
-          <span className="text-xs uppercase tracking-[0.2em] font-semibold text-[color:var(--brand-gold)]">
+          <span className="text-xs uppercase tracking-[0.2em] font-semibold text-[color:var(--brand-gold-ink)]">
             Account
           </span>
 
@@ -417,7 +417,7 @@ const EditProfileScreen = () => {
 
         <div className="mb-7">
 
-          <p className="text-xs uppercase tracking-[0.22em] font-semibold text-[color:var(--brand-gold)]">
+          <p className="text-xs uppercase tracking-[0.22em] font-semibold text-[color:var(--brand-gold-ink)]">
             Personal Information
           </p>
 
@@ -561,7 +561,7 @@ const EditProfileScreen = () => {
 
               <div className="flex items-center gap-3 mb-5">
 
-                <div className="w-10 h-10 rounded-xl bg-[color:var(--brand-gold-soft)] text-[color:var(--brand-gold)] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-[color:var(--brand-gold-soft)] text-[color:var(--brand-gold-ink)] flex items-center justify-center">
                   <ShieldCheck className="w-5 h-5" />
                 </div>
 
@@ -601,7 +601,7 @@ const EditProfileScreen = () => {
 
                   <div className="mt-2 flex items-center gap-2 font-semibold">
 
-                    <CalendarDays className="w-4 h-4 text-[color:var(--brand-gold)]" />
+                    <CalendarDays className="w-4 h-4 text-[color:var(--brand-gold-ink)]" />
 
                     {memberSince || '—'}
 
@@ -652,7 +652,7 @@ const EditProfileScreen = () => {
 
                 <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
 
-                <p className="text-sm leading-5">
+                <p role="alert" className="text-sm leading-5">
                   {error}
                 </p>
 

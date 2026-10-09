@@ -15,7 +15,7 @@ const reviewController = {
     } catch (err) {
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: 'Something went wrong. Please try again.',
       });
     }
   },
@@ -51,7 +51,7 @@ const reviewController = {
 
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: 'Something went wrong. Please try again.',
       });
     }
   },
@@ -77,7 +77,7 @@ const reviewController = {
     } catch (err) {
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: 'Something went wrong. Please try again.',
       });
     }
   },
@@ -87,11 +87,19 @@ const reviewController = {
     try {
       const userId = req.user.id;
       const { package_id, rating, comment } = req.body;
+      const trimmedComment = comment ? String(comment).trim() : '';
 
       if (!package_id || !rating) {
         return res.status(400).json({
           status: 'fail',
           message: 'Package ID and rating are required',
+        });
+      }
+
+      if (trimmedComment.length > 2000) {
+        return res.status(400).json({
+          status: 'fail',
+          message: 'Review comment must be 2000 characters or fewer',
         });
       }
 
@@ -164,7 +172,7 @@ const reviewController = {
         user_id: userId,
         package_id: Number(package_id),
         rating: numericRating,
-        comment: comment ? comment.trim() : null,
+        comment: trimmedComment || null,
       });
 
       res.status(201).json({
@@ -179,7 +187,7 @@ const reviewController = {
 
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: 'Something went wrong. Please try again.',
       });
     }
   },
@@ -221,14 +229,22 @@ const reviewController = {
         });
       }
 
+      const trimmedComment = comment !== undefined ? String(comment).trim() : undefined;
+      if (trimmedComment !== undefined && trimmedComment.length > 2000) {
+        return res.status(400).json({
+          status: 'fail',
+          message: 'Review comment must be 2000 characters or fewer',
+        });
+      }
+
       const updatedReview = await Review.update(id, {
         rating:
           rating !== undefined
             ? Number(rating)
             : existingReview.rating,
         comment:
-          comment !== undefined
-            ? comment.trim()
+          trimmedComment !== undefined
+            ? trimmedComment
             : existingReview.comment,
       });
 
@@ -244,7 +260,7 @@ const reviewController = {
 
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: 'Something went wrong. Please try again.',
       });
     }
   },
@@ -289,7 +305,7 @@ const reviewController = {
 
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: 'Something went wrong. Please try again.',
       });
     }
   },

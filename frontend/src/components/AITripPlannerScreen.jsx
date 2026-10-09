@@ -1,12 +1,22 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { apiFetch } from '../api/client';
 import {
   Sparkles,
   Send,
   MapPin,
   Compass,
   MessageCircle,
-  Bot
+  Bot,
+  RotateCw
 } from 'lucide-react';
+
+let messageSeq = 1;
+
+const nextMessageId = () => {
+  messageSeq += 1;
+  return messageSeq;
+};
 
 // Simple markdown renderer for **bold** text
 const renderMarkdown = (text) => {
@@ -22,6 +32,8 @@ const renderMarkdown = (text) => {
 };
 
 const AITripPlannerScreen = () => {
+  const navigate = useNavigate();
+
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -54,13 +66,15 @@ const AITripPlannerScreen = () => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = async () => {
-    if (!inputValue.trim() || isLoading) return;
+  const handleSend = async (overrideText) => {
+    const messageText = String(
+      overrideText !== undefined ? overrideText : inputValue
+    ).trim();
 
-    const messageText = inputValue.trim();
+    if (!messageText || isLoading) return;
 
     const userMessage = {
-      id: Date.now(),
+      id: nextMessageId(),
       text: messageText,
       sender: 'user'
     };
@@ -70,27 +84,15 @@ const AITripPlannerScreen = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/trip-planner', {
+      const data = await apiFetch('/api/trip-planner', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          message: messageText,
-          userId: 'temp-user-id'
-        })
+        body: {
+          message: messageText
+        }
       });
 
-      if (!response.ok) {
-        throw new Error(
-          `API request failed with status ${response.status}`
-        );
-      }
-
-      const data = await response.json();
-
       const aiMessage = {
-        id: Date.now() + 1,
+        id: nextMessageId(),
         text: data.message,
         sender: 'ai',
         recommendedPackages: data.recommendedPackages || []
@@ -101,16 +103,29 @@ const AITripPlannerScreen = () => {
       console.error('Error getting AI response:', error);
 
       const errorMessage = {
-        id: Date.now() + 1,
+        id: nextMessageId(),
         text:
+          error?.message ||
           "Sorry, I'm having trouble connecting to the AI service right now. Please try again later.",
-        sender: 'ai'
+        sender: 'ai',
+        isError: true,
+        retryPrompt: messageText
       };
 
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleRetry = async (prompt) => {
+    if (isLoading || !prompt) return;
+
+    setMessages((prev) =>
+      prev.filter((msg) => !(msg.isError && msg.retryPrompt === prompt))
+    );
+
+    await handleSend(prompt);
   };
 
   const handleKeyPress = (e) => {
@@ -132,12 +147,12 @@ const AITripPlannerScreen = () => {
           </div>
 
           <div>
-            <h1 className="text-lg font-bold text-[color:var(--text-primary)]">
+            <h1 className="text-lg text-[color:var(--text-primary)]">
               AI Trip Planner
             </h1>
 
             <div className="mt-0.5 flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--success)]" />
 
               <span className="text-xs font-medium text-[color:var(--text-muted)]">
                 Your Pakistan travel assistant
@@ -169,7 +184,7 @@ const AITripPlannerScreen = () => {
                 </div>
 
                 <div>
-                  <h2 className="text-base font-bold text-[color:var(--text-primary)]">
+                  <h2 className="text-base text-[color:var(--text-primary)]">
                     Plan your next journey
                   </h2>
 
@@ -265,6 +280,18 @@ const AITripPlannerScreen = () => {
                     {renderMarkdown(msg.text)}
                   </div>
 
+                  {msg.isError && msg.retryPrompt && (
+                    <button
+                      type="button"
+                      onClick={() => handleRetry(msg.retryPrompt)}
+                      disabled={isLoading}
+                      className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-primary)] bg-[color:var(--bg-secondary)] px-3 py-1.5 text-xs font-bold text-[color:var(--text-primary)] transition hover:bg-[color:var(--brand-gold-soft)] disabled:opacity-50"
+                    >
+                      <RotateCw size={13} strokeWidth={2.2} />
+                      Try again
+                    </button>
+                  )}
+
                   {msg.recommendedPackages &&
                     msg.recommendedPackages.length > 0 && (
                       <div className="mt-4 border-t border-[color:var(--border-light)] pt-4">
@@ -277,22 +304,37 @@ const AITripPlannerScreen = () => {
 
                           {msg.recommendedPackages.map(
                             (pkg, idx) => (
-                              <div
-                                key={idx}
-                                className="rounded-xl bg-[color:var(--bg-secondary)] p-3"
+                              <button
+                                type="button"
+                                key={pkg.id || idx}
+                                onClick={() =>
+                                  pkg.id &&
+                                  navigate(`/package/${pkg.id}`)
+                                }
+                                className="w-full text-left rounded-xl bg-[color:var(--bg-secondary)] p-3 transition hover:bg-[color:var(--brand-gold-soft)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--brand-primary)]"
                               >
                                 <p className="text-sm font-semibold text-[color:var(--text-primary)]">
                                   {pkg.title}
                                 </p>
 
-                                <p className="mt-1 text-xs leading-5 text-[color:var(--text-secondary)]">
-                                  {pkg.description}
-                                </p>
+                                {pkg.description && (
+                                  <p className="mt-1 text-xs leading-5 text-[color:var(--text-secondary)]">
+                                    {pkg.description}
+                                  </p>
+                                )}
 
-                                <p className="mt-2 text-xs font-bold text-[color:var(--brand-primary)]">
-                                  PKR {pkg.price}
-                                </p>
-                              </div>
+                                <div className="mt-2 flex items-center justify-between gap-2">
+                                  <p className="text-xs font-bold text-[color:var(--brand-primary)]">
+                                    PKR {Number(pkg.price).toLocaleString()}
+                                  </p>
+
+                                  {pkg.duration_days && (
+                                    <span className="text-[11px] font-medium text-[color:var(--text-muted)]">
+                                      {pkg.duration_days} days
+                                    </span>
+                                  )}
+                                </div>
+                              </button>
                             )
                           )}
 
@@ -347,6 +389,7 @@ const AITripPlannerScreen = () => {
                 />
 
                 <input
+                aria-label="Message the AI trip planner"
                   type="text"
                   value={inputValue}
                   onChange={(e) =>

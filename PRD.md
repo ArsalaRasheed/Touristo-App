@@ -4,7 +4,7 @@
 
 Touristo is a Pakistan-first tourism marketplace that connects travelers with tour companies and tour guides.
 
-The platform allows travelers to discover Pakistani destinations, explore tour packages, compare hosts and guides, plan trips using AI, make bookings, manage trips, communicate with hosts, and access travel-safety tools.
+The platform allows travelers to discover Pakistani destinations, explore tour packages, evaluate hosts and guides, plan trips using AI, make bookings, manage trips, communicate with hosts, and access travel-safety tools.
 
 Touristo follows an asset-light marketplace model. The platform does not operate tours itself; it connects travelers with tour companies that provide tour packages.
 
@@ -41,6 +41,16 @@ Tour companies looking to:
 * Manage tour guides
 * Communicate with potential customers
 
+## 3.3 Admins
+
+Platform administrators looking to:
+
+* Monitor marketplace activity
+* Manage users and roles
+* Decide host verification status
+* Moderate packages, reviews and reports
+* Review an audit trail of admin actions
+
 ---
 
 # 4. Core Product Goals
@@ -51,7 +61,7 @@ Help travelers discover destinations, tour companies, guides, and packages.
 
 ### Compare
 
-Allow users to evaluate packages, hosts, and guides using available information such as price, duration, ratings, and verification.
+Allow users to evaluate packages, hosts, and guides using available information such as price, duration, ratings, and verification. (Dedicated side-by-side comparison UI is **not implemented** — the guide comparison screen was removed and the package comparison utility is dead code.)
 
 ### Plan
 
@@ -83,7 +93,7 @@ Provide weather information, location sharing, and emergency SOS tools.
 * Host registration
 * Email/password login
 * JWT authentication
-* Role-based access
+* Role-based access (traveler, host, admin)
 * Protected routes
 * Persistent browser authentication state
 
@@ -135,7 +145,7 @@ Travelers can:
 * View host information
 * View ratings/reviews
 * View tour-guide information
-* Save packages
+* Save packages — **not implemented** (no favorites/saved-packages table exists; the UI keeps no server-side state)
 * Start bookings
 * Chat with the host
 
@@ -159,7 +169,7 @@ Travelers can:
 1. Select a package.
 2. Select number of travelers.
 3. Select travel/start date.
-4. Add special requests.
+4. Add special requests. (Collected in the UI, but **not persisted** — the bookings table has no special-requests column; PLANNED.)
 5. Select an available displayed payment method.
 6. Review the calculated total.
 7. Submit the booking.
@@ -204,10 +214,10 @@ Travelers can:
 
 * Browse guides
 * Search/filter guides
-* Compare guides
+* Compare guides — **not implemented** (the guide comparison screen was removed from the app)
 * View specialties
 * View ratings
-* Receive matching recommendations
+* Receive matching recommendations — implemented as `POST /api/tour-guides/recommend` (AI-assisted, authenticated)
 
 Hosts can:
 
@@ -223,7 +233,11 @@ Future active-trip functionality may allow guide/group communication after an ap
 
 # 9. AI Requirements
 
-## AI Trip Planner
+All AI features run through a shared backend AI service (`touristo/services/aiService.js`) using Google Gemini with OpenAI fallback (or the reverse, depending on configuration). Both keys stay server-side; requests have per-attempt and overall timeouts, bounded retries, provider fallback and typed error responses.
+
+## AI Trip Planner — IMPLEMENTED
+
+`POST /api/trip-planner`
 
 The AI planner should:
 
@@ -234,8 +248,9 @@ The AI planner should:
 * Support Urdu.
 * Support Roman Urdu.
 * Handle loading and errors.
+* Ground answers in database content: the server loads destinations and packages, the model must return `{message, packageIds}`, and returned ids are re-validated against the database before the response is sent.
 
-## AI Review Summarization
+## AI Review Summarization — IMPLEMENTED
 
 The system should:
 
@@ -244,7 +259,25 @@ The system should:
 * Identify positive highlights.
 * Identify recurring concerns.
 * Produce a concise summary.
-* Cache the generated summary.
+* Cache the generated summary (`review_summaries` table).
+
+## Host AI Package Builder — IMPLEMENTED
+
+`POST /api/packages/ai/generate` (host-only)
+
+* Generates a draft package (title, description, itinerary, tags, SEO fields) from a short brief.
+* Never publishes or writes to the database on its own — the host reviews and publishes.
+* Rate-limited and cached for identical requests.
+
+## AI Guide Recommendation — IMPLEMENTED
+
+`POST /api/tour-guides/recommend`
+
+* Matches travelers to guides based on their stated preferences and the available guide catalog.
+
+## Travel Radar AI Explanations — IMPLEMENTED
+
+* `GET /api/travel-radar` includes AI-generated explanations of trend data (currently YouTube-sourced).
 
 ---
 
@@ -296,19 +329,27 @@ Future:
 
 ---
 
-# 12. Admin Requirements — Future Phase
+# 12. Admin Requirements — IMPLEMENTED
 
-The future Admin Dashboard should support:
+The Admin Dashboard is implemented (`AdminDashboardScreen.jsx` at `/admin-dashboard`, API under `/api/admin` with a `requireAdmin` guard that re-checks the account role in the database on every request).
 
-* User management
-* Host verification
+Supported:
+
+* User management (including role changes)
+* Host verification status decisions
 * Package moderation
 * Booking monitoring
 * Review moderation
-* Reports
-* Platform analytics
-* Safety monitoring
-* Marketplace activity monitoring
+* Reports (user-raised moderation reports with an open/resolved/dismissed workflow)
+* Platform statistics and analytics
+* Admin audit log (`admin_audit_log`)
+
+Still PLANNED:
+
+* Destination management
+* Marketplace/messaging monitoring
+* Host verification document upload and review (no document upload exists yet)
+* Safety monitoring beyond report triage
 
 ---
 

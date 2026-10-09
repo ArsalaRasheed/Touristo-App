@@ -12,7 +12,8 @@ const {
 } = require('../controllers/messageController');
 
 const {
-  authenticateToken
+  authenticateToken,
+  syncRole
 } = require('../middleware/auth');
 
 // ============================================
@@ -22,6 +23,7 @@ const {
 router.get(
   '/inbox',
   authenticateToken,
+  syncRole,
   getInbox
 );
 
@@ -32,6 +34,7 @@ router.get(
 router.get(
   '/unread-count',
   authenticateToken,
+  syncRole,
   getUnreadCount
 );
 
@@ -42,6 +45,7 @@ router.get(
 router.post(
   '/conversation',
   authenticateToken,
+  syncRole,
   createConversation
 );
 
@@ -52,6 +56,7 @@ router.post(
 router.get(
   '/conversation/:conversationId',
   authenticateToken,
+  syncRole,
   getConversation
 );
 
@@ -62,6 +67,7 @@ router.get(
 router.post(
   '/conversation/:conversationId/messages',
   authenticateToken,
+  syncRole,
   sendMessage
 );
 
@@ -72,6 +78,7 @@ router.post(
 router.patch(
   '/conversation/:conversationId/read',
   authenticateToken,
+  syncRole,
   markAsRead
 );
 

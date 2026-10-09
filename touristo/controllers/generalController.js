@@ -5,8 +5,9 @@ const generalController = {
   // Get homepage data including personalized recommendations
   async getHomepageData(req, res) {
     try {
-      // Get user ID from request (would come from auth middleware in real implementation)
-      const userId = req.query.userId || null;
+      // Personalisation comes from the VERIFIED token only.
+      // An arbitrary ?userId= can no longer read another user's signals.
+      const userId = req.user?.id || null;
       
       // Get personalized recommendations if user ID is provided
       let recommendedPackages = [];
@@ -76,7 +77,7 @@ const generalController = {
       console.error('Error in getHomepageData:', err);
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: 'Something went wrong. Please try again.',
       });
     }
   }

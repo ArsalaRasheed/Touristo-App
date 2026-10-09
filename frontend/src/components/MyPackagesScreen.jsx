@@ -1,4 +1,4 @@
-import React, {
+import {
   useState,
   useEffect
 } from 'react';
@@ -27,6 +27,12 @@ const MyPackagesScreen = () => {
 
   const navigate =
     useNavigate();
+
+  const accessError = !user
+    ? 'User not authenticated.'
+    : user.role !== 'host'
+      ? 'Access denied. This section is available to tour companies only.'
+      : null;
 
   useEffect(() => {
     const fetchPackages =
@@ -145,29 +151,11 @@ const MyPackagesScreen = () => {
         }
       };
 
-    if (
-      user &&
-      user.role === 'host'
-    ) {
-
-      fetchPackages();
-
-    } else if (user) {
-
-      setError(
-        'Access denied. This section is available to tour companies only.'
-      );
-
-      setLoading(false);
-
-    } else {
-
-      setError(
-        'User not authenticated.'
-      );
-
-      setLoading(false);
+    if (user?.role !== 'host') {
+      return;
     }
+
+    fetchPackages();
 
   }, [
     user,
@@ -180,14 +168,14 @@ const MyPackagesScreen = () => {
   |--------------------------------------------------------------------------
   */
 
-  if (loading) {
+  if (loading && !accessError) {
 
     return (
       <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] p-4 flex items-center justify-center">
 
-        <div className="text-center">
+        <div className="text-center" role="status">
 
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[color:var(--accent-primary)] mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[color:var(--brand-primary)] mx-auto"></div>
 
           <p className="mt-4 text-[color:var(--text-secondary)]">
             Loading your packages...
@@ -205,19 +193,19 @@ const MyPackagesScreen = () => {
   |--------------------------------------------------------------------------
   */
 
-  if (error) {
+  if (accessError || error) {
 
     return (
       <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] p-4 flex items-center justify-center">
 
-        <div className="text-center p-6 bg-[color:var(--surface-primary)] rounded-xl border border-[color:var(--border-primary)] max-w-md">
+        <div className="text-center p-6 bg-[color:var(--surface-primary)] rounded-xl border border-[color:var(--border-light)] max-w-md">
 
-          <h2 className="text-xl font-bold mb-2 text-red-500">
+          <h2 className="text-xl mb-2 text-[color:var(--danger)]">
             Error Loading Packages
           </h2>
 
-          <p className="text-[color:var(--text-secondary)] mb-4">
-            {error}
+          <p role="alert" className="text-[color:var(--text-secondary)] mb-4">
+            {accessError || error}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -226,7 +214,7 @@ const MyPackagesScreen = () => {
               onClick={() =>
                 window.location.reload()
               }
-              className="bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] py-2 px-4 rounded-lg"
+              className="bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary-hover)] text-[color:var(--text-inverse)] py-2 px-4 rounded-lg"
             >
               Try Again
             </button>
@@ -235,7 +223,7 @@ const MyPackagesScreen = () => {
               onClick={() =>
                 navigate('/host-dashboard')
               }
-              className="bg-[color:var(--surface-secondary)] hover:bg-[color:var(--border-primary)] text-[color:var(--text-primary)] py-2 px-4 rounded-lg"
+              className="bg-[color:var(--surface-secondary)] hover:bg-[color:var(--border-light)] text-[color:var(--text-primary)] py-2 px-4 rounded-lg"
             >
               Go to Dashboard
             </button>
@@ -261,13 +249,13 @@ const MyPackagesScreen = () => {
 
         <div className="flex justify-between items-center mb-6">
 
-          <h1 className="text-3xl font-bold text-[color:var(--text-primary)]">
+          <h1 className="text-3xl tracking-[-0.03em] text-[color:var(--text-primary)]">
             My Packages
           </h1>
 
           <Link
             to="/host/create-package"
-            className="bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] font-bold py-2 px-4 rounded-lg"
+            className="bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary-hover)] text-[color:var(--text-inverse)] font-bold py-2 px-4 rounded-lg"
           >
             + Add New
           </Link>
@@ -286,7 +274,7 @@ const MyPackagesScreen = () => {
               📦
             </div>
 
-            <h3 className="text-xl font-bold mb-2 text-[color:var(--text-primary)]">
+            <h3 className="text-xl mb-2 text-[color:var(--text-primary)]">
               No packages yet
             </h3>
 
@@ -296,7 +284,7 @@ const MyPackagesScreen = () => {
 
             <Link
               to="/host/create-package"
-              className="inline-block bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] font-bold py-3 px-6 rounded-full transition"
+              className="inline-block bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary-hover)] text-[color:var(--text-inverse)] font-bold py-3 px-6 rounded-full transition"
             >
               Create Your First Package
             </Link>
@@ -311,10 +299,10 @@ const MyPackagesScreen = () => {
 
               <div
                 key={pkg.id}
-                className="bg-[color:var(--surface-primary)] rounded-2xl overflow-hidden shadow-md border border-[color:var(--border-primary)]"
+                className="bg-[color:var(--surface-primary)] rounded-2xl overflow-hidden shadow-[var(--shadow-md)] border border-[color:var(--border-light)]"
               >
 
-                <div className="h-48 bg-gradient-to-r from-[color:var(--accent-primary)] to-[color:var(--accent-primary-hover)] flex items-center justify-center">
+                <div className="h-48 bg-gradient-to-r from-[color:var(--brand-primary)] to-[color:var(--brand-primary-hover)] flex items-center justify-center">
 
                   <div className="text-white text-4xl">
                     {(pkg.title || 'P')
@@ -325,7 +313,7 @@ const MyPackagesScreen = () => {
 
                 <div className="p-6">
 
-                  <h3 className="text-xl font-bold mb-2 text-[color:var(--text-primary)]">
+                  <h3 className="text-xl mb-2 text-[color:var(--text-primary)]">
                     {pkg.title}
                   </h3>
 
@@ -335,7 +323,7 @@ const MyPackagesScreen = () => {
 
                   <div className="flex justify-between items-center mb-4">
 
-                    <span className="font-bold text-[color:var(--accent-primary)]">
+                    <span className="font-bold text-[color:var(--brand-primary)]">
                       PKR{' '}
                       {parseInt(
                         pkg.price || 0
@@ -357,13 +345,13 @@ const MyPackagesScreen = () => {
                           `/host/create-package?edit=${pkg.id}`
                         )
                       }
-                      className="flex-1 py-2 bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] rounded-lg hover:bg-[color:var(--border-primary)] transition text-sm"
+                      className="flex-1 py-2 bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] rounded-lg hover:bg-[color:var(--border-light)] transition text-sm"
                     >
                       Edit
                     </button>
 
                     <button
-                      className="flex-1 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition text-sm"
+                      className="flex-1 py-2 bg-[color:var(--danger-soft)] text-[color:var(--danger)] rounded-lg hover:bg-[color:var(--danger)]/35 transition text-sm"
                     >
                       Delete
                     </button>
@@ -384,7 +372,7 @@ const MyPackagesScreen = () => {
 
           <Link
             to="/host/create-package"
-            className="inline-block bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] font-bold py-3 px-6 rounded-full transition"
+            className="inline-block bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary-hover)] text-[color:var(--text-inverse)] font-bold py-3 px-6 rounded-full transition"
           >
             Create More Packages
           </Link>

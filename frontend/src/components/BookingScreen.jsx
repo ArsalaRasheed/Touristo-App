@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -21,8 +21,14 @@ const BookingScreen = () => {
   const packageIdFromUrl = searchParams.get('packageId');
 
   const [packageInfo, setPackageInfo] = useState(statePackageInfo);
-  const [packageLoading, setPackageLoading] = useState(!statePackageInfo);
-  const [packageError, setPackageError] = useState('');
+  const [packageLoading, setPackageLoading] = useState(
+    !statePackageInfo?.id && Boolean(packageIdFromUrl)
+  );
+  const [packageError, setPackageError] = useState(
+    statePackageInfo?.id || packageIdFromUrl
+      ? ''
+      : 'Package information is missing. Please open the package again.'
+  );
 
   const [bookingDetails, setBookingDetails] = useState({
     travelers: 1,
@@ -39,17 +45,7 @@ const BookingScreen = () => {
    * using packageId from the URL.
    */
   useEffect(() => {
-    if (statePackageInfo?.id) {
-      setPackageInfo(statePackageInfo);
-      setPackageLoading(false);
-      return;
-    }
-
-    if (!packageIdFromUrl) {
-      setPackageLoading(false);
-      setPackageError(
-        'Package information is missing. Please open the package again.'
-      );
+    if (statePackageInfo?.id || !packageIdFromUrl) {
       return;
     }
 
@@ -162,7 +158,6 @@ const BookingScreen = () => {
        * No hard-coded package ID is used anywhere.
        */
       const bookingData = {
-        user_id: user.id,
         package_id: packageInfo.id,
         booking_date: new Date().toISOString().split('T')[0],
         start_date: bookingDetails.startDate,
@@ -170,9 +165,6 @@ const BookingScreen = () => {
           bookingDetails.startDate,
           packageInfo.totalDays
         ),
-        total_price: totalPrice,
-        status: 'confirmed',
-        payment_status: 'completed',
         travelers: Number(bookingDetails.travelers)
       };
 
@@ -223,10 +215,10 @@ const BookingScreen = () => {
     return (
       <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] p-4">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-[color:var(--surface-primary)] rounded-2xl p-8 border border-[color:var(--border-primary)] text-center">
+          <div className="bg-[color:var(--surface-primary)] rounded-2xl p-8 border border-[color:var(--border-light)] text-center">
             <div className="loading-spinner mx-auto mb-4" />
 
-            <h2 className="text-xl font-bold mb-2">
+            <h2 className="text-xl mb-2">
               Loading selected package...
             </h2>
 
@@ -245,10 +237,10 @@ const BookingScreen = () => {
   if (!packageInfo?.id) {
     return (
       <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] p-4 flex items-center justify-center">
-        <div className="w-full max-w-md bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)] rounded-2xl p-6 text-center">
+        <div className="w-full max-w-md bg-[color:var(--surface-primary)] border border-[color:var(--border-light)] rounded-2xl p-6 text-center">
           <div className="text-4xl mb-4">⚠️</div>
 
-          <h1 className="text-xl font-bold mb-2">
+          <h1 className="text-xl mb-2">
             Unable to load selected package
           </h1>
 
@@ -260,7 +252,7 @@ const BookingScreen = () => {
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="w-full bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] py-3 rounded-xl font-bold transition"
+            className="w-full bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary-hover)] text-[color:var(--text-inverse)] py-3 rounded-xl font-bold transition"
           >
             Go Back
           </button>
@@ -273,7 +265,7 @@ const BookingScreen = () => {
     <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] p-4">
       <div className="max-w-4xl mx-auto">
 
-        <h1 className="text-3xl font-bold mb-2 text-[color:var(--text-primary)]">
+        <h1 className="text-3xl mb-2 text-[color:var(--text-primary)]">
           Complete Your Booking
         </h1>
 
@@ -287,9 +279,9 @@ const BookingScreen = () => {
           <div className="lg:col-span-2 space-y-6">
 
             {/* Package Summary */}
-            <div className="bg-[color:var(--surface-primary)] rounded-2xl p-6 border border-[color:var(--border-primary)]">
+            <div className="bg-[color:var(--surface-primary)] rounded-2xl p-6 border border-[color:var(--border-light)]">
 
-              <h2 className="text-xl font-bold mb-4 text-[color:var(--text-primary)]">
+              <h2 className="text-xl mb-4 text-[color:var(--text-primary)]">
                 Package Summary
               </h2>
 
@@ -309,7 +301,7 @@ const BookingScreen = () => {
 
                 <div className="min-w-0">
 
-                  <h3 className="font-bold text-[color:var(--text-primary)] break-words">
+                  <h3 className="text-[color:var(--text-primary)] break-words">
                     {packageInfo.title}
                   </h3>
 
@@ -317,7 +309,7 @@ const BookingScreen = () => {
                     {packageInfo.host}
                   </p>
 
-                  <p className="font-semibold text-[color:var(--accent-primary)]">
+                  <p className="font-semibold text-[color:var(--brand-primary)]">
                     PKR{' '}
                     {Number(
                       packageInfo.pricePerPerson || 0
@@ -330,9 +322,9 @@ const BookingScreen = () => {
             </div>
 
             {/* Booking Details */}
-            <div className="bg-[color:var(--surface-primary)] rounded-2xl p-6 border border-[color:var(--border-primary)]">
+            <div className="bg-[color:var(--surface-primary)] rounded-2xl p-6 border border-[color:var(--border-light)]">
 
-              <h2 className="text-xl font-bold mb-4 text-[color:var(--text-primary)]">
+              <h2 className="text-xl mb-4 text-[color:var(--text-primary)]">
                 Booking Details
               </h2>
 
@@ -340,27 +332,35 @@ const BookingScreen = () => {
 
                 {/* Travelers */}
                 <div>
-                  <label className="block text-[color:var(--text-secondary)] mb-1">
+                  <label
+                    htmlFor="booking-travelers"
+                    className="block text-[color:var(--text-secondary)] mb-1"
+                  >
                     Number of Travelers
                   </label>
 
                   <input
+                    id="booking-travelers"
                     type="number"
                     name="travelers"
                     value={bookingDetails.travelers}
                     onChange={handleChange}
                     min="1"
-                    className="w-full p-3 border border-[color:var(--border-primary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-primary)] bg-[color:var(--surface-primary)] text-[color:var(--text-primary)]"
+                    className="w-full p-3 border border-[color:var(--border-control)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-primary)] bg-[color:var(--surface-primary)] text-[color:var(--text-primary)]"
                   />
                 </div>
 
                 {/* Start Date */}
                 <div>
-                  <label className="block text-[color:var(--text-secondary)] mb-1">
+                  <label
+                    htmlFor="booking-start-date"
+                    className="block text-[color:var(--text-secondary)] mb-1"
+                  >
                     Start Date
                   </label>
 
                   <input
+                    id="booking-start-date"
                     type="date"
                     name="startDate"
                     value={bookingDetails.startDate}
@@ -368,23 +368,27 @@ const BookingScreen = () => {
                     min={new Date()
                       .toISOString()
                       .split('T')[0]}
-                    className="w-full p-3 border border-[color:var(--border-primary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-primary)] bg-[color:var(--surface-primary)] text-[color:var(--text-primary)]"
+                    className="w-full p-3 border border-[color:var(--border-control)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-primary)] bg-[color:var(--surface-primary)] text-[color:var(--text-primary)]"
                   />
                 </div>
 
                 {/* Special Requests */}
                 <div>
-                  <label className="block text-[color:var(--text-secondary)] mb-1">
+                  <label
+                    htmlFor="booking-special-requests"
+                    className="block text-[color:var(--text-secondary)] mb-1"
+                  >
                     Special Requests
                   </label>
 
                   <textarea
+                    id="booking-special-requests"
                     name="specialRequests"
                     value={bookingDetails.specialRequests}
                     onChange={handleChange}
                     rows="3"
                     placeholder="Any special requests or dietary requirements..."
-                    className="w-full p-3 border border-[color:var(--border-primary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-primary)] bg-[color:var(--surface-primary)] text-[color:var(--text-primary)]"
+                    className="w-full p-3 border border-[color:var(--border-control)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-primary)] bg-[color:var(--surface-primary)] text-[color:var(--text-primary)]"
                   />
                 </div>
 
@@ -401,8 +405,8 @@ const BookingScreen = () => {
                       className={`flex items-center p-4 border rounded-lg cursor-pointer transition ${
                         bookingDetails.paymentMethod ===
                         'credit-card'
-                          ? 'border-[color:var(--accent-primary)] bg-[color:var(--accent-primary)] bg-opacity-10'
-                          : 'border-[color:var(--border-primary)] hover:border-[color:var(--accent-primary)]'
+                          ? 'border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] bg-opacity-10'
+                          : 'border-[color:var(--border-light)] hover:border-[color:var(--brand-primary)]'
                       }`}
                       onClick={() =>
                         setBookingDetails((prev) => ({
@@ -414,6 +418,7 @@ const BookingScreen = () => {
                       <input
                         type="radio"
                         name="paymentMethod"
+                        aria-label="Credit card"
                         value="credit-card"
                         checked={
                           bookingDetails.paymentMethod ===
@@ -455,8 +460,8 @@ const BookingScreen = () => {
                       className={`flex items-center p-4 border rounded-lg cursor-pointer transition ${
                         bookingDetails.paymentMethod ===
                         'bank-transfer'
-                          ? 'border-[color:var(--accent-primary)] bg-[color:var(--accent-primary)] bg-opacity-10'
-                          : 'border-[color:var(--border-primary)] hover:border-[color:var(--accent-primary)]'
+                          ? 'border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] bg-opacity-10'
+                          : 'border-[color:var(--border-light)] hover:border-[color:var(--brand-primary)]'
                       }`}
                       onClick={() =>
                         setBookingDetails((prev) => ({
@@ -468,6 +473,7 @@ const BookingScreen = () => {
                       <input
                         type="radio"
                         name="paymentMethod"
+                        aria-label="Bank transfer"
                         value="bank-transfer"
                         checked={
                           bookingDetails.paymentMethod ===
@@ -509,8 +515,8 @@ const BookingScreen = () => {
                       className={`flex items-center p-4 border rounded-lg cursor-pointer transition ${
                         bookingDetails.paymentMethod ===
                         'cash-on-arrival'
-                          ? 'border-[color:var(--accent-primary)] bg-[color:var(--accent-primary)] bg-opacity-10'
-                          : 'border-[color:var(--border-primary)] hover:border-[color:var(--accent-primary)]'
+                          ? 'border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] bg-opacity-10'
+                          : 'border-[color:var(--border-light)] hover:border-[color:var(--brand-primary)]'
                       }`}
                       onClick={() =>
                         setBookingDetails((prev) => ({
@@ -522,6 +528,7 @@ const BookingScreen = () => {
                       <input
                         type="radio"
                         name="paymentMethod"
+                        aria-label="Cash on arrival"
                         value="cash-on-arrival"
                         checked={
                           bookingDetails.paymentMethod ===
@@ -569,9 +576,9 @@ const BookingScreen = () => {
           <div className="space-y-6">
 
             {/* Price Summary */}
-            <div className="bg-[color:var(--surface-primary)] rounded-2xl p-6 border border-[color:var(--border-primary)] sticky top-4">
+            <div className="bg-[color:var(--surface-primary)] rounded-2xl p-6 border border-[color:var(--border-light)] sticky top-4">
 
-              <h2 className="text-xl font-bold mb-4 text-[color:var(--text-primary)]">
+              <h2 className="text-xl mb-4 text-[color:var(--text-primary)]">
                 Price Summary
               </h2>
 
@@ -596,13 +603,13 @@ const BookingScreen = () => {
                   </span>
                 </div>
 
-                <div className="border-t border-[color:var(--border-primary)] pt-3 mt-3">
+                <div className="border-t border-[color:var(--border-light)] pt-3 mt-3">
 
                   <div className="flex justify-between gap-4 font-bold text-lg">
 
                     <span>Total:</span>
 
-                    <span className="text-[color:var(--accent-primary)]">
+                    <span className="text-[color:var(--brand-primary)]">
                       PKR {totalPrice.toLocaleString()}
                     </span>
 
@@ -614,7 +621,7 @@ const BookingScreen = () => {
 
               <button
                 onClick={handleConfirmBooking}
-                className="w-full bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] py-3 rounded-xl font-bold transition duration-200"
+                className="w-full bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary-hover)] text-[color:var(--text-inverse)] py-3 rounded-xl font-bold transition duration-200"
               >
                 Confirm Booking
               </button>
@@ -627,9 +634,9 @@ const BookingScreen = () => {
             </div>
 
             {/* Duration */}
-            <div className="bg-[color:var(--surface-primary)] rounded-2xl p-6 border border-[color:var(--border-primary)]">
+            <div className="bg-[color:var(--surface-primary)] rounded-2xl p-6 border border-[color:var(--border-light)]">
 
-              <h3 className="font-bold mb-2 text-[color:var(--text-primary)]">
+              <h3 className="mb-2 text-[color:var(--text-primary)]">
                 Trip Duration
               </h3>
 

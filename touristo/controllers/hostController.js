@@ -1,6 +1,28 @@
 const Host = require('../models/Host');
 const { query } = require('../config/database');
 const { getHostWithRanking, getAllHostsWithRanking } = require('../utils/hostRanking');
+const { sanitizeHost, isAdmin } = require('../middleware/accessControl');
+
+const GENERIC_ERROR = 'Something went wrong. Please try again.';
+
+/**
+ * Real completed-trip count for a host - never randomised.
+ */
+const getCompletedTrips = async (hostId) => {
+  try {
+    const result = await query(
+      `SELECT COUNT(*)::int AS trips
+         FROM bookings b
+         JOIN packages p ON p.id = b.package_id
+        WHERE p.host_id = $1 AND b.status = 'completed'`,
+      [hostId]
+    );
+    return result.rows[0]?.trips || 0;
+  } catch (err) {
+    console.warn('Could not load host trip count:', err.message);
+    return 0;
+  }
+};
 
 const hostController = {
   // Get all hosts
@@ -8,12 +30,32 @@ const hostController = {
     try {
       // Use the ranking utility to get all hosts with their rankings
       const hosts = await getAllHostsWithRanking();
-      
+
+      // Real trip counts from completed bookings (never invented)
+      let tripCounts = new Map();
+
+      try {
+        const counts = await query(`
+          SELECT
+            p.host_id,
+            SUM(CASE WHEN b.status = 'completed' THEN 1 ELSE 0 END)::int AS trips
+          FROM packages p
+          LEFT JOIN bookings b ON b.package_id = p.id
+          GROUP BY p.host_id
+        `);
+
+        tripCounts = new Map(
+          counts.rows.map(row => [row.host_id, row.trips])
+        );
+      } catch (countErr) {
+        console.warn('Could not load host trip counts:', countErr.message);
+      }
+
       // Add ranking numbers to hosts (top 3 get special positions)
       const hostsWithRankingNumbers = hosts.map((host, index) => ({
-        ...host,
+        ...sanitizeHost(host, req),
         ranking: index + 1,
-        trips_completed: Math.floor(Math.random() * 300) // Mock data for number of trips
+        trips_completed: tripCounts.get(host.id) || 0
       }));
       
       res.status(200).json({
@@ -25,7 +67,7 @@ const hostController = {
       console.error('Error in getAllHosts:', err);
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: 'Something went wrong. Please try again.',
       });
     }
   },
@@ -78,11 +120,11 @@ const hostController = {
 
       // Add tour guides and packages to host data
       const hostWithData = {
-        ...hostWithRanking,
+        ...sanitizeHost(hostWithRanking, req),
         tourGuides: tourGuides,
         packages: packagesWithBookings,
         packageCount: packagesWithBookings.length,
-        trips_completed: Math.floor(Math.random() * 300) // Mock data for number of trips
+        trips_completed: await getCompletedTrips(host.id)
       };
 
       res.status(200).json({
@@ -93,7 +135,7 @@ const hostController = {
       console.error('Error in getHostById:', err);
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: 'Something went wrong. Please try again.',
       });
     }
   },
@@ -146,11 +188,11 @@ const hostController = {
 
       // Add tour guides and packages to host data
       const hostWithData = {
-        ...hostWithRanking,
+        ...sanitizeHost(hostWithRanking, req),
         tourGuides: tourGuides,
         packages: packagesWithBookings,
         packageCount: packagesWithBookings.length,
-        trips_completed: Math.floor(Math.random() * 300) // Mock data for number of trips
+        trips_completed: await getCompletedTrips(host.id)
       };
 
       res.status(200).json({
@@ -161,33 +203,56 @@ const hostController = {
       console.error('Error in getHostByUserId:', err);
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: 'Something went wrong. Please try again.',
       });
     }
   },
 
-  // Create a new host
+  /**
+   * Create a host profile.
+   *
+   * The owning user is ALWAYS the authenticated caller - a client-supplied
+   * `user_id` is ignored. One host profile per user.
+   */
   async createHost(req, res) {
     try {
-      const { user_id, company_name, description, location, license_number, cnic_or_business_registration, company_address } = req.body;
+      const user_id = req.user.id;
+      const { company_name, description, location, license_number, cnic_or_business_registration, company_address } = req.body;
 
       // Validate required fields
-      if (!user_id || !company_name) {
+      if (!company_name || !String(company_name).trim()) {
         return res.status(400).json({
           status: 'fail',
-          message: 'User ID and company name are required',
+          message: 'Company name is required',
+        });
+      }
+
+      const existing = await Host.findByUserId(user_id);
+      if (existing) {
+        return res.status(409).json({
+          status: 'fail',
+          message: 'You already have a company profile',
         });
       }
 
       const newHost = await Host.create({
         user_id,
-        company_name,
+        company_name: String(company_name).trim(),
         description,
         location,
         license_number,
         cnic_or_business_registration,
         company_address
       });
+
+      // A user who creates a company profile becomes a host.
+      // Admins keep their role.
+      if (req.user.role === 'traveler') {
+        await query(
+          `UPDATE users SET role = 'host', updated_at = NOW() WHERE id = $1 AND role = 'traveler'`,
+          [user_id]
+        ).catch((err) => console.warn('Could not promote user role:', err.message));
+      }
 
       res.status(201).json({
         status: 'success',
@@ -197,7 +262,7 @@ const hostController = {
       console.error('Error in createHost:', err);
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: GENERIC_ERROR,
       });
     }
   },
@@ -206,17 +271,79 @@ const hostController = {
   async updateHost(req, res) {
     try {
       const { id } = req.params;
-      const { company_name, description, location, license_number, cnic_or_business_registration, company_address, verification_status, verified } = req.body;
 
-      const updatedHost = await Host.update(id, {
+      const existing = await Host.findById(id);
+
+      if (!existing) {
+        return res.status(404).json({
+          status: 'fail',
+          message: 'Host not found',
+        });
+      }
+
+      const isOwner =
+        Number(existing.user_id) === Number(req.user?.id);
+      const isAdmin = req.user?.role === 'admin';
+
+      if (!isOwner && !isAdmin) {
+        return res.status(403).json({
+          status: 'fail',
+          message:
+            'You are not authorized to update this host profile',
+        });
+      }
+
+      const {
         company_name,
         description,
         location,
         license_number,
         cnic_or_business_registration,
         company_address,
-        verification_status,
-        verified
+      } = req.body || {};
+
+      const pickText = (value, current) =>
+        typeof value === 'string' ? value : current;
+
+      const updatedHost = await Host.update(id, {
+        company_name:
+          typeof company_name === 'string' &&
+          company_name.trim()
+            ? company_name.trim()
+            : existing.company_name,
+
+        description: pickText(
+          description,
+          existing.description
+        ),
+
+        location: pickText(
+          location,
+          existing.location
+        ),
+
+        license_number: pickText(
+          license_number,
+          existing.license_number
+        ),
+
+        cnic_or_business_registration:
+          pickText(
+            cnic_or_business_registration,
+            existing.cnic_or_business_registration
+          ),
+
+        company_address: pickText(
+          company_address,
+          existing.company_address
+        ),
+
+        // Verification is admin controlled only and can never be
+        // set from this endpoint, regardless of the request body.
+        verification_status:
+          existing.verification_status || 'pending',
+
+        verified: existing.verified === true,
       });
 
       if (!updatedHost) {
@@ -234,7 +361,7 @@ const hostController = {
       console.error('Error in updateHost:', err);
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: 'Something went wrong. Please try again.',
       });
     }
   },
@@ -243,6 +370,27 @@ const hostController = {
   async deleteHost(req, res) {
     try {
       const { id } = req.params;
+
+      const existing = await Host.findById(id);
+
+      if (!existing) {
+        return res.status(404).json({
+          status: 'fail',
+          message: 'Host not found',
+        });
+      }
+
+      const isOwner =
+        Number(existing.user_id) === Number(req.user?.id);
+      const isAdmin = req.user?.role === 'admin';
+
+      if (!isOwner && !isAdmin) {
+        return res.status(403).json({
+          status: 'fail',
+          message:
+            'You are not authorized to delete this host profile',
+        });
+      }
 
       const deleted = await Host.delete(id);
 
@@ -261,7 +409,7 @@ const hostController = {
       console.error('Error in deleteHost:', err);
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: 'Something went wrong. Please try again.',
       });
     }
   }

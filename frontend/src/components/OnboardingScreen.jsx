@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo_touristo.png';
 
@@ -54,7 +54,7 @@ const OnboardingScreen = () => {
     <div className="min-h-screen flex flex-col bg-[color:var(--bg-primary)] text-[color:var(--text-primary)]">
       <div className="flex-grow flex flex-col items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl overflow-hidden shadow-md">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl overflow-hidden shadow-[var(--shadow-md)]">
             <img
               src={logo}
               alt="Touristo"
@@ -63,7 +63,7 @@ const OnboardingScreen = () => {
           </div>
           
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-center mb-2 text-[color:var(--text-primary)]">{steps[currentStep].title}</h1>
+            <h1 className="text-3xl text-center mb-2 text-[color:var(--text-primary)]">{steps[currentStep].title}</h1>
             <p className="text-center text-[color:var(--text-secondary)]">{steps[currentStep].description}</p>
           </div>
           
@@ -79,7 +79,7 @@ const OnboardingScreen = () => {
             {steps.map((_, index) => (
               <div 
                 key={index} 
-                className={`w-3 h-3 rounded-full mx-1 ${index === currentStep ? 'bg-[color:var(--accent-primary)]' : 'bg-[color:var(--border-primary)]'}`}
+                className={`w-3 h-3 rounded-full mx-1 ${index === currentStep ? 'bg-[color:var(--brand-primary)]' : 'bg-[color:var(--border-light)]'}`}
               ></div>
             ))}
           </div>
@@ -91,14 +91,14 @@ const OnboardingScreen = () => {
           {currentStep > 0 ? (
             <button 
               onClick={prevStep}
-              className="px-6 py-3 bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] rounded-lg font-medium hover:bg-[color:var(--border-primary)] transition"
+              className="px-6 py-3 bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] rounded-lg font-medium hover:bg-[color:var(--border-light)] transition"
             >
               Previous
             </button>
           ) : (
             <button 
               onClick={skipOnboarding}
-              className="px-6 py-3 bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] rounded-lg font-medium hover:bg-[color:var(--border-primary)] transition"
+              className="px-6 py-3 bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] rounded-lg font-medium hover:bg-[color:var(--border-light)] transition"
             >
               Skip
             </button>
@@ -106,7 +106,7 @@ const OnboardingScreen = () => {
           
           <button 
             onClick={nextStep}
-            className="px-6 py-3 bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] rounded-lg font-medium transition"
+            className="px-6 py-3 bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary-hover)] text-[color:var(--text-inverse)] rounded-lg font-medium transition"
           >
             {currentStep === steps.length - 1 ? 'Get Started' : 'Next'}
           </button>

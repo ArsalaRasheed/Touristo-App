@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -6,7 +5,7 @@ import {
   Home,
   Search,
   Sparkles,
-  ShieldAlert,
+  Siren,
   User,
   LayoutDashboard,
   Package,
@@ -37,8 +36,7 @@ const BottomNav = () => {
     {
       to: '/sos',
       label: 'SOS',
-      icon: ShieldAlert,
-      isSOS: true
+      icon: Siren
     },
     {
       to: '/profile',
@@ -124,71 +122,6 @@ const BottomNav = () => {
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = isRouteActive(item);
-
-            if (item.isSOS) {
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  aria-label="Emergency SOS"
-                  className="
-                    relative
-                    flex-1
-                    h-full
-                    flex
-                    flex-col
-                    items-center
-                    justify-center
-                    min-w-0
-                    group
-                  "
-                >
-                  <div
-                    className={`
-                      relative
-                      w-10
-                      h-10
-                      rounded-full
-                      flex
-                      items-center
-                      justify-center
-                      transition-all
-                      duration-200
-                      ${
-                        isActive
-                          ? 'bg-[color:var(--danger)] text-white shadow-[0_5px_15px_rgba(184,76,76,0.28)]'
-                          : 'bg-[color:var(--danger-soft)] text-[color:var(--danger)] group-hover:bg-[#F5DCDC]'
-                      }
-                    `}
-                  >
-                    <Icon
-                      size={19}
-                      strokeWidth={2.2}
-                    />
-
-                    {isActive && (
-                      <span className="absolute inset-0 rounded-full ring-2 ring-[color:var(--danger)]/15" />
-                    )}
-                  </div>
-
-                  <span
-                    className={`
-                      mt-1
-                      text-[10px]
-                      leading-none
-                      whitespace-nowrap
-                      ${
-                        isActive
-                          ? 'font-bold text-[color:var(--danger)]'
-                          : 'font-medium text-[color:var(--text-muted)]'
-                      }
-                    `}
-                  >
-                    {item.label}
-                  </span>
-                </Link>
-              );
-            }
 
             return (
               <Link

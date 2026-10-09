@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import {
@@ -21,12 +21,14 @@ import {
    TOGGLE
 ============================================================ */
 
-const Toggle = ({ checked, onChange }) => {
+const Toggle = ({ checked, onChange, label }) => {
   return (
     <button
       type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
       onClick={onChange}
-      aria-pressed={checked}
       className={`relative h-7 w-12 shrink-0 rounded-full transition-all duration-200 ${
         checked
           ? 'bg-[color:var(--brand-primary)]'
@@ -34,7 +36,7 @@ const Toggle = ({ checked, onChange }) => {
       }`}
     >
       <span
-        className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+        className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-[var(--shadow-sm)] transition-transform duration-200 ${
           checked ? 'translate-x-6' : 'translate-x-1'
         }`}
       />
@@ -86,6 +88,7 @@ const SettingRow = ({
       <Toggle
         checked={checked}
         onChange={onChange}
+        label={title}
       />
 
     </div>
@@ -114,7 +117,7 @@ const SectionCard = ({
 
         <div>
 
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[color:var(--brand-gold)]">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[color:var(--brand-gold-ink)]">
             {eyebrow}
           </p>
 
@@ -173,6 +176,7 @@ const SelectField = ({
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          aria-label={label}
           className="w-full appearance-none rounded-xl border border-[color:var(--border-light)] bg-[color:var(--surface-secondary)] px-4 py-3 pr-10 text-sm font-medium text-[color:var(--text-primary)] outline-none transition-all focus:border-[color:var(--brand-gold)] focus:ring-2 focus:ring-[color:var(--brand-gold)]/15"
         >
           {children}
@@ -251,7 +255,7 @@ const SettingsScreen = () => {
               Back to Profile
             </Link>
 
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--brand-gold)]">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--brand-gold-ink)]">
               Preferences
             </span>
 
@@ -266,7 +270,7 @@ const SettingsScreen = () => {
 
             <div>
 
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[color:var(--brand-gold)]">
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[color:var(--brand-gold-ink)]">
                 Account
               </p>
 

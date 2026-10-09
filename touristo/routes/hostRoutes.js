@@ -1,24 +1,24 @@
 const express = require('express');
 const router = express.Router();
 const hostController = require('../controllers/hostController');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, optionalAuth, syncRole } = require('../middleware/auth');
 
-// Get all hosts
-router.get('/', hostController.getAllHosts);
+// Get all hosts (public listing - PII scrubbed unless the caller is the owner)
+router.get('/', optionalAuth, hostController.getAllHosts);
 
-// Get host by user ID
-router.get('/user/:id', hostController.getHostByUserId);
+// Get host by user ID (public listing - PII scrubbed unless owner/admin)
+router.get('/user/:id', optionalAuth, hostController.getHostByUserId);
 
-// Get host by ID
-router.get('/:id', hostController.getHostById);
+// Get host by ID (public listing - PII scrubbed unless owner/admin)
+router.get('/:id', optionalAuth, hostController.getHostById);
 
-// Create a new host
-router.post('/', authenticateToken, hostController.createHost);
+// Create a new host (bound to the authenticated user)
+router.post('/', authenticateToken, syncRole, hostController.createHost);
 
 // Update host
-router.put('/:id', authenticateToken, hostController.updateHost);
+router.put('/:id', authenticateToken, syncRole, hostController.updateHost);
 
 // Delete host
-router.delete('/:id', authenticateToken, hostController.deleteHost);
+router.delete('/:id', authenticateToken, syncRole, hostController.deleteHost);
 
 module.exports = router;

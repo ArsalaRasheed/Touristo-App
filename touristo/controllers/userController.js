@@ -2,15 +2,31 @@ const User = require('../models/User');
 const { query } = require('../config/database');
 const bcrypt = require('bcrypt');
 const { generateToken } = require('../utils/jwtUtils');
+const { sanitizeUser } = require('../middleware/accessControl');
 
 // Regular expression for email validation
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Roles a user may self-select at signup. 'admin' can never be chosen
+// by a client - admin accounts are granted explicitly by another admin.
+const SIGNUP_ROLES = ['traveler', 'host'];
+
 const userController = {
-  // Get user by ID with stats
+  // Get user by ID with stats (self or admin only)
   async getUserById(req, res) {
     try {
       const { id } = req.params;
+
+      const isSelf = Number(req.user.id) === Number(id);
+      const isAdmin = req.user.role === 'admin';
+
+      if (!isSelf && !isAdmin) {
+        return res.status(403).json({
+          status: 'fail',
+          message: 'You are not authorized to view this profile',
+        });
+      }
+
       const user = await User.findById(id);
 
       if (!user) {
@@ -36,7 +52,7 @@ const userController = {
       res.status(200).json({
         status: 'success',
         data: { 
-          user,
+          user: sanitizeUser(user),
           stats: {
             totalTrips: parseInt(stats.total_trips) || 0,
             totalReviews: parseInt(stats.total_reviews) || 0,
@@ -49,7 +65,7 @@ const userController = {
       console.error('Error in getUserById:', err);
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: 'Something went wrong. Please try again.',
       });
     }
   },
@@ -121,25 +137,25 @@ const userController = {
       console.error('Error in login:', err);
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: 'Something went wrong. Please try again.',
       });
     }
   },
 
-  // Get all users
+  // Get all users (admin only - enforced at the route level)
   async getAllUsers(req, res) {
     try {
       const users = await User.findAll();
       res.status(200).json({
         status: 'success',
         results: users.length,
-        data: { users },
+        data: { users: users.map(sanitizeUser) },
       });
     } catch (err) {
       console.error('Error in getAllUsers:', err);
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: 'Something went wrong. Please try again.',
       });
     }
   },
@@ -148,6 +164,8 @@ const userController = {
   async createUser(req, res) {
     try {
       const { name, email, password, phone, role } = req.body;
+      // Never trust a client-supplied role outside the signup whitelist.
+      const userRole = SIGNUP_ROLES.includes(role) ? role : 'traveler';
       
       // Basic validation
       if (!name || !email || !password || !phone) {
@@ -193,7 +211,7 @@ const userController = {
         email: sanitizedEmail, 
         password, 
         phone: sanitizedPhone, 
-        role 
+        role: userRole 
       });
         const userData = {
           id: newUser.id,
@@ -217,16 +235,35 @@ const userController = {
       console.error('Error in createUser:', err);
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: 'Something went wrong. Please try again.',
       });
     }
   },
 
-  // Update user
+  // Update user (self or admin). Role and password can never be changed here.
   async updateUser(req, res) {
     try {
       const { id } = req.params;
       const { name, email, phone } = req.body;
+
+      const isSelf = Number(req.user.id) === Number(id);
+      const isAdmin = req.user.role === 'admin';
+
+      if (!isSelf && !isAdmin) {
+        return res.status(403).json({
+          status: 'fail',
+          message: 'You are not authorized to update this profile',
+        });
+      }
+
+      const existing = await User.findById(id);
+
+      if (!existing) {
+        return res.status(404).json({
+          status: 'fail',
+          message: 'User not found',
+        });
+      }
 
       // Email format validation if email is provided
       if (email && !emailRegex.test(email)) {
@@ -236,15 +273,15 @@ const userController = {
         });
       }
 
-      // Sanitize inputs
-      const sanitizedName = name ? name.trim() : undefined;
-      const sanitizedEmail = email ? email.trim().toLowerCase() : undefined;
-      const sanitizedPhone = phone ? phone.trim() : undefined;
-
-      const updatedUser = await User.update(id, { 
-        name: sanitizedName, 
-        email: sanitizedEmail, 
-        phone: sanitizedPhone 
+      // Merge with the existing row so partial updates never wipe fields
+      // (the model requires name/email/phone to all be present).
+      const updatedUser = await User.update(id, {
+        name: name && String(name).trim() ? String(name).trim() : existing.name,
+        email:
+          email && String(email).trim()
+            ? String(email).trim().toLowerCase()
+            : existing.email,
+        phone: phone && String(phone).trim() ? String(phone).trim() : existing.phone,
       });
 
       if (!updatedUser) {
@@ -256,21 +293,31 @@ const userController = {
 
       res.status(200).json({
         status: 'success',
-        data: { user: updatedUser },
+        data: { user: sanitizeUser(updatedUser) },
       });
     } catch (err) {
       console.error('Error in updateUser:', err);
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: 'Something went wrong. Please try again.',
       });
     }
   },
 
-  // Delete user
+  // Delete user (self or admin)
   async deleteUser(req, res) {
     try {
       const { id } = req.params;
+
+      const isSelf = Number(req.user.id) === Number(id);
+      const isAdmin = req.user.role === 'admin';
+
+      if (!isSelf && !isAdmin) {
+        return res.status(403).json({
+          status: 'fail',
+          message: 'You are not authorized to delete this account',
+        });
+      }
 
       const deleted = await User.delete(id);
 
@@ -289,7 +336,7 @@ const userController = {
       console.error('Error in deleteUser:', err);
       res.status(500).json({
         status: 'error',
-        message: err.message,
+        message: 'Something went wrong. Please try again.',
       });
     }
   },

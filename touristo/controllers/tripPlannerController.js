@@ -1,141 +1,153 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const aiService = require('../services/aiService');
+const db = require('../config/database');
 
-const genAI = new GoogleGenerativeAI(
-  process.env.GEMINI_API_KEY
-);
+/*
+|--------------------------------------------------------------------------
+| AI Trip Planner
+|--------------------------------------------------------------------------
+|
+| The model never sees or invents database facts on its own:
+|
+| 1. The server loads a small, explicit catalog (destinations + packages)
+|    from the database and puts ONLY those rows into the prompt.
+| 2. The model must answer with structured JSON: { message, packageIds }.
+| 3. The server then re-validates every returned packageId against the
+|    catalog it supplied - unknown ids are dropped before the response
+|    leaves the process, so a hallucinated id can never reach a client.
+| 4. Prices/descriptions in the response always come from the database
+|    rows, never from the model text.
+|
+| If structured output cannot be parsed, one bounded retry is attempted
+| and then a safe, typed AI error is returned.
+|
+|--------------------------------------------------------------------------
+*/
 
-const sleep = (ms) =>
-  new Promise(resolve =>
-    setTimeout(resolve, ms)
-  );
+const MAX_DESTINATIONS = 40;
+const MAX_PACKAGES = 12;
+const MAX_RECOMMENDATIONS = 4;
+const MAX_MESSAGE_CHARS = 4000;
 
-const getErrorStatus = (error) => {
-  return (
-    error?.status ||
-    error?.statusCode ||
-    error?.response?.status ||
-    error?.errorDetails?.status ||
-    null
-  );
+const loadCatalog = async () => {
+  const empty = { destinations: [], packages: [] };
+
+  try {
+    const destinations = await db.query(
+      `SELECT name FROM destinations ORDER BY name ASC LIMIT $1`,
+      [MAX_DESTINATIONS]
+    );
+
+    const packages = await db.query(
+      `SELECT id, title, description, price, duration_days, destination, image, group_size
+         FROM (
+           SELECT DISTINCT ON (destination)
+                  id, title, description, price, duration_days, destination,
+                  image, group_size, created_at
+             FROM packages
+            WHERE destination IS NOT NULL AND destination <> ''
+            ORDER BY destination, created_at DESC
+         ) AS latest_per_destination
+        ORDER BY created_at DESC
+        LIMIT $1`,
+      [MAX_PACKAGES]
+    );
+
+    return {
+      destinations: destinations.rows.map((row) => row.name).filter(Boolean),
+      packages: packages.rows.map((row) => ({
+        id: Number(row.id),
+        title: row.title,
+        description: row.description
+          ? String(row.description).slice(0, 220)
+          : '',
+        price: Number(row.price),
+        duration_days: row.duration_days ? Number(row.duration_days) : null,
+        destination: row.destination || '',
+        image: row.image || '',
+        group_size: row.group_size || ''
+      }))
+    };
+  } catch (error) {
+    /*
+     * A planner that still answers general travel questions is better
+     * than a 500. Without a catalog we simply forbid recommendations.
+     */
+    console.warn('[trip-planner] catalog unavailable:', error.message);
+    return empty;
+  }
 };
 
-const isRetryableError = (error) => {
-  const status = getErrorStatus(error);
+const buildPrompt = (message, catalog) => {
+  const destinationList = catalog.destinations.length
+    ? catalog.destinations.map((name) => `- ${name}`).join('\n')
+    : '- (no destinations available)';
 
-  if (
-    status === 408 ||
-    status === 429 ||
-    status === 500 ||
-    status === 502 ||
-    status === 503 ||
-    status === 504
-  ) {
-    return true;
+  const packageList = catalog.packages.length
+    ? JSON.stringify(catalog.packages, null, 0)
+    : '[]';
+
+  return `You are the Touristo travel assistant for Pakistan.
+
+RULES (never break these):
+- Answer in the SAME language and script the user used (English, Urdu script, or Roman Urdu).
+- Only mention destinations that appear in the DESTINATIONS list below.
+- Only recommend packages by copying their exact "id" from the PACKAGES list below.
+- Never invent package ids, prices, availability, ratings, or bookings.
+- Quote a price only if it appears in the PACKAGES list.
+- Be concise: 3-5 short sentences, use **bold** for key places.
+- If you cannot find a suitable package, return an empty packageIds array.
+
+DESTINATIONS available:
+${destinationList}
+
+PACKAGES available (id, title, price, duration_days, destination):
+${packageList}
+
+USER REQUEST:
+"${String(message).trim()}"`;
+};
+
+const validatePackageIds = (rawIds, catalog) => {
+  const allowed = new Map(
+    catalog.packages.map((pkg) => [pkg.id, pkg])
+  );
+
+  if (!Array.isArray(rawIds)) {
+    return [];
   }
 
-  const message = String(
-    error?.message || ''
-  ).toLowerCase();
+  const seen = new Set();
+  const resolved = [];
 
-  return (
-    message.includes('rate limit') ||
-    message.includes('resource exhausted') ||
-    message.includes('too many requests') ||
-    message.includes('service unavailable') ||
-    message.includes('temporarily unavailable') ||
-    message.includes('timeout') ||
-    message.includes('deadline exceeded')
-  );
-};
+  for (const raw of rawIds) {
+    const id = Number(raw);
 
-const getRetryDelay = (error, attempt) => {
-  const retryAfter =
-    error?.response?.headers?.['retry-after'] ||
-    error?.response?.headers?.['Retry-After'];
+    if (!Number.isInteger(id) || !allowed.has(id) || seen.has(id)) {
+      continue;
+    }
 
-  if (retryAfter) {
-    const seconds = Number(retryAfter);
+    seen.add(id);
+    resolved.push(allowed.get(id));
 
-    if (
-      Number.isFinite(seconds) &&
-      seconds > 0
-    ) {
-      return Math.min(seconds * 1000, 30000);
+    if (resolved.length >= MAX_RECOMMENDATIONS) {
+      break;
     }
   }
 
-  const baseDelay =
-    Math.pow(2, attempt) * 1000;
-
-  const jitter =
-    Math.floor(Math.random() * 500);
-
-  return Math.min(
-    baseDelay + jitter,
-    15000
-  );
+  return resolved;
 };
 
-const generateWithRetry = async (
-  model,
-  prompt,
-  maxAttempts = 4
-) => {
-  let lastError;
-
-  for (
-    let attempt = 0;
-    attempt < maxAttempts;
-    attempt++
-  ) {
-    try {
-      return await model.generateContent(
-        prompt
-      );
-    } catch (error) {
-      lastError = error;
-
-      console.error(
-        `Gemini request failed (attempt ${
-          attempt + 1
-        }/${maxAttempts}):`,
-        {
-          status: getErrorStatus(error),
-          message: error?.message
-        }
-      );
-
-      const hasMoreAttempts =
-        attempt < maxAttempts - 1;
-
-      if (
-        !hasMoreAttempts ||
-        !isRetryableError(error)
-      ) {
-        throw error;
-      }
-
-      const delay =
-        getRetryDelay(
-          error,
-          attempt
-        );
-
-      console.log(
-        `Retrying Gemini request in ${delay}ms...`
-      );
-
-      await sleep(delay);
-    }
+const normalizeMessage = (value) => {
+  if (typeof value !== 'string') {
+    return '';
   }
 
-  throw lastError;
+  return value.trim().slice(0, MAX_MESSAGE_CHARS);
 };
 
 const planTrip = async (req, res) => {
   try {
-    const { message, userId } =
-      req.body;
+    const { message } = req.body;
 
     if (!message || !String(message).trim()) {
       return res.status(400).json({
@@ -144,110 +156,84 @@ const planTrip = async (req, res) => {
       });
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-      return res.status(500).json({
-        status: 'error',
-        message:
-          'AI service is not configured'
+    const catalog = await loadCatalog();
+    const basePrompt = buildPrompt(message, catalog);
+
+    const jsonInstruction = `${basePrompt}
+
+RESPOND WITH STRICT JSON ONLY (no markdown fences, no prose around it):
+{"message":"<your reply to the user>","packageIds":[<ids from the PACKAGES list you want to recommend>]}`;
+
+    let parsed = null;
+    let provider = null;
+
+    try {
+      const result = await aiService.generateJson({
+        prompt: jsonInstruction,
+        temperature: 0.4,
+        maxOutputTokens: 900
       });
+
+      parsed = result.data;
+      provider = result.provider;
+    } catch (error) {
+      const canRetry =
+        error instanceof aiService.AIError &&
+        error.code === 'invalid_output';
+
+      if (!canRetry) {
+        throw error;
+      }
+
+      /*
+       * One bounded retry with an even stricter instruction, then we
+       * stop instead of burning more quota.
+       */
+      const retry = await aiService.generateJson({
+        prompt:
+          `${jsonInstruction}\n\nReturn ONLY a valid JSON object. ` +
+          `Any text before or after the JSON is an error.`,
+        temperature: 0,
+        maxOutputTokens: 900
+      });
+
+      parsed = retry.data;
+      provider = retry.provider;
     }
 
-    /*
-     * Keep the existing Gemini model used by the project.
-     * The retry layer handles temporary 429/5xx failures.
-     */
-    const model =
-      genAI.getGenerativeModel({
-        model: 'gemini-3.5-flash'
-      });
+    const reply = normalizeMessage(parsed && parsed.message);
 
-    const prompt = `
-      You are a helpful travel assistant for Touristo,
-      a platform that connects travelers with verified
-      tour operators in Pakistan.
+    if (!reply) {
+      throw new aiService.AIError('invalid_output');
+    }
 
-      Your task is to help users plan trips based on
-      their preferences.
-
-      Always respond in the same language/script
-      the user used:
-      - English
-      - Urdu script
-      - Roman Urdu
-
-      User request:
-      "${String(message).trim()}"
-
-      Provide a concise, friendly response with
-      helpful travel advice.
-
-      Structure your response clearly with:
-
-      1. Acknowledgment of their request
-      2. Key recommendations or information
-      3. Follow-up questions if needed
-
-      Use **bold** formatting for important keywords,
-      destinations, or recommendations.
-
-      Keep your response under 3-4 sentences
-      whenever possible.
-    `;
-
-    const result =
-      await generateWithRetry(
-        model,
-        prompt,
-        4
-      );
-
-    const response =
-      await result.response;
-
-    const text =
-      response.text();
+    const recommendedPackages = validatePackageIds(
+      parsed ? parsed.packageIds : [],
+      catalog
+    );
 
     return res.status(200).json({
       status: 'success',
-      message: text,
-      recommendedPackages: []
+      message: reply,
+      provider,
+      recommendedPackages
     });
-
   } catch (error) {
-    console.error(
-      'Error in planTrip:',
-      error
-    );
-
-    const status =
-      getErrorStatus(error);
-
-    if (status === 429) {
-      return res.status(429).json({
+    if (error instanceof aiService.AIError) {
+      return res.status(error.status).json({
         status: 'error',
-        message:
-          'The AI service is temporarily busy. Please wait a moment and try again.'
+        code: error.code,
+        message: error.message
       });
     }
 
-    if (
-      status === 500 ||
-      status === 502 ||
-      status === 503 ||
-      status === 504
-    ) {
-      return res.status(503).json({
-        status: 'error',
-        message:
-          'The AI service is temporarily unavailable. Please try again in a moment.'
-      });
-    }
+    console.error('Error in planTrip:', error);
 
     return res.status(500).json({
       status: 'error',
+      code: 'unknown',
       message:
-        'Failed to process trip planning request',
-      error: error.message
+        'Failed to process trip planning request. Please try again in a moment.'
     });
   }
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import {
@@ -31,7 +31,7 @@ const ContactInfo = ({
 
       <div className="min-w-0">
 
-        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[color:var(--brand-gold)]">
+        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[color:var(--brand-gold-ink)]">
           {title}
         </p>
 
@@ -83,7 +83,7 @@ const FormField = ({
         onChange={onChange}
         required={required}
         placeholder={placeholder}
-        className="w-full rounded-xl border border-[color:var(--border-light)] bg-[color:var(--surface-secondary)] px-4 py-3 text-sm text-[color:var(--text-primary)] outline-none transition-all placeholder:text-[color:var(--text-muted)] focus:border-[color:var(--brand-gold)] focus:bg-[color:var(--surface-primary)] focus:ring-2 focus:ring-[color:var(--brand-gold)]/15"
+        className="w-full rounded-xl border border-[color:var(--border-control)] bg-[color:var(--surface-secondary)] px-4 py-3 text-sm text-[color:var(--text-primary)] outline-none transition-all placeholder:text-[color:var(--text-muted)] focus:border-[color:var(--brand-gold)] focus:bg-[color:var(--surface-primary)] focus:ring-2 focus:ring-[color:var(--brand-gold)]/15"
       />
 
     </div>
@@ -205,7 +205,7 @@ const ContactScreen = () => {
 
             <div className="mb-7">
 
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--brand-gold)]">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--brand-gold-ink)]">
                 Contact details
               </p>
 
@@ -278,7 +278,7 @@ const ContactScreen = () => {
 
             <div className="mb-6">
 
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--brand-gold)]">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--brand-gold-ink)]">
                 Message
               </p>
 
@@ -363,7 +363,7 @@ const ContactScreen = () => {
                   required
                   rows={6}
                   placeholder="Tell us how we can help..."
-                  className="w-full resize-none rounded-xl border border-[color:var(--border-light)] bg-[color:var(--surface-secondary)] px-4 py-3 text-sm leading-6 text-[color:var(--text-primary)] outline-none transition-all placeholder:text-[color:var(--text-muted)] focus:border-[color:var(--brand-gold)] focus:bg-[color:var(--surface-primary)] focus:ring-2 focus:ring-[color:var(--brand-gold)]/15"
+                  className="w-full resize-none rounded-xl border border-[color:var(--border-control)] bg-[color:var(--surface-secondary)] px-4 py-3 text-sm leading-6 text-[color:var(--text-primary)] outline-none transition-all placeholder:text-[color:var(--text-muted)] focus:border-[color:var(--brand-gold)] focus:bg-[color:var(--surface-primary)] focus:ring-2 focus:ring-[color:var(--brand-gold)]/15"
                 />
 
               </div>

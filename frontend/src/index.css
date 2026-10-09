@@ -15,6 +15,7 @@
   --brand-gold: #C8A45D;
   --brand-gold-light: #E7D3A3;
   --brand-gold-soft: #F5EFE1;
+  --brand-gold-ink: #7F651F;
 
   /* ---------- Backgrounds ---------- */
   --bg-primary: #F7F5EF;
@@ -27,26 +28,25 @@
   /* ---------- Typography ---------- */
   --text-primary: #17221D;
   --text-secondary: #66716B;
-  --text-muted: #8A928D;
+  --text-muted: #63736A;
   --text-inverse: #FFFFFF;
 
   /* ---------- Borders ---------- */
-  --border-primary: #E3E0D7;
-  --border-light: #ECEAE3;
+  --border-light: #E3E0D7;
+  --border-control: #8C8878;
 
   /* ---------- Semantic ---------- */
   --success: #2F7655;
   --success-soft: #EAF4EE;
 
-  --warning: #B9852E;
+  --warning: #8F651D;
   --warning-soft: #FBF3DF;
 
-  --danger: #B84C4C;
+  --danger: #A33B3B;
   --danger-soft: #F9EAEA;
 
   /* ---------- Navigation ---------- */
   --nav-bg: #FFFFFF;
-  --nav-text: #17221D;
   --nav-active: #163B2F;
 
   /* ---------- Shadows ---------- */
@@ -64,6 +64,10 @@
   --shadow-lg:
     0 22px 55px rgba(23, 34, 29, 0.16),
     0 6px 16px rgba(23, 34, 29, 0.07);
+
+  --shadow-xl:
+    0 30px 70px rgba(23, 34, 29, 0.18),
+    0 8px 22px rgba(23, 34, 29, 0.08);
 
   /* ---------- Radius ---------- */
   --radius-sm: 10px;
@@ -115,7 +119,6 @@ body {
 
 #root {
   width: 100%;
-  max-width: 1126px;
   min-height: 100vh;
 
   margin: 0 auto;
@@ -275,7 +278,7 @@ a {
 
 .btn-gold {
   background: var(--brand-gold);
-  color: #1E241F;
+  color: var(--text-primary);
 
   box-shadow:
     0 4px 12px rgba(200, 164, 93, 0.18);
@@ -322,7 +325,7 @@ a {
 
   padding: 0.7rem 0.9rem;
 
-  border: 1px solid var(--border-primary);
+  border: 1px solid var(--border-control);
   border-radius: var(--radius-md);
 
   background: var(--surface-primary);
@@ -342,7 +345,7 @@ a {
 }
 
 .input:hover {
-  border-color: #CBC7BD;
+  border-color: #7A7768;
 }
 
 .input:focus {
@@ -457,8 +460,19 @@ a:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-  outline: 2px solid var(--brand-gold);
+  outline: 2px solid var(--brand-gold-ink);
   outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* =========================================================
@@ -597,23 +611,3 @@ select:focus-visible {
   }
 }
 
-/* =========================================================
-   RESPONSIVE ROOT
-   ========================================================= */
-
-@media (max-width: 768px) {
-  #root {
-    width: 100%;
-    max-width: 100%;
-  }
-}
-
-/* =========================================================
-   LARGE DESKTOP
-   ========================================================= */
-
-@media (min-width: 1440px) {
-  #root {
-    max-width: 1280px;
-  }
-}

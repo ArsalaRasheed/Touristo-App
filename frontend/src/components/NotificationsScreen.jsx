@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import {
@@ -28,7 +28,7 @@ const NotificationIcon = ({ type }) => {
     review: {
       icon: Star,
       wrapper:
-        'bg-[color:var(--brand-gold-soft)] text-[color:var(--brand-gold)]'
+        'bg-[color:var(--brand-gold-soft)] text-[color:var(--brand-gold-ink)]'
     },
     offer: {
       icon: Gift,
@@ -180,7 +180,7 @@ const NotificationsScreen = () => {
 
             <div>
 
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[color:var(--brand-gold)]">
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[color:var(--brand-gold-ink)]">
                 Updates
               </p>
 
@@ -209,7 +209,7 @@ const NotificationsScreen = () => {
 
             <div className="flex items-center gap-3">
 
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[color:var(--brand-gold-soft)] text-[color:var(--brand-gold)]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[color:var(--brand-gold-soft)] text-[color:var(--brand-gold-ink)]">
                 <Clock3 className="h-5 w-5" />
               </div>
 

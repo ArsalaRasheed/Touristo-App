@@ -100,8 +100,8 @@ Use the application's semantic theme variables:
 --surface-secondary
 --text-primary
 --text-secondary
---border-primary
---accent-primary
+--border-light
+--brand-primary
 
 Use semantic success/warning/error colors only where necessary.
 

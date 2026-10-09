@@ -73,9 +73,7 @@ const weatherController = {
 
       return res.status(503).json({
         status: 'error',
-        message:
-          error.message ||
-          'Unable to retrieve live weather data.'
+        message: 'Unable to retrieve live weather data right now.'
       });
     }
   }

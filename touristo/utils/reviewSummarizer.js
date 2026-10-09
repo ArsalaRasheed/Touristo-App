@@ -1,33 +1,30 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const aiService = require('../services/aiService');
 const { query } = require('../config/database');
 
-// Initialize Gemini client, but handle missing API key gracefully
-let genAI = null;
-if (process.env.GEMINI_API_KEY) {
-  genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-}
-
 /**
- * Summarize reviews using AI
+ * Summarize reviews using AI.
+ *
+ * Returns a non-empty string on success. Returns `null` whenever a summary
+ * could NOT be produced (AI not configured, provider failure, no key) so
+ * callers can choose a transient message that is never written to the
+ * cache - a cached failure would otherwise poison the package page forever.
  * @param {Array} reviews - Array of review objects
- * @returns {string} Summary of reviews
+ * @returns {Promise<string|null>} Summary of reviews or null on failure
  */
 async function summarizeReviews(reviews) {
-  if (!genAI) {
-    console.warn('Gemini API key not configured. Returning default summary.');
-    return "AI summary unavailable. The Gemini API key is not configured.";
-  }
-
   if (!reviews || reviews.length === 0) {
     return "No reviews available for this package.";
+  }
+
+  if (!aiService.isAiConfigured()) {
+    console.warn('AI API key not configured. Returning default summary.');
+    return null;
   }
 
   // Format reviews for AI processing
   const formattedReviews = reviews.map(review => 
     `"${review.comment}" - Rating: ${review.rating}/5`
   ).join('\n\n');
-
-  const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
 
   const prompt = `
     Please provide a concise 3-line summary of the following reviews for a tour package:
@@ -43,13 +40,24 @@ async function summarizeReviews(reviews) {
   `;
 
   try {
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text();
+    const result = await aiService.generateText({
+      prompt,
+      temperature: 0.3,
+      maxOutputTokens: 300
+    });
+
+    return result.text;
   } catch (error) {
-    console.error('Error generating review summary:', error);
-    // Return a fallback message instead of throwing
-    return "Could not generate review summary at this time.";
+    if (error instanceof aiService.AIError) {
+      console.warn(
+        `[review-summary-ai] provider=${error.provider} code=${error.code}`
+      );
+    } else {
+      console.error('Error generating review summary:', error);
+    }
+
+    // Null signals "transient failure" - the caller must not cache this.
+    return null;
   }
 }
 
@@ -136,10 +144,14 @@ async function generateAndCacheSummary(packageId) {
     // Generate summary using AI
     const summary = await summarizeReviews(reviews);
 
-    // Cache the summary
-    await updateCachedSummary(packageId, summary);
+    // A failed/empty summary is a transient condition. Do NOT cache it,
+    // otherwise a temporary provider outage would permanently replace the
+    // real summary until a manual row edit.
+    if (summary) {
+      await updateCachedSummary(packageId, summary);
+    }
 
-    return summary;
+    return summary || "AI summary is temporarily unavailable. Please try again later.";
   } catch (error) {
     console.error('Error generating and caching summary:', error);
     // Return a fallback instead of throwing

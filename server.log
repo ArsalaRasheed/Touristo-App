@@ -1,0 +1,671 @@
+◇ injected env (19) from .env // tip: ⌘ suppress logs { quiet: true }
+Server running on port 3000
+Ensuring database schema exists...
+Connected to PostgreSQL database
+Database connected successfully
+Executed query {
+  text: '\n' +
+    '      CREATE TABLE IF NOT EXISTS users (\n' +
+    '        id SERIAL PRIMARY KEY,\n' +
+    '        name VARCHAR(255) NOT NULL,\n' +
+    '        email VARCHAR(255) UNIQUE NOT NULL,\n' +
+    '        password_hash TEXT NOT NULL, -- This will now work as the table is empty\n' +
+    '        phone VARCHAR(20) NOT NULL, -- Made phone required\n' +
+    "        role VARCHAR(50) DEFAULT 'traveler',\n" +
+    '        created_at TIMESTAMP DEFAULT NOW(),\n' +
+    '        updated_at TIMESTAMP DEFAULT NOW()\n' +
+    '      );\n' +
+    '    ',
+  duration: 1822,
+  rows: null
+}
+Executing command: 
+      CREATE TABLE IF NOT EXISTS hosts (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id),
+        company_name VARCHAR(255) NOT NULL,
+        description TEXT,
+        location VARCHAR(255),
+        license_number VARCHAR(100),
+        cnic_or_business_registration VARCHAR(100), -- Added CNIC/business registration field
+        company_address TEXT, -- Added company address field
+        verification_status VARCHAR(20) DEFAULT 'pending', -- Added verification status field
+        verified BOOLEAN DEFAULT FALSE, -- Adding the missing column
+        rating_score DECIMAL(3,2) DEFAULT 0.00, -- Adding the missing rating_score column
+        rating DECIMAL(3,2) DEFAULT 0.00,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    
+Executed query {
+  text: '\n' +
+    '      CREATE TABLE IF NOT EXISTS hosts (\n' +
+    '        id SERIAL PRIMARY KEY,\n' +
+    '        user_id INTEGER REFERENCES users(id),\n' +
+    '        company_name VARCHAR(255) NOT NULL,\n' +
+    '        description TEXT,\n' +
+    '        location VARCHAR(255),\n' +
+    '        license_number VARCHAR(100),\n' +
+    '        cnic_or_business_registration VARCHAR(100), -- Added CNIC/business registration field\n' +
+    '        company_address TEXT, -- Added company address field\n' +
+    "        verification_status VARCHAR(20) DEFAULT 'pending', -- Added verification status field\n" +
+    '        verified BOOLEAN DEFAULT FALSE, -- Adding the missing column\n' +
+    '        rating_score DECIMAL(3,2) DEFAULT 0.00, -- Adding the missing rating_score column\n' +
+    '        rating DECIMAL(3,2) DEFAULT 0.00,\n' +
+    '        created_at TIMESTAMP DEFAULT NOW(),\n' +
+    '        updated_at TIMESTAMP DEFAULT NOW()\n' +
+    '      );\n' +
+    '    ',
+  duration: 181,
+  rows: null
+}
+Executing command: 
+      CREATE TABLE IF NOT EXISTS destinations (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        category VARCHAR(100),
+        history TEXT,
+        culture TEXT,
+        famous_spots TEXT, -- Adding the missing column
+        famous_food TEXT,  -- Adding the missing column
+        latitude DECIMAL(10, 8),  -- For coordinates
+        longitude DECIMAL(11, 8), -- For coordinates
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    
+Executed query {
+  text: '\n' +
+    '      CREATE TABLE IF NOT EXISTS destinations (\n' +
+    '        id SERIAL PRIMARY KEY,\n' +
+    '        name VARCHAR(255) NOT NULL,\n' +
+    '        category VARCHAR(100),\n' +
+    '        history TEXT,\n' +
+    '        culture TEXT,\n' +
+    '        famous_spots TEXT, -- Adding the missing column\n' +
+    '        famous_food TEXT,  -- Adding the missing column\n' +
+    '        latitude DECIMAL(10, 8),  -- For coordinates\n' +
+    '        longitude DECIMAL(11, 8), -- For coordinates\n' +
+    '        created_at TIMESTAMP DEFAULT NOW(),\n' +
+    '        updated_at TIMESTAMP DEFAULT NOW()\n' +
+    '      );\n' +
+    '    ',
+  duration: 199,
+  rows: null
+}
+Executing command: 
+      CREATE TABLE IF NOT EXISTS packages (
+        id SERIAL PRIMARY KEY,
+        host_id INTEGER NOT NULL REFERENCES hosts(id),
+        destination_id INTEGER NOT NULL REFERENCES destinations(id),
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        price DECIMAL(10,2) NOT NULL,
+        duration_days INTEGER,
+        location VARCHAR(255),
+        image TEXT,
+        destination VARCHAR(255),
+        inclusions TEXT[],
+        exclusions TEXT[],
+        itinerary JSONB,  -- Adding itinerary field to store day-by-day information
+        group_size VARCHAR(50), -- Adding group size information
+        highlights TEXT[],
+        activities TEXT[],
+        tags TEXT[],
+        target_traveler_type VARCHAR(80),
+        best_season VARCHAR(80),
+        safety_notes TEXT[],
+        seo_description VARCHAR(300),
+        availability_start DATE,
+        availability_end DATE,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    
+Executed query {
+  text: '\n' +
+    '      CREATE TABLE IF NOT EXISTS packages (\n' +
+    '        id SERIAL PRIMARY KEY,\n' +
+    '        host_id INTEGER NOT NULL REFERENCES hosts(id),\n' +
+    '        destination_id INTEGER NOT NULL REFERENCES destinations(id),\n' +
+    '        title VARCHAR(255) NOT NULL,\n' +
+    '        description TEXT,\n' +
+    '        price DECIMAL(10,2) NOT NULL,\n' +
+    '        duration_days INTEGER,\n' +
+    '        location VARCHAR(255),\n' +
+    '        image TEXT,\n' +
+    '        destination VARCHAR(255),\n' +
+    '        inclusions TEXT[],\n' +
+    '        exclusions TEXT[],\n' +
+    '        itinerary JSONB,  -- Adding itinerary field to store day-by-day information\n' +
+    '        group_size VARCHAR(50), -- Adding group size information\n' +
+    '        highlights TEXT[],\n' +
+    '        activities TEXT[],\n' +
+    '        tags TEXT[],\n' +
+    '        target_traveler_type VARCHAR(80),\n' +
+    '        best_season VARCHAR(80),\n' +
+    '        safety_notes TEXT[],\n' +
+    '        seo_description VARCHAR(300),\n' +
+    '        availability_start DATE,\n' +
+    '        availability_end DATE,\n' +
+    '        created_at TIMESTAMP DEFAULT NOW(),\n' +
+    '        updated_at TIMESTAMP DEFAULT NOW()\n' +
+    '      );\n' +
+    '    ',
+  duration: 179,
+  rows: null
+}
+Executed query {
+  text: "ALTER TABLE packages ADD COLUMN IF NOT EXISTS highlights TEXT[] DEFAULT '{}'::text[]",
+  duration: 229,
+  rows: null
+}
+Executed query {
+  text: "ALTER TABLE packages ADD COLUMN IF NOT EXISTS activities TEXT[] DEFAULT '{}'::text[]",
+  duration: 204,
+  rows: null
+}
+Executed query {
+  text: "ALTER TABLE packages ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}'::text[]",
+  duration: 204,
+  rows: null
+}
+Executed query {
+  text: 'ALTER TABLE packages ADD COLUMN IF NOT EXISTS target_traveler_type VARCHAR(80)',
+  duration: 205,
+  rows: null
+}
+Executed query {
+  text: 'ALTER TABLE packages ADD COLUMN IF NOT EXISTS best_season VARCHAR(80)',
+  duration: 178,
+  rows: null
+}
+Executed query {
+  text: "ALTER TABLE packages ADD COLUMN IF NOT EXISTS safety_notes TEXT[] DEFAULT '{}'::text[]",
+  duration: 229,
+  rows: null
+}
+Executed query {
+  text: 'ALTER TABLE packages ADD COLUMN IF NOT EXISTS seo_description VARCHAR(300)',
+  duration: 203,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      CREATE TABLE IF NOT EXISTS bookings (\n' +
+    '        id SERIAL PRIMARY KEY,\n' +
+    '        user_id INTEGER NOT NULL REFERENCES users(id),\n' +
+    '        package_id INTEGER NOT NULL REFERENCES packages(id),\n' +
+    '        booking_date DATE DEFAULT CURRENT_DATE,\n' +
+    '        start_date DATE, -- Made nullable to align with seed data inserting travel_date\n' +
+    '        end_date DATE,   -- Made nullable to align with seed data inserting travel_date\n' +
+    '        travel_date DATE, -- Adding the missing travel_date column\n' +
+    '        total_price DECIMAL(10,2) NOT NULL,\n' +
+    "        status VARCHAR(50) DEFAULT 'pending',\n" +
+    "        payment_status VARCHAR(50) DEFAULT 'pending',\n" +
+    '        travelers INTEGER DEFAULT 1,\n' +
+    '        created_at TIMESTAMP DEFAULT NOW(),\n' +
+    '        updated_at TIMESTAMP DEFAULT NOW()\n' +
+    '      );\n' +
+    '    ',
+  duration: 203,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      CREATE TABLE IF NOT EXISTS reviews (\n' +
+    '        id SERIAL PRIMARY KEY,\n' +
+    '        user_id INTEGER NOT NULL REFERENCES users(id),\n' +
+    '        package_id INTEGER NOT NULL REFERENCES packages(id),\n' +
+    '        rating INTEGER CHECK (rating >= 1 AND rating <= 5) NOT NULL,\n' +
+    '        comment TEXT,\n' +
+    '        created_at TIMESTAMP DEFAULT NOW()\n' +
+    '      );\n' +
+    '    ',
+  duration: 205,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      CREATE TABLE IF NOT EXISTS review_summaries (\n' +
+    '        id SERIAL PRIMARY KEY,\n' +
+    '        package_id INTEGER NOT NULL REFERENCES packages(id) ON DELETE CASCADE,\n' +
+    '        summary TEXT NOT NULL,\n' +
+    '        created_at TIMESTAMP DEFAULT NOW(),\n' +
+    '        updated_at TIMESTAMP DEFAULT NOW()\n' +
+    '      );\n' +
+    '    ',
+  duration: 181,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      CREATE TABLE IF NOT EXISTS tour_guides (\n' +
+    '        id SERIAL PRIMARY KEY,\n' +
+    '        host_id INTEGER NOT NULL REFERENCES hosts(id) ON DELETE CASCADE,\n' +
+    '        name VARCHAR(255) NOT NULL,\n' +
+    '        photo TEXT,\n' +
+    '        specialty VARCHAR(255) NOT NULL,\n' +
+    '        rating DECIMAL(3,2) DEFAULT 0.00,\n' +
+    '        created_at TIMESTAMP DEFAULT NOW(),\n' +
+    '        updated_at TIMESTAMP DEFAULT NOW()\n' +
+    '      );\n' +
+    '    ',
+  duration: 193,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      CREATE TABLE IF NOT EXISTS marketplace_chats (\n' +
+    '        id SERIAL PRIMARY KEY,\n' +
+    '\n' +
+    '        conversation_id VARCHAR(255) UNIQUE NOT NULL,\n' +
+    '\n' +
+    '        traveler_id INTEGER NOT NULL\n' +
+    '          REFERENCES users(id)\n' +
+    '          ON DELETE CASCADE,\n' +
+    '\n' +
+    '        host_id INTEGER NOT NULL\n' +
+    '          REFERENCES hosts(id)\n' +
+    '          ON DELETE CASCADE,\n' +
+    '\n' +
+    '        last_message_snippet TEXT,\n' +
+    '\n' +
+    '        updated_at TIMESTAMP DEFAULT NOW(),\n' +
+    '\n' +
+    '        created_at TIMESTAMP DEFAULT NOW()\n' +
+    '      );\n' +
+    '    ',
+  duration: 235,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      CREATE TABLE IF NOT EXISTS messages (\n' +
+    '        id SERIAL PRIMARY KEY,\n' +
+    '\n' +
+    '        sender_id INTEGER NOT NULL\n' +
+    '          REFERENCES users(id)\n' +
+    '          ON DELETE CASCADE,\n' +
+    '\n' +
+    '        receiver_id INTEGER NOT NULL\n' +
+    '          REFERENCES users(id)\n' +
+    '          ON DELETE CASCADE,\n' +
+    '\n' +
+    '        content TEXT NOT NULL,\n' +
+    '\n' +
+    '        created_at TIMESTAMP DEFAULT NOW()\n' +
+    '      );\n' +
+    '    ',
+  duration: 204,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      ALTER TABLE messages\n' +
+    '      ADD COLUMN IF NOT EXISTS conversation_id VARCHAR(255);\n' +
+    '    ',
+  duration: 204,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      ALTER TABLE messages\n' +
+    '      ADD COLUMN IF NOT EXISTS associated_package_id INTEGER\n' +
+    '      REFERENCES packages(id)\n' +
+    '      ON DELETE SET NULL;\n' +
+    '    ',
+  duration: 204,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      ALTER TABLE messages\n' +
+    '      ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT FALSE;\n' +
+    '    ',
+  duration: 203,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      ALTER TABLE messages\n' +
+    '      ADD COLUMN IF NOT EXISTS message_text TEXT;\n' +
+    '    ',
+  duration: 206,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      UPDATE messages\n' +
+    '      SET message_text = content\n' +
+    '      WHERE message_text IS NULL;\n' +
+    '    ',
+  duration: 306,
+  rows: 0
+}
+Executed query {
+  text: '\n' +
+    '      CREATE TABLE IF NOT EXISTS reports (\n' +
+    '        id SERIAL PRIMARY KEY,\n' +
+    '        reporter_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n' +
+    '        target_type VARCHAR(20) NOT NULL,\n' +
+    '        target_id INTEGER NOT NULL,\n' +
+    '        reason VARCHAR(60) NOT NULL,\n' +
+    '        details TEXT,\n' +
+    "        status VARCHAR(20) NOT NULL DEFAULT 'open',\n" +
+    '        resolution_note TEXT,\n' +
+    '        resolved_by INTEGER REFERENCES users(id) ON DELETE SET NULL,\n' +
+    '        resolved_at TIMESTAMP,\n' +
+    '        created_at TIMESTAMP DEFAULT NOW(),\n' +
+    '        updated_at TIMESTAMP DEFAULT NOW(),\n' +
+    '        CONSTRAINT reports_target_type_check\n' +
+    "          CHECK (target_type IN ('review', 'package', 'user', 'host')),\n" +
+    '        CONSTRAINT reports_status_check\n' +
+    "          CHECK (status IN ('open', 'resolved', 'dismissed'))\n" +
+    '      );\n' +
+    '    ',
+  duration: 203,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      CREATE INDEX IF NOT EXISTS idx_reports_reporter_id\n' +
+    '      ON reports(reporter_id);\n' +
+    '    ',
+  duration: 181,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      CREATE INDEX IF NOT EXISTS idx_reports_resolved_by\n' +
+    '      ON reports(resolved_by);\n' +
+    '    ',
+  duration: 227,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      CREATE INDEX IF NOT EXISTS idx_reports_target\n' +
+    '      ON reports(target_type, target_id);\n' +
+    '    ',
+  duration: 204,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      CREATE INDEX IF NOT EXISTS idx_reports_status_created\n' +
+    '      ON reports(status, created_at DESC);\n' +
+    '    ',
+  duration: 205,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      CREATE INDEX IF NOT EXISTS idx_reports_open_created\n' +
+    '      ON reports(created_at DESC)\n' +
+    "      WHERE status = 'open';\n" +
+    '    ',
+  duration: 202,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      CREATE UNIQUE INDEX IF NOT EXISTS uq_reports_open_target\n' +
+    '      ON reports(reporter_id, target_type, target_id)\n' +
+    "      WHERE status = 'open';\n" +
+    '    ',
+  duration: 178,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      CREATE TABLE IF NOT EXISTS admin_audit_log (\n' +
+    '        id SERIAL PRIMARY KEY,\n' +
+    '        actor_id INTEGER REFERENCES users(id) ON DELETE SET NULL,\n' +
+    '        actor_email VARCHAR(255),\n' +
+    '        action VARCHAR(60) NOT NULL,\n' +
+    '        target_type VARCHAR(30) NOT NULL,\n' +
+    '        target_id INTEGER,\n' +
+    "        details JSONB NOT NULL DEFAULT '{}'::jsonb,\n" +
+    '        created_at TIMESTAMP DEFAULT NOW()\n' +
+    '      );\n' +
+    '    ',
+  duration: 178,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      CREATE INDEX IF NOT EXISTS idx_admin_audit_log_created\n' +
+    '      ON admin_audit_log(created_at DESC);\n' +
+    '    ',
+  duration: 254,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      CREATE INDEX IF NOT EXISTS idx_admin_audit_log_actor\n' +
+    '      ON admin_audit_log(actor_id, created_at DESC);\n' +
+    '    ',
+  duration: 237,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      CREATE INDEX IF NOT EXISTS idx_hosts_verification_pending\n' +
+    '      ON hosts(verification_status)\n' +
+    "      WHERE verification_status = 'pending';\n" +
+    '    ',
+  duration: 313,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      CREATE INDEX IF NOT EXISTS idx_marketplace_chats_traveler\n' +
+    '      ON marketplace_chats(traveler_id);\n' +
+    '    ',
+  duration: 262,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      CREATE INDEX IF NOT EXISTS idx_marketplace_chats_host\n' +
+    '      ON marketplace_chats(host_id);\n' +
+    '    ',
+  duration: 280,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      CREATE INDEX IF NOT EXISTS idx_marketplace_chats_updated\n' +
+    '      ON marketplace_chats(updated_at DESC);\n' +
+    '    ',
+  duration: 230,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      CREATE INDEX IF NOT EXISTS idx_messages_conversation\n' +
+    '      ON messages(conversation_id, created_at);\n' +
+    '    ',
+  duration: 305,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      CREATE INDEX IF NOT EXISTS idx_messages_unread\n' +
+    '      ON messages(receiver_id, is_read);\n' +
+    '    ',
+  duration: 274,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      CREATE INDEX IF NOT EXISTS idx_messages_package\n' +
+    '      ON messages(associated_package_id);\n' +
+    '    ',
+  duration: 236,
+  rows: null
+}
+Executed query {
+  text: 'CREATE INDEX IF NOT EXISTS idx_packages_host_id ON packages(host_id);',
+  duration: 306,
+  rows: null
+}
+Executed query {
+  text: 'CREATE INDEX IF NOT EXISTS idx_packages_destination_id ON packages(destination_id);',
+  duration: 236,
+  rows: null
+}
+Executed query {
+  text: 'CREATE INDEX IF NOT EXISTS idx_bookings_user_id ON bookings(user_id);',
+  duration: 323,
+  rows: null
+}
+Executed query {
+  text: 'CREATE INDEX IF NOT EXISTS idx_bookings_package_id ON bookings(package_id);',
+  duration: 177,
+  rows: null
+}
+Executed query {
+  text: 'CREATE INDEX IF NOT EXISTS idx_reviews_user_id ON reviews(user_id);',
+  duration: 210,
+  rows: null
+}
+Executed query {
+  text: 'CREATE INDEX IF NOT EXISTS idx_reviews_package_id ON reviews(package_id);',
+  duration: 227,
+  rows: null
+}
+Executed query {
+  text: 'CREATE INDEX IF NOT EXISTS idx_destinations_category ON destinations(category);',
+  duration: 208,
+  rows: null
+}
+Executed query {
+  text: 'CREATE INDEX IF NOT EXISTS idx_tour_guides_host_id ON tour_guides(host_id);',
+  duration: 177,
+  rows: null
+}
+Executed query {
+  text: 'CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON messages(sender_id);',
+  duration: 177,
+  rows: null
+}
+Executed query {
+  text: 'CREATE INDEX IF NOT EXISTS idx_messages_receiver_id ON messages(receiver_id);',
+  duration: 178,
+  rows: null
+}
+Executed query {
+  text: 'CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);',
+  duration: 178,
+  rows: null
+}
+Executed query {
+  text: 'CREATE INDEX IF NOT EXISTS idx_hosts_user_id ON hosts(user_id);',
+  duration: 178,
+  rows: null
+}
+Executed query {
+  text: 'CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(status);',
+  duration: 179,
+  rows: null
+}
+Executed query {
+  text: 'CREATE INDEX IF NOT EXISTS idx_packages_created_at ON packages(created_at DESC);',
+  duration: 179,
+  rows: null
+}
+Executed query {
+  text: 'CREATE INDEX IF NOT EXISTS idx_review_summaries_package_id ON review_summaries(package_id);',
+  duration: 234,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      DELETE FROM reviews r\n' +
+    '      USING reviews r2\n' +
+    '      WHERE r.id > r2.id\n' +
+    '        AND r.user_id = r2.user_id\n' +
+    '        AND r.package_id = r2.package_id;\n' +
+    '    ',
+  duration: 306,
+  rows: 0
+}
+Executed query {
+  text: '\n' +
+    '      CREATE UNIQUE INDEX IF NOT EXISTS uq_reviews_user_package\n' +
+    '      ON reviews(user_id, package_id);\n' +
+    '    ',
+  duration: 204,
+  rows: null
+}
+Database schema setup completed successfully.
+Database schema setup completed
+Seeding database with initial data...
+User already exists: Pakistan Travel Experts
+User already exists: Northern Adventures
+User already exists: Hunza Valley Tours
+User already exists: Swat Tourism
+User already exists: Coastal Adventures
+User already exists: Mountain Expeditions
+User already exists: Historical Heritage Tours
+User already exists: Naran Kaghan Explorer
+User already exists: Babusar Top Adventures
+Host already exists: Pakistan Travel Experts
+Host already exists: Northern Adventures
+Host already exists: Hunza Valley Tours
+Host already exists: Swat Tourism
+Host already exists: Coastal Adventures
+Host already exists: Mountain Expeditions
+Host already exists: Historical Heritage Tours
+Host already exists: Naran Kaghan Explorer
+Host already exists: Babusar Top Adventures
+Destination already exists: Hunza Valley
+Destination already exists: Skardu
+Destination already exists: Swat Valley
+Destination already exists: Naran
+Destination already exists: Babusar Top
+Destination already exists: Lahore
+Destination already exists: Mohenjo-daro
+Destination already exists: Gwadar
+Package already exists: Hunza Cultural Heritage Tour
+Package already exists: Skardu Mountain Adventure
+Package already exists: Hunza Luxury Experience
+Package already exists: Swat Valley Trekking Adventure
+Package already exists: Gwadar Coastal Adventure
+Package already exists: Skardu Mountain Expedition
+Package already exists: Lahore Historical Tour
+Package already exists: Mohenjo-daro Archaeological Tour
+Package already exists: Naran Kaghan Scenic Tour
+Package already exists: Babusar Top Adventure
+Sample booking already exists
+Tour guide already exists: Ali Khan for host ID: 1
+Tour guide already exists: Fatima Ahmed for host ID: 1
+Tour guide already exists: Hassan Raza for host ID: 1
+Tour guide already exists: Ahmed Shah for host ID: 2
+Tour guide already exists: Sara Malik for host ID: 2
+Tour guide already exists: Kamran Tariq for host ID: 2
+Tour guide already exists: Naveed Hussain for host ID: 3
+Tour guide already exists: Zeenat Bibi for host ID: 3
+Tour guide already exists: Omar Farooq for host ID: 3
+Tour guide already exists: Tariq Mahmood for host ID: 4
+Tour guide already exists: Ayesha Parveen for host ID: 4
+Tour guide already exists: Irfan Ali for host ID: 4
+Tour guide already exists: Farhan Qureshi for host ID: 5
+Tour guide already exists: Maria Khan for host ID: 5
+Tour guide already exists: Bilal Saeed for host ID: 5
+Tour guide already exists: Rashid Minhas for host ID: 6
+Tour guide already exists: Hina Zafar for host ID: 6
+Tour guide already exists: Waqar Yasin for host ID: 6
+Tour guide already exists: Asadullah Baig for host ID: 7
+Tour guide already exists: Rabia Noor for host ID: 7
+Tour guide already exists: Talha Javaid for host ID: 7
+Tour guide already exists: Sohail Ashraf for host ID: 8
+Tour guide already exists: Sanaullah Khan for host ID: 8
+Tour guide already exists: Imran Shah for host ID: 8
+Tour guide already exists: Zafar Iqbal for host ID: 9
+Tour guide already exists: Amina Liaquat for host ID: 9
+Tour guide already exists: Daniyal Aslam for host ID: 9
+Database seeding completed successfully!
+Database seeding completed

@@ -1,4 +1,4 @@
-const { query } = require('../config/database');
+const { query, withTransaction } = require('../config/database');
 const bcrypt = require('bcrypt');
 
 class User {
@@ -61,8 +61,37 @@ class User {
   }
 
   static async delete(id) {
-    const result = await query('DELETE FROM users WHERE id = $1 RETURNING id', [id]);
-    return result.rows.length > 0;
+    // Account deletion must clean up every dependent row, otherwise the
+    // FK constraints (reviews, bookings, packages, messages, chats) turn
+    // the DELETE into a 500. Everything runs in one transaction so a
+    // partial deletion can never be observed.
+    return withTransaction(async (client) => {
+      const userResult = await client.query('SELECT role FROM users WHERE id = $1 FOR UPDATE', [id]);
+      if (userResult.rows.length === 0) return false;
+
+      // Host-owned packages first (their reviews/bookings reference them).
+      await client.query(`
+        DELETE FROM reviews WHERE package_id IN (
+          SELECT p.id FROM packages p JOIN hosts h ON h.id = p.host_id WHERE h.user_id = $1
+        )
+      `, [id]);
+      await client.query(`
+        DELETE FROM bookings WHERE package_id IN (
+          SELECT p.id FROM packages p JOIN hosts h ON h.id = p.host_id WHERE h.user_id = $1
+        )
+      `, [id]);
+      // bookings of the user as a traveler
+      await client.query('DELETE FROM bookings WHERE user_id = $1', [id]);
+      await client.query('DELETE FROM reviews WHERE user_id = $1', [id]);
+      await client.query('DELETE FROM marketplace_chats WHERE traveler_id = $1', [id]);
+      await client.query('DELETE FROM messages WHERE sender_id = $1 OR receiver_id = $1', [id]);
+      await client.query('DELETE FROM reports WHERE reporter_id = $1', [id]);
+      // Host profile + cascading packages/tour_guides
+      await client.query('DELETE FROM hosts WHERE user_id = $1', [id]);
+
+      const result = await client.query('DELETE FROM users WHERE id = $1 RETURNING id', [id]);
+      return result.rows.length > 0;
+    });
   }
 }
 

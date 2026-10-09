@@ -9,61 +9,86 @@ import {
   Navigate
 } from 'react-router-dom';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 
-import { AuthProvider, useAuth } from './context/AuthContext';
-
-import SplashScreen from './components/SplashScreen';
-import OnboardingScreen from './components/OnboardingScreen';
-import HomeScreen from './components/HomeScreen';
-import SearchScreen from './components/SearchScreen';
-
-import PackageDetailScreen from './components/PackageDetailScreen';
-import BookingScreen from './components/BookingScreen';
-
-import LoginSignupScreen from './components/LoginSignupScreen';
-import CompanyRegistrationScreen from './components/CompanyRegistrationScreen';
-
-import AITripPlannerScreen from './components/AITripPlannerScreen';
-import EmergencySOSScreen from './components/EmergencySOSScreen';
-import WeatherScreen from './components/WeatherScreen';
-import MyTripsScreen from './components/MyTripsScreen';
-
-import ProfileScreen from './components/ProfileScreen';
-import EditProfileScreen from './components/EditProfileScreen';
-import PrivacySecurityScreen from './components/PrivacySecurityScreen';
-import PaymentMethodsScreen from './components/PaymentMethodsScreen';
-import HostProfileScreen from './components/HostProfileScreen';
-
-import HostDashboardScreen from './components/HostDashboardScreen';
-import CreateEditPackageScreen from './components/CreateEditPackageScreen';
-
-import NotificationsScreen from './components/NotificationsScreen';
-import SettingsScreen from './components/SettingsScreen';
-import AboutScreen from './components/AboutScreen';
-import ContactScreen from './components/ContactScreen';
+import { useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthProvider';
 
 import BottomNav from './components/BottomNav';
 
-import DestinationsScreen from './components/DestinationsScreen';
-import DestinationExploreScreen from './components/DestinationExploreScreen';
+/*
+|--------------------------------------------------------------------------
+| CODE SPLITTING
+|--------------------------------------------------------------------------
+| Screens are lazy loaded so the initial bundle stays small.
+| BottomNav stays eager because it renders alongside every
+| protected screen.
+*/
 
-import ExperiencesScreen from './components/ExperiencesScreen';
-import ExperienceDetailScreen from './components/ExperienceDetailScreen';
+const SplashScreen = React.lazy(() => import('./components/SplashScreen'));
+const OnboardingScreen = React.lazy(() => import('./components/OnboardingScreen'));
+const HomeScreen = React.lazy(() => import('./components/HomeScreen'));
+const SearchScreen = React.lazy(() => import('./components/SearchScreen'));
 
-import HostDiscoveryScreen from './components/HostDiscoveryScreen';
+const PackageDetailScreen = React.lazy(() => import('./components/PackageDetailScreen'));
+const BookingScreen = React.lazy(() => import('./components/BookingScreen'));
 
-import HostBookingsScreen from './components/HostBookingsScreen';
-import MyPackagesScreen from './components/MyPackagesScreen';
-import ManageTourGuidesScreen from './components/ManageTourGuidesScreen';
+const LoginSignupScreen = React.lazy(() => import('./components/LoginSignupScreen'));
+const CompanyRegistrationScreen = React.lazy(() => import('./components/CompanyRegistrationScreen'));
+
+const AITripPlannerScreen = React.lazy(() => import('./components/AITripPlannerScreen'));
+const EmergencySOSScreen = React.lazy(() => import('./components/EmergencySOSScreen'));
+const WeatherScreen = React.lazy(() => import('./components/WeatherScreen'));
+const MyTripsScreen = React.lazy(() => import('./components/MyTripsScreen'));
+
+const ProfileScreen = React.lazy(() => import('./components/ProfileScreen'));
+const EditProfileScreen = React.lazy(() => import('./components/EditProfileScreen'));
+const PrivacySecurityScreen = React.lazy(() => import('./components/PrivacySecurityScreen'));
+const PaymentMethodsScreen = React.lazy(() => import('./components/PaymentMethodsScreen'));
+const MyReportsScreen = React.lazy(() => import('./components/MyReportsScreen'));
+const HostProfileScreen = React.lazy(() => import('./components/HostProfileScreen'));
+
+const HostDashboardScreen = React.lazy(() => import('./components/HostDashboardScreen'));
+const CreateEditPackageScreen = React.lazy(() => import('./components/CreateEditPackageScreen'));
+
+const NotificationsScreen = React.lazy(() => import('./components/NotificationsScreen'));
+const SettingsScreen = React.lazy(() => import('./components/SettingsScreen'));
+const AboutScreen = React.lazy(() => import('./components/AboutScreen'));
+const ContactScreen = React.lazy(() => import('./components/ContactScreen'));
+
+const DestinationsScreen = React.lazy(() => import('./components/DestinationsScreen'));
+const DestinationExploreScreen = React.lazy(() => import('./components/DestinationExploreScreen'));
+
+const TravelTrendRadar = React.lazy(() => import('./components/TravelTrendRadar'));
+
+const ExperiencesScreen = React.lazy(() => import('./components/ExperiencesScreen'));
+const ExperienceDetailScreen = React.lazy(() => import('./components/ExperienceDetailScreen'));
+
+const HostDiscoveryScreen = React.lazy(() => import('./components/HostDiscoveryScreen'));
+
+const HostBookingsScreen = React.lazy(() => import('./components/HostBookingsScreen'));
+const MyPackagesScreen = React.lazy(() => import('./components/MyPackagesScreen'));
+const ManageTourGuidesScreen = React.lazy(() => import('./components/ManageTourGuidesScreen'));
 
 /*
 |--------------------------------------------------------------------------
 | CENTRALIZED MARKETPLACE COMMUNICATION
 |--------------------------------------------------------------------------
-| This file will be created in the next step.
 */
-import InboxScreen from './components/InboxScreen';
+const InboxScreen = React.lazy(() => import('./components/InboxScreen'));
+
+const AdminDashboardScreen = React.lazy(() => import('./components/AdminDashboardScreen'));
+
+
+const RouteFallback = () => (
+  <div
+    className="min-h-screen flex items-center justify-center bg-[color:var(--bg-primary)]"
+    role="status"
+  >
+    <div className="w-10 h-10 rounded-full border-4 border-[color:var(--brand-primary-soft)] border-t-[color:var(--brand-primary)] animate-spin" />
+    <span className="sr-only">Loading screen…</span>
+  </div>
+);
 
 
 /*
@@ -136,9 +161,11 @@ const ProtectedRoute = ({
     return (
       <Navigate
         to={
-          user.role === 'host'
-            ? '/host-dashboard'
-            : '/home'
+          user.role === 'admin'
+            ? '/admin-dashboard'
+            : user.role === 'host'
+              ? '/host-dashboard'
+              : '/home'
         }
         replace
       />
@@ -160,6 +187,8 @@ const AppContent = () => {
     <AuthProvider>
 
       <Router>
+
+        <Suspense fallback={<RouteFallback />}>
 
         <Routes>
 
@@ -498,6 +527,20 @@ const AppContent = () => {
             />
 
             <Route
+              path="/my-reports"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    'traveler',
+                    'host'
+                  ]}
+                >
+                  <MyReportsScreen />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/notifications"
               element={
                 <ProtectedRoute
@@ -587,6 +630,40 @@ const AppContent = () => {
             }
           />
 
+          {/* ======================================================
+              TRAVEL TREND RADAR
+          ====================================================== */}
+
+          <Route
+            path="/travel-radar"
+            element={
+              <ProtectedRoute
+                allowedRoles={[
+                  'traveler',
+                  'host'
+                ]}
+              >
+                <TravelTrendRadar />
+              </ProtectedRoute>
+            }
+          />
+
+
+          {/* ======================================================
+              ADMIN DASHBOARD
+          ====================================================== */}
+
+          <Route
+            path="/admin-dashboard"
+            element={
+              <ProtectedRoute
+                allowedRoles={['admin']}
+              >
+                <AdminDashboardScreen />
+              </ProtectedRoute>
+            }
+          />
+
 
           {/* ======================================================
               404
@@ -598,7 +675,7 @@ const AppContent = () => {
               <div className="min-h-screen flex items-center justify-center bg-[color:var(--bg-primary)] px-4">
                 <div className="text-center">
 
-                  <h1 className="text-5xl font-bold mb-3">
+                  <h1 className="text-5xl mb-3">
                     404
                   </h1>
 
@@ -617,6 +694,8 @@ const AppContent = () => {
           />
 
         </Routes>
+
+        </Suspense>
 
       </Router>
 

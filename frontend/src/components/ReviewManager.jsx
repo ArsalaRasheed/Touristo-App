@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Star,
   MessageSquare,
@@ -365,8 +365,8 @@ const ReviewManager = ({ userId }) => {
             <Star
               className={`w-7 h-7 ${
                 star <= currentRating
-                  ? 'fill-yellow-400 text-yellow-400'
-                  : 'text-gray-300'
+                  ? 'fill-[color:var(--brand-gold-ink)] text-[color:var(--brand-gold-ink)]'
+                  : 'text-[color:var(--border-light)]'
               }`}
             />
           </button>
@@ -377,9 +377,9 @@ const ReviewManager = ({ userId }) => {
 
   if (loading) {
     return (
-      <section className="bg-[color:var(--surface-primary)] rounded-2xl p-6 mb-6 border border-[color:var(--border-primary)] shadow-sm">
+      <section className="bg-[color:var(--surface-primary)] rounded-2xl p-6 mb-6 border border-[color:var(--border-light)] shadow-[var(--shadow-sm)]">
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="w-7 h-7 animate-spin text-[color:var(--accent-primary)]" />
+          <Loader2 className="w-7 h-7 animate-spin text-[color:var(--brand-primary)]" />
           <span className="ml-3 text-[color:var(--text-secondary)]">
             Loading your reviews...
           </span>
@@ -389,14 +389,14 @@ const ReviewManager = ({ userId }) => {
   }
 
   return (
-    <section className="bg-[color:var(--surface-primary)] rounded-2xl p-6 mb-6 border border-[color:var(--border-primary)] shadow-sm">
+    <section className="bg-[color:var(--surface-primary)] rounded-2xl p-6 mb-6 border border-[color:var(--border-light)] shadow-[var(--shadow-sm)]">
       <div className="flex items-center gap-3 mb-2">
         <div className="w-11 h-11 rounded-xl bg-[color:var(--surface-secondary)] flex items-center justify-center">
-          <MessageSquare className="w-5 h-5 text-[color:var(--accent-primary)]" />
+          <MessageSquare className="w-5 h-5 text-[color:var(--brand-primary)]" />
         </div>
 
         <div>
-          <h2 className="text-xl font-bold text-[color:var(--text-primary)]">
+          <h2 className="text-xl text-[color:var(--text-primary)]">
             Reviews & Ratings
           </h2>
 
@@ -407,27 +407,27 @@ const ReviewManager = ({ userId }) => {
       </div>
 
       {message && (
-        <div className="flex items-start gap-3 p-4 mb-5 rounded-xl bg-green-50 border border-green-200 text-green-800">
+        <div className="flex items-start gap-3 p-4 mb-5 rounded-xl bg-[color:var(--success-soft)] border border-[color:var(--success)]/30 text-[color:var(--success)]">
           <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
           <p className="text-sm">{message}</p>
         </div>
       )}
 
       {error && (
-        <div className="flex items-start gap-3 p-4 mb-5 rounded-xl bg-red-50 border border-red-200 text-red-700">
+        <div className="flex items-start gap-3 p-4 mb-5 rounded-xl bg-[color:var(--danger-soft)] border border-[color:var(--danger)]/35 text-[color:var(--danger)]">
           <X className="w-5 h-5 shrink-0 mt-0.5" />
-          <p className="text-sm">{error}</p>
+          <p role="alert" className="text-sm">{error}</p>
         </div>
       )}
 
       {(selectedPackage || editingReview) && (
         <form
           onSubmit={submitReview}
-          className="mb-6 p-5 rounded-xl bg-[color:var(--surface-secondary)] border border-[color:var(--border-primary)]"
+          className="mb-6 p-5 rounded-xl bg-[color:var(--surface-secondary)] border border-[color:var(--border-light)]"
         >
           <div className="flex items-start justify-between gap-4 mb-5">
             <div>
-              <h3 className="text-lg font-bold text-[color:var(--text-primary)]">
+              <h3 className="text-lg text-[color:var(--text-primary)]">
                 {editingReview
                   ? 'Edit Your Review'
                   : 'Write a Review'}
@@ -447,7 +447,7 @@ const ReviewManager = ({ userId }) => {
             <button
               type="button"
               onClick={cancelForm}
-              className="p-2 rounded-lg hover:bg-[color:var(--border-primary)] transition"
+              className="p-2 rounded-lg hover:bg-[color:var(--border-light)] transition"
               aria-label="Close review form"
             >
               <X className="w-5 h-5 text-[color:var(--text-secondary)]" />
@@ -485,7 +485,7 @@ const ReviewManager = ({ userId }) => {
               placeholder="Tell other travelers about your experience..."
               rows={4}
               maxLength={1000}
-              className="w-full rounded-xl border border-[color:var(--border-primary)] bg-[color:var(--surface-primary)] text-[color:var(--text-primary)] p-3 outline-none focus:ring-2 focus:ring-[color:var(--accent-primary)] resize-none"
+              className="w-full rounded-xl border border-[color:var(--border-light)] bg-[color:var(--surface-primary)] text-[color:var(--text-primary)] p-3 outline-none focus:ring-2 focus:ring-[color:var(--brand-primary)] resize-none"
             />
 
             <div className="flex justify-end mt-1">
@@ -498,7 +498,7 @@ const ReviewManager = ({ userId }) => {
           <button
             type="submit"
             disabled={submitting || !rating}
-            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[color:var(--accent-primary)] text-[color:var(--nav-text)] font-semibold hover:bg-[color:var(--accent-primary-hover)] transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[color:var(--brand-primary)] text-[color:var(--text-inverse)] font-semibold hover:bg-[color:var(--brand-primary-hover)] transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? (
               <>
@@ -516,7 +516,7 @@ const ReviewManager = ({ userId }) => {
       )}
 
       <div className="mb-7">
-        <h3 className="text-lg font-bold text-[color:var(--text-primary)] mb-3">
+        <h3 className="text-lg text-[color:var(--text-primary)] mb-3">
           Trips Available for Review
         </h3>
 
@@ -534,7 +534,7 @@ const ReviewManager = ({ userId }) => {
               return (
                 <div
                   key={booking.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-[color:var(--surface-secondary)] border border-[color:var(--border-primary)]"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-[color:var(--surface-secondary)] border border-[color:var(--border-light)]"
                 >
                   <div className="flex items-center gap-4 min-w-0">
                     {image ? (
@@ -548,8 +548,8 @@ const ReviewManager = ({ userId }) => {
                         className="w-16 h-16 rounded-xl object-cover shrink-0"
                       />
                     ) : (
-                      <div className="w-16 h-16 rounded-xl bg-[color:var(--accent-primary)]/10 flex items-center justify-center shrink-0">
-                        <Star className="w-7 h-7 text-[color:var(--accent-primary)]" />
+                      <div className="w-16 h-16 rounded-xl bg-[color:var(--brand-primary)]/10 flex items-center justify-center shrink-0">
+                        <Star className="w-7 h-7 text-[color:var(--brand-primary)]" />
                       </div>
                     )}
 
@@ -580,7 +580,7 @@ const ReviewManager = ({ userId }) => {
                   <button
                     type="button"
                     onClick={() => startReview(booking)}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[color:var(--accent-primary)] text-[color:var(--nav-text)] font-medium hover:bg-[color:var(--accent-primary-hover)] transition shrink-0"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[color:var(--brand-primary)] text-[color:var(--text-inverse)] font-medium hover:bg-[color:var(--brand-primary-hover)] transition shrink-0"
                   >
                     <Star className="w-4 h-4" />
                     Write Review
@@ -593,7 +593,7 @@ const ReviewManager = ({ userId }) => {
       </div>
 
       <div>
-        <h3 className="text-lg font-bold text-[color:var(--text-primary)] mb-3">
+        <h3 className="text-lg text-[color:var(--text-primary)] mb-3">
           Your Reviews
         </h3>
 
@@ -610,7 +610,7 @@ const ReviewManager = ({ userId }) => {
             {reviews.map((review) => (
               <div
                 key={review.id}
-                className="p-5 rounded-xl bg-[color:var(--surface-secondary)] border border-[color:var(--border-primary)]"
+                className="p-5 rounded-xl bg-[color:var(--surface-secondary)] border border-[color:var(--border-light)]"
               >
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <div className="flex-1">
@@ -639,7 +639,7 @@ const ReviewManager = ({ userId }) => {
                     <button
                       type="button"
                       onClick={() => startEdit(review)}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[color:var(--surface-primary)] text-[color:var(--text-primary)] border border-[color:var(--border-primary)] hover:bg-[color:var(--border-primary)] transition text-sm"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[color:var(--surface-primary)] text-[color:var(--text-primary)] border border-[color:var(--border-light)] hover:bg-[color:var(--border-light)] transition text-sm"
                     >
                       <Pencil className="w-4 h-4" />
                       Edit
@@ -648,7 +648,7 @@ const ReviewManager = ({ userId }) => {
                     <button
                       type="button"
                       onClick={() => deleteReview(review.id)}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition text-sm"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[color:var(--danger-soft)] text-[color:var(--danger)] border border-[color:var(--danger)]/35 hover:bg-[color:var(--danger)]/15 transition text-sm"
                     >
                       <Trash2 className="w-4 h-4" />
                       Delete

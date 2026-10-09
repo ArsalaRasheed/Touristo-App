@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { apiFetch } from '../api/client';
 import ReviewManager from './ReviewManager';
 
 import {
@@ -22,10 +23,10 @@ import {
   UserRound,
   Mail,
   Building2,
-  Clock3,
   Sparkles,
   Globe2,
-  WalletCards
+  WalletCards,
+  Flag
 } from 'lucide-react';
 
 const ProfileScreen = () => {
@@ -43,13 +44,7 @@ const ProfileScreen = () => {
           throw new Error('User not authenticated');
         }
 
-        const userResponse = await fetch(`/api/users/${user.id}`);
-
-        if (!userResponse.ok) {
-          throw new Error(`HTTP error! status: ${userResponse.status}`);
-        }
-
-        const userDataResult = await userResponse.json();
+        const userDataResult = await apiFetch(`/api/users/${user.id}`);
 
         const enhancedUserData = {
           ...userDataResult.data.user,
@@ -63,13 +58,13 @@ const ProfileScreen = () => {
         setUserData(enhancedUserData);
 
         if (user.role === 'host') {
-          const hostResponse = await fetch(
-            `/api/hosts/user/${user.id}`
-          );
-
-          if (hostResponse.ok) {
-            const hostDataResult = await hostResponse.json();
+          try {
+            const hostDataResult = await apiFetch(
+              `/api/hosts/user/${user.id}`
+            );
             setHostData(hostDataResult.data.host);
+          } catch (hostErr) {
+            console.error('Error fetching company profile:', hostErr);
           }
         }
       } catch (err) {
@@ -128,7 +123,7 @@ const ProfileScreen = () => {
             Unable to load profile
           </h2>
 
-          <p className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">
+          <p role="alert" className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">
             {error}
           </p>
 
@@ -171,7 +166,7 @@ const ProfileScreen = () => {
           <div className="flex items-end justify-between gap-4">
 
             <div>
-              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.24em] text-[color:var(--brand-gold)]">
+              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.24em] text-[color:var(--brand-gold-ink)]">
                 <Sparkles className="h-3.5 w-3.5" />
                 Account
               </p>
@@ -217,7 +212,7 @@ const ProfileScreen = () => {
 
                 </div>
 
-                <div className="absolute -bottom-2 -right-2 flex h-9 w-9 items-center justify-center rounded-full border-4 border-[color:var(--surface-primary)] bg-[color:var(--brand-gold)] text-white shadow-sm">
+                <div className="absolute -bottom-2 -right-2 flex h-9 w-9 items-center justify-center rounded-full border-4 border-[color:var(--surface-primary)] bg-[color:var(--brand-gold)] text-white shadow-[var(--shadow-sm)]">
                   <UserRound className="h-4 w-4" />
                 </div>
 
@@ -249,13 +244,13 @@ const ProfileScreen = () => {
                 <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[color:var(--text-secondary)]">
 
                   <span className="inline-flex items-center gap-1.5">
-                    <Mail className="h-4 w-4 text-[color:var(--brand-gold)]" />
+                    <Mail className="h-4 w-4 text-[color:var(--brand-gold-ink)]" />
                     {userData?.email}
                   </span>
 
                   {memberYear && (
                     <span className="inline-flex items-center gap-1.5">
-                      <CalendarDays className="h-4 w-4 text-[color:var(--brand-gold)]" />
+                      <CalendarDays className="h-4 w-4 text-[color:var(--brand-gold-ink)]" />
                       Member since {memberYear}
                     </span>
                   )}
@@ -271,7 +266,7 @@ const ProfileScreen = () => {
                   {isHost && hostData?.rating && (
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-light)] bg-[color:var(--surface-secondary)] px-3 py-1.5 text-xs font-semibold text-[color:var(--text-secondary)]">
                       <Star
-                        className="h-3.5 w-3.5 text-[color:var(--brand-gold)]"
+                        className="h-3.5 w-3.5 text-[color:var(--brand-gold-ink)]"
                         fill="currentColor"
                       />
                       {hostData.rating}/5 rating
@@ -657,7 +652,7 @@ const ProfileScreen = () => {
           <div className="flex items-start justify-between gap-4">
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--brand-gold)]">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--brand-gold-ink)]">
                 Preferences
               </p>
 
@@ -670,7 +665,7 @@ const ProfileScreen = () => {
               </p>
             </div>
 
-            <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[color:var(--brand-gold-soft)] text-[color:var(--brand-gold)] sm:flex">
+            <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[color:var(--brand-gold-soft)] text-[color:var(--brand-gold-ink)] sm:flex">
               <Settings className="h-5 w-5" />
             </div>
 
@@ -704,6 +699,13 @@ const ProfileScreen = () => {
               icon={Globe2}
               title="All Settings"
               description="Language, currency and account settings"
+            />
+
+            <SettingLink
+              to="/my-reports"
+              icon={Flag}
+              title="My Reports"
+              description="Track content you reported and its status"
             />
 
           </div>
@@ -793,7 +795,7 @@ const InfoItem = ({
     <div className="mt-2 flex items-center gap-2">
 
       {Icon && (
-        <Icon className="h-4 w-4 shrink-0 text-[color:var(--brand-gold)]" />
+        <Icon className="h-4 w-4 shrink-0 text-[color:var(--brand-gold-ink)]" />
       )}
 
       <p className="truncate text-sm font-semibold text-[color:var(--text-primary)]">

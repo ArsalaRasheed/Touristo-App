@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -9,7 +9,7 @@ const MyTripsScreen = () => {
   const [itineraries, setItineraries] = useState({});
   const [weatherData, setWeatherData] = useState({});
   const [weatherLoading, setWeatherLoading] = useState({});
-  const [location, setLocation] = useState(null);
+  const [, setLocation] = useState(null);
   const [sosActive, setSosActive] = useState(false);
   const [emergencyContacts, setEmergencyContacts] = useState(null);
 
@@ -64,10 +64,7 @@ const MyTripsScreen = () => {
     }
   }, []);
 
-  const getEmergencyContactsForLocation = async (
-    lat,
-    lng
-  ) => {
+  const getEmergencyContactsForLocation = async () => {
     const mockContacts = {
       hospital: {
         name: 'Pakistan Institute of Medical Sciences',
@@ -300,7 +297,7 @@ const MyTripsScreen = () => {
     return (
       <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] p-4 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[color:var(--accent-primary)] mx-auto" />
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[color:var(--brand-primary)] mx-auto" />
 
           <p className="mt-4 text-[color:var(--text-secondary)]">
             Loading trips...
@@ -313,8 +310,8 @@ const MyTripsScreen = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] p-4 flex items-center justify-center">
-        <div className="text-center p-6 bg-[color:var(--surface-primary)] rounded-xl border border-[color:var(--border-primary)] max-w-md">
-          <h2 className="text-xl font-bold mb-2 text-red-500">
+        <div className="text-center p-6 bg-[color:var(--surface-primary)] rounded-xl border border-[color:var(--border-light)] max-w-md">
+          <h2 className="text-xl mb-2 text-[color:var(--danger)]">
             Error Loading Trips
           </h2>
 
@@ -326,7 +323,7 @@ const MyTripsScreen = () => {
             onClick={() =>
               window.location.reload()
             }
-            className="bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] py-2 px-4 rounded-lg"
+            className="bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary-hover)] text-[color:var(--text-inverse)] py-2 px-4 rounded-lg"
           >
             Try Again
           </button>
@@ -341,40 +338,49 @@ const MyTripsScreen = () => {
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
-          <h1 className="text-2xl font-bold text-[color:var(--text-primary)]">
+          <h1 className="text-3xl tracking-[-0.03em] text-[color:var(--text-primary)]">
             My Trips
           </h1>
 
-          {trips.some(
-            trip =>
-              getTripStatus(trip.start_date) ===
-              'upcoming'
-          ) && (
-            <button
-              onClick={activateSOS}
-              className={`w-full sm:w-auto px-4 py-2 rounded-lg font-bold transition ${
-                sosActive
-                  ? 'bg-red-600 animate-pulse text-white'
-                  : 'bg-red-500 hover:bg-red-600 text-white'
-              }`}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Link
+              to="/sos"
+              className="px-4 py-2 rounded-lg font-bold text-center transition bg-[color:var(--bg-secondary)] border border-[color:var(--border-primary)] text-[color:var(--text-primary)] hover:bg-[color:var(--surface-primary)]"
             >
-              {sosActive
-                ? 'SOS ACTIVATED!'
-                : 'SOS'}
-            </button>
-          )}
+              Safety &amp; SOS
+            </Link>
+
+            {trips.some(
+              trip =>
+                getTripStatus(trip.start_date) ===
+                'upcoming'
+            ) && (
+              <button
+                onClick={activateSOS}
+                className={`w-full sm:w-auto px-4 py-2 rounded-lg font-bold transition ${
+                  sosActive
+                    ? 'bg-[color:var(--danger)] animate-pulse text-white'
+                    : 'bg-[color:var(--danger)] hover:bg-[color:var(--danger)]/85 text-white'
+                }`}
+              >
+                {sosActive
+                  ? 'SOS ACTIVATED!'
+                  : 'SOS'}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Emergency Contacts */}
         {sosActive && emergencyContacts && (
-          <div className="mb-6 p-4 bg-red-100 border border-red-300 rounded-xl">
-            <h3 className="font-bold text-red-800 mb-2">
+          <div className="mb-6 p-4 bg-[color:var(--danger-soft)] border border-[color:var(--danger)]/35 rounded-xl">
+            <h3 className="text-[color:var(--danger)] mb-2">
               Emergency Contacts Nearby:
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="bg-white p-3 rounded-lg">
-                <h4 className="font-bold text-red-700">
+                <h4 className="text-[color:var(--danger)]">
                   Hospital
                 </h4>
                 <p className="text-sm">
@@ -383,14 +389,14 @@ const MyTripsScreen = () => {
                 <p className="text-sm font-semibold">
                   {emergencyContacts.hospital.phone}
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-[color:var(--text-secondary)]">
                   {emergencyContacts.hospital.distance}{' '}
                   away
                 </p>
               </div>
 
               <div className="bg-white p-3 rounded-lg">
-                <h4 className="font-bold text-red-700">
+                <h4 className="text-[color:var(--danger)]">
                   Police
                 </h4>
                 <p className="text-sm">
@@ -399,14 +405,14 @@ const MyTripsScreen = () => {
                 <p className="text-sm font-semibold">
                   {emergencyContacts.police.phone}
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-[color:var(--text-secondary)]">
                   {emergencyContacts.police.distance}{' '}
                   away
                 </p>
               </div>
 
               <div className="bg-white p-3 rounded-lg">
-                <h4 className="font-bold text-red-700">
+                <h4 className="text-[color:var(--danger)]">
                   Fire
                 </h4>
                 <p className="text-sm">
@@ -415,7 +421,7 @@ const MyTripsScreen = () => {
                 <p className="text-sm font-semibold">
                   {emergencyContacts.fire.phone}
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-[color:var(--text-secondary)]">
                   {emergencyContacts.fire.distance}{' '}
                   away
                 </p>
@@ -426,12 +432,12 @@ const MyTripsScreen = () => {
 
         {/* Trips */}
         {trips.length === 0 ? (
-          <div className="bg-[color:var(--surface-primary)] rounded-2xl p-8 text-center border border-[color:var(--border-primary)]">
+          <div className="bg-[color:var(--surface-primary)] rounded-2xl p-8 text-center border border-[color:var(--border-light)]">
             <div className="text-5xl mb-4">
               ✈️
             </div>
 
-            <h2 className="text-xl font-bold mb-2 text-[color:var(--text-primary)]">
+            <h2 className="text-xl mb-2 text-[color:var(--text-primary)]">
               No Trips Yet
             </h2>
 
@@ -443,7 +449,7 @@ const MyTripsScreen = () => {
 
             <Link
               to="/destinations"
-              className="inline-block bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] py-2 px-6 rounded-lg font-medium"
+              className="inline-block bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary-hover)] text-[color:var(--text-inverse)] py-2 px-6 rounded-lg font-medium"
             >
               Explore Destinations
             </Link>
@@ -458,12 +464,12 @@ const MyTripsScreen = () => {
               return (
                 <div
                   key={trip.id}
-                  className="bg-[color:var(--surface-primary)] rounded-2xl p-4 sm:p-6 border border-[color:var(--border-primary)] shadow-sm"
+                  className="bg-[color:var(--surface-primary)] rounded-2xl p-4 sm:p-6 border border-[color:var(--border-light)] shadow-[var(--shadow-sm)]"
                 >
                   {/* Trip heading */}
                   <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
                     <div className="min-w-0">
-                      <h3 className="text-xl font-bold text-[color:var(--text-primary)] break-words">
+                      <h3 className="text-xl text-[color:var(--text-primary)] break-words">
                         {trip.package_title ||
                           'Trip Package'}
                       </h3>
@@ -480,8 +486,8 @@ const MyTripsScreen = () => {
                           getTripStatus(
                             trip.start_date
                           ) === 'upcoming'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-green-100 text-green-800'
+                            ? 'bg-[color:var(--brand-primary-soft)] text-[color:var(--brand-primary)]'
+                            : 'bg-[color:var(--success-soft)] text-[color:var(--success)]'
                         }`}
                       >
                         {getTripStatus(
@@ -530,7 +536,7 @@ const MyTripsScreen = () => {
                         Total Cost
                       </p>
 
-                      <p className="font-bold text-[color:var(--accent-primary)]">
+                      <p className="font-bold text-[color:var(--brand-primary)]">
                         PKR{' '}
                         {parseFloat(
                           trip.total_price || 0
@@ -541,7 +547,7 @@ const MyTripsScreen = () => {
 
                   {/* Weather */}
                   <div className="mb-6">
-                    <h4 className="font-bold mb-2 text-[color:var(--text-primary)]">
+                    <h4 className="mb-2 text-[color:var(--text-primary)]">
                       Live Weather
                     </h4>
 
@@ -553,7 +559,7 @@ const MyTripsScreen = () => {
                             onClick={() =>
                               getWeather(trip)
                             }
-                            className="text-[color:var(--accent-primary)] hover:text-[color:var(--accent-primary-hover)] font-medium"
+                            className="text-[color:var(--brand-primary)] hover:text-[color:var(--brand-primary-hover)] font-medium"
                           >
                             Load Live Weather
                           </button>
@@ -563,7 +569,7 @@ const MyTripsScreen = () => {
                       {weatherLoading[trip.id] && (
                         <div className="flex justify-center items-center min-h-16">
                           <div className="flex items-center gap-3 text-[color:var(--text-secondary)]">
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[color:var(--accent-primary)]" />
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[color:var(--brand-primary)]" />
                             Loading live weather...
                           </div>
                         </div>
@@ -571,7 +577,7 @@ const MyTripsScreen = () => {
 
                       {weather?.error && (
                         <div className="text-center py-2">
-                          <p className="text-sm text-red-600 mb-2">
+                          <p className="text-sm text-[color:var(--danger)] mb-2">
                             {weather.error}
                           </p>
 
@@ -593,7 +599,7 @@ const MyTripsScreen = () => {
 
                               getWeather(trip);
                             }}
-                            className="text-sm font-semibold text-[color:var(--accent-primary)]"
+                            className="text-sm font-semibold text-[color:var(--brand-primary)]"
                           >
                             Try Again
                           </button>
@@ -653,8 +659,8 @@ const MyTripsScreen = () => {
                                 className={
                                   weather.roadStatus ===
                                   'Clear'
-                                    ? 'text-green-600'
-                                    : 'text-amber-600'
+                                    ? 'text-[color:var(--success)]'
+                                    : 'text-[color:var(--warning)]'
                                 }
                               >
                                 Roads:{' '}
@@ -670,7 +676,7 @@ const MyTripsScreen = () => {
                   {/* Itinerary */}
                   <div className="mb-6">
                     <div className="flex justify-between items-center mb-2 gap-3">
-                      <h4 className="font-bold text-[color:var(--text-primary)]">
+                      <h4 className="text-[color:var(--text-primary)]">
                         Itinerary
                       </h4>
 
@@ -678,7 +684,7 @@ const MyTripsScreen = () => {
                         onClick={() =>
                           getItinerary(trip.id)
                         }
-                        className="text-[color:var(--accent-primary)] hover:text-[color:var(--accent-primary-hover)] text-sm font-medium"
+                        className="text-[color:var(--brand-primary)] hover:text-[color:var(--brand-primary-hover)] text-sm font-medium"
                       >
                         {itineraries[trip.id]
                           ? 'Hide'
@@ -697,7 +703,7 @@ const MyTripsScreen = () => {
                               key={index}
                               className="mb-4 last:mb-0"
                             >
-                              <h5 className="font-bold text-[color:var(--text-primary)]">
+                              <h5 className="text-[color:var(--text-primary)]">
                                 Day {index + 1}:{' '}
                                 {day.title}
                               </h5>
@@ -716,34 +722,43 @@ const MyTripsScreen = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <Link
                       to={`/package/${trip.package_id}`}
-                      className="w-full text-center bg-[color:var(--surface-secondary)] hover:bg-[color:var(--border-primary)] text-[color:var(--text-primary)] py-3 rounded-lg font-medium"
+                      className="w-full text-center bg-[color:var(--surface-secondary)] hover:bg-[color:var(--border-light)] text-[color:var(--text-primary)] py-3 rounded-lg font-medium"
                     >
                       View Package
                     </Link>
 
                     <Link
                       to={`/trip-planner?tripId=${trip.id}`}
-                      className="w-full text-center bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] py-3 rounded-lg font-medium"
+                      className="w-full text-center bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary-hover)] text-[color:var(--text-inverse)] py-3 rounded-lg font-medium"
                     >
                       Plan Activities
                     </Link>
 
                     <button
-                      className="w-full text-center bg-[color:var(--surface-secondary)] hover:bg-[color:var(--border-primary)] text-[color:var(--text-primary)] py-3 rounded-lg font-medium"
-                      onClick={() =>
-                        navigator.share
-                          ? navigator.share({
-                              title:
-                                'My Trip Details',
+                      className="w-full text-center bg-[color:var(--surface-secondary)] hover:bg-[color:var(--border-light)] text-[color:var(--text-primary)] py-3 rounded-lg font-medium"
+                      onClick={() => {
+                        if (!navigator.share) {
+                          alert(
+                            'Web Share API not supported in your browser'
+                          );
+                          return;
+                        }
+
+                        try {
+                          Promise.resolve(
+                            navigator.share({
+                              title: 'My Trip Details',
                               text: `Check out my trip: ${trip.package_title} to ${trip.destination}`,
-                              url:
-                                window.location
-                                  .href
+                              url: window.location.href
                             })
-                          : alert(
-                              'Web Share API not supported in your browser'
-                            )
-                      }
+                          ).catch(shareError => {
+                            console.error('Share failed:', shareError);
+                          });
+                        } catch (shareError) {
+                          console.error('Share failed:', shareError);
+                          alert('Could not share this trip right now.');
+                        }
+                      }}
                     >
                       Share
                     </button>

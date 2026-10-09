@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo_touristo.png';
+import { Flame, ArrowUpRight } from 'lucide-react';
+import { apiFetch } from '../api/client';
+import { FALLBACK_IMAGE } from '../utils/images';
 
 const HomeScreen = () => {
   const [recommendedPackages, setRecommendedPackages] = useState([]);
@@ -30,13 +33,7 @@ const HomeScreen = () => {
   useEffect(() => {
     const fetchHomepageData = async () => {
       try {
-        const response = await fetch('/api/homepage-data');
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
+        const data = await apiFetch('/api/homepage-data');
 
         setRecommendedPackages(
           data.data?.recommendedPackages || []
@@ -154,7 +151,7 @@ const HomeScreen = () => {
                 to="/"
                 className="flex items-center gap-3 group"
               >
-                <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg group-hover:scale-105 transition-transform">
+                <div className="w-10 h-10 rounded-xl overflow-hidden shadow-[var(--shadow-lg)] group-hover:scale-105 transition-transform">
                   <img
                     src={logo}
                     alt="Touristo"
@@ -309,7 +306,7 @@ const HomeScreen = () => {
 
                 <Link
                   to="/destinations"
-                  className="inline-flex items-center justify-center min-h-12 px-7 rounded-full bg-white text-[color:var(--brand-primary)] text-sm sm:text-base font-semibold hover:bg-[color:var(--brand-gold-light)] transition-colors shadow-lg"
+                  className="inline-flex items-center justify-center min-h-12 px-7 rounded-full bg-white text-[color:var(--brand-primary)] text-sm sm:text-base font-semibold hover:bg-[color:var(--brand-gold-light)] transition-colors shadow-[var(--shadow-lg)]"
                 >
                   Explore Destinations
                   <span className="ml-2">→</span>
@@ -357,6 +354,7 @@ const HomeScreen = () => {
                     </div>
 
                     <input
+                    aria-label="Search Touristo"
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
@@ -393,6 +391,144 @@ const HomeScreen = () => {
       </section>
 
       {/* =====================================================
+          TRAVEL RADAR ENTRY POINT
+      ===================================================== */}
+
+      <section className="px-5 sm:px-8 pt-12 sm:pt-14 bg-[color:var(--bg-primary)]">
+
+        <div className="max-w-7xl mx-auto">
+
+          <div className="
+            relative
+            overflow-hidden
+            rounded-[28px]
+            bg-[color:var(--brand-primary)]
+            shadow-[var(--shadow-lg)]
+            px-6
+            py-7
+            sm:px-9
+            sm:py-9
+            flex
+            flex-col
+            sm:flex-row
+            sm:items-center
+            gap-6
+          ">
+
+            {/* Decorative glow */}
+
+            <div className="
+              absolute
+              -top-24
+              -right-16
+              w-64
+              h-64
+              rounded-full
+              bg-[color:var(--brand-gold)]
+              opacity-[0.10]
+              blur-3xl
+            " />
+
+            <div className="
+              absolute
+              -bottom-28
+              -left-16
+              w-72
+              h-72
+              rounded-full
+              bg-white
+              opacity-[0.04]
+              blur-3xl
+            " />
+
+            <div className="relative z-10 flex-1 min-w-0">
+
+              <span className="
+                inline-flex
+                items-center
+                gap-2
+                px-3
+                py-1.5
+                rounded-full
+                bg-white/10
+                border
+                border-white/10
+                text-[color:var(--brand-gold-light)]
+                text-[11px]
+                font-semibold
+                uppercase
+                tracking-[0.16em]
+              ">
+
+                <Flame size={13} />
+
+                Travel Radar
+
+              </span>
+
+              <h2 className="
+                mt-4
+                text-2xl
+                sm:text-3xl
+                font-semibold
+                tracking-[-0.03em]
+                text-white
+              ">
+                See what's trending in Pakistan
+              </h2>
+
+              <p className="
+                mt-2
+                max-w-xl
+                text-sm
+                leading-6
+                text-white/65
+              ">
+
+                Real travel signals from recent creator content —
+                ranked destinations, top creators and why they are
+                trending right now.
+
+              </p>
+
+            </div>
+
+            <Link
+              to="/travel-radar"
+              className="
+                relative
+                z-10
+                shrink-0
+                inline-flex
+                items-center
+                justify-center
+                gap-2
+                min-h-12
+                px-7
+                rounded-full
+                bg-[color:var(--brand-gold)]
+                text-[color:var(--text-primary)]
+                text-sm
+                font-semibold
+                hover:bg-[color:var(--brand-gold-light)]
+                transition-colors
+                shadow-[0_6px_18px_rgba(200,164,93,0.28)]
+              "
+            >
+
+              Explore Travel Trends
+
+              <ArrowUpRight size={17} />
+
+            </Link>
+
+          </div>
+
+        </div>
+
+      </section>
+
+      {/* =====================================================
           RECOMMENDED
       ===================================================== */}
 
@@ -404,7 +540,7 @@ const HomeScreen = () => {
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
 
               <div>
-                <span className="text-xs uppercase tracking-[0.2em] font-semibold text-[color:var(--brand-gold)]">
+                <span className="text-xs uppercase tracking-[0.2em] font-semibold text-[color:var(--brand-gold-ink)]">
                   Curated for you
                 </span>
 
@@ -441,16 +577,19 @@ const HomeScreen = () => {
                     <div className="relative h-52 overflow-hidden">
 
                       <img
-                        src={pkg.image}
+                        src={pkg.image || FALLBACK_IMAGE}
                         alt={pkg.title || 'Tour package'}
                         className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
                         loading="lazy"
+                        onError={(event) => {
+                          event.currentTarget.src = FALLBACK_IMAGE;
+                        }}
                       />
 
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
                       {pkg.comparisonBadge === 'Top Match' && (
-                        <div className="absolute top-3 left-3 badge badge-gold shadow-sm">
+                        <div className="absolute top-3 left-3 badge badge-gold shadow-[var(--shadow-sm)]">
                           Top Match
                         </div>
                       )}
@@ -520,7 +659,7 @@ const HomeScreen = () => {
 
           <div className="text-center max-w-2xl mx-auto mb-10">
 
-            <span className="text-xs uppercase tracking-[0.2em] font-semibold text-[color:var(--brand-gold)]">
+            <span className="text-xs uppercase tracking-[0.2em] font-semibold text-[color:var(--brand-gold-ink)]">
               Start somewhere unforgettable
             </span>
 
@@ -552,11 +691,15 @@ const HomeScreen = () => {
 
                     <img
                       src={
-                        destination.packages?.[0]?.image
+                        destination.packages?.[0]?.image ||
+                        FALLBACK_IMAGE
                       }
                       alt={destination.name}
                       className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-700"
                       loading="lazy"
+                      onError={(event) => {
+                        event.currentTarget.src = FALLBACK_IMAGE;
+                      }}
                     />
 
                     <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
@@ -619,7 +762,7 @@ const HomeScreen = () => {
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
 
               <div>
-                <span className="text-xs uppercase tracking-[0.2em] font-semibold text-[color:var(--brand-gold)]">
+                <span className="text-xs uppercase tracking-[0.2em] font-semibold text-[color:var(--brand-gold-ink)]">
                   Handpicked
                 </span>
 
@@ -652,10 +795,13 @@ const HomeScreen = () => {
                     <div className="relative h-56 overflow-hidden">
 
                       <img
-                        src={pkg.image}
+                        src={pkg.image || FALLBACK_IMAGE}
                         alt={pkg.title || 'Featured experience'}
                         className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
                         loading="lazy"
+                        onError={(event) => {
+                          event.currentTarget.src = FALLBACK_IMAGE;
+                        }}
                       />
 
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />

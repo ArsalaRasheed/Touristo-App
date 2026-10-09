@@ -1,10 +1,11 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const aiService = require('../services/aiService');
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const MAX_GUIDES_TO_SEND = 30;
+const MAX_PREFERENCE_LENGTH = 500;
 
 const recommendGuide = async (req, res) => {
   try {
-    const { guides, preference } = req.body;
+    let { guides, preference } = req.body;
 
     if (!guides || !Array.isArray(guides) || guides.length === 0) {
       return res.status(400).json({
@@ -13,30 +14,35 @@ const recommendGuide = async (req, res) => {
       });
     }
 
-    if (!preference || !preference.trim()) {
+    if (!preference || !String(preference).trim()) {
       return res.status(400).json({
         success: false,
         message: 'Guide preference is required'
       });
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-      return res.status(500).json({
-        success: false,
-        message: 'AI service is not configured'
-      });
+    preference = String(preference).trim();
+
+    if (preference.length > MAX_PREFERENCE_LENGTH) {
+      preference = preference.slice(0, MAX_PREFERENCE_LENGTH);
     }
 
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-3.5-flash'
-    });
-
-    const guideData = guides.map((guide) => ({
-      id: guide.id,
-      name: guide.name,
-      specialty: guide.specialty,
-      rating: guide.rating
-    }));
+    const guideData = guides
+      .slice(0, MAX_GUIDES_TO_SEND)
+      .map((guide) => ({
+        id: guide.id,
+        name:
+          typeof guide.name === 'string'
+            ? guide.name.slice(0, 100)
+            : String(guide.id ?? ''),
+        specialty:
+          typeof guide.specialty === 'string'
+            ? guide.specialty.slice(0, 100)
+            : '',
+        rating: Number.isFinite(Number(guide.rating))
+          ? guide.rating
+          : null
+      }));
 
     const prompt = `
 You are an AI tour guide recommendation assistant for Touristo.
@@ -70,26 +76,45 @@ Do not add markdown.
 Do not add extra text.
 `;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text().trim();
-
     let recommendation;
+    let provider;
 
     try {
-      recommendation = JSON.parse(text);
-    } catch (parseError) {
-      const cleanedText = text
-        .replace(/```json/g, '')
-        .replace(/```/g, '')
-        .trim();
+      const result = await aiService.generateJson({
+        prompt,
+        temperature: 0.2,
+        maxOutputTokens: 1200
+      });
+      recommendation = result.data;
+      provider = result.provider;
+    } catch (error) {
+      const canRetry =
+        error instanceof aiService.AIError &&
+        error.code === 'invalid_output';
 
-      recommendation = JSON.parse(cleanedText);
+      if (!canRetry) {
+        throw error;
+      }
+
+      /*
+       * One bounded retry with a stricter instruction and no creativity,
+       * then stop instead of burning more quota.
+       */
+      const retry = await aiService.generateJson({
+        prompt:
+          `${prompt}\n\nReturn ONLY a single valid JSON object. ` +
+          `Any markdown, prose or trailing text is a failure.`,
+        temperature: 0,
+        maxOutputTokens: 1200
+      });
+      recommendation = retry.data;
+      provider = retry.provider;
     }
 
     const recommendedGuide = guides.find(
       (guide) =>
-        String(guide.id) === String(recommendation.recommendedGuideId)
+        String(guide.id) ===
+        String(recommendation.recommendedGuideId)
     );
 
     if (!recommendedGuide) {
@@ -104,17 +129,29 @@ Do not add extra text.
       data: {
         recommendedGuideId: recommendedGuide.id,
         recommendedGuideName: recommendedGuide.name,
-        reason: recommendation.reason
+        reason:
+          typeof recommendation.reason === 'string'
+            ? recommendation.reason
+            : '(no reason provided)'
       }
     });
 
   } catch (error) {
+    if (error instanceof aiService.AIError) {
+      return res.status(error.status).json({
+        success: false,
+        code: error.code,
+        message: error.message
+      });
+    }
+
     console.error('Error recommending tour guide:', error);
 
     res.status(500).json({
       success: false,
-      message: 'Failed to recommend tour guide',
-      error: error.message
+      code: 'unknown',
+      message:
+        'Failed to recommend tour guide. Please try again in a moment.'
     });
   }
 };

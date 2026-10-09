@@ -4,12 +4,13 @@
 
 This document describes the current navigation flow and major user journeys implemented in the Touristo application.
 
-Touristo is a Pakistan-first tourism marketplace connecting travelers with tour companies. The application supports traveler discovery, package browsing, bookings, trip management, AI trip planning, host communication, tour-guide discovery, weather information, and emergency SOS functionality.
+The application supports traveler discovery, package browsing, bookings, trip management, AI trip planning, host communication, tour-guide discovery, weather information, travel radar insights, moderation reporting, admin moderation, and emergency SOS functionality.
 
-The application has two main user roles:
+The application has three user roles:
 
 * Traveler
 * Tour Company / Host
+* Admin
 
 ---
 
@@ -142,9 +143,11 @@ The Package Detail screen provides:
 Available actions include:
 
 * Book Now
-* Save package
 * Chat with Host
 * View Host Profile
+* Report (opens `ReportDialog` — files a moderation report against the package/host/review)
+
+"Save package" is **not implemented** — there is no favorites/saved-packages backend, so the package detail page offers no persistent save action.
 
 ### Traveler → Host Communication
 
@@ -168,7 +171,7 @@ Tour guides are not used as pre-booking chat contacts.
 
    * Number of travelers
    * Start/travel date
-   * Special requests
+   * Special requests (collected in the UI but **not persisted** — no special-requests column exists; PLANNED)
    * Available payment-method selection
 4. The system calculates the booking total.
 5. The booking is submitted to the backend.
@@ -209,7 +212,15 @@ The AI assistant can:
 * Respond in the language/script used by the user.
 * Support English, Urdu and Roman Urdu prompts.
 
-The AI Trip Planner is powered through the backend Gemini integration.
+The AI Trip Planner runs through the backend AI service (Google Gemini with OpenAI fallback, server-side keys).
+
+**Flow (DB-grounded):**
+
+1. Traveler submits a message to `POST /api/trip-planner` (authenticated).
+2. The server loads destinations and packages from the database.
+3. Only those rows are placed into the prompt; the model must answer with structured JSON `{message, packageIds}`.
+4. The server re-validates every returned package id against the catalog it supplied — unknown ids are dropped before the response leaves the process.
+5. Recommended packages are returned alongside the reply; prices and descriptions always come from the database, never from the model text.
 
 ---
 
@@ -238,8 +249,9 @@ Travelers can:
 * Browse tour guides.
 * View guide specialties.
 * View guide ratings.
-* Compare guides.
-* Receive preference-based guide matching.
+* Receive AI-based matching recommendations (`POST /api/tour-guides/recommend`).
+
+Side-by-side guide comparison is **not implemented** — the guide comparison screen was removed from the app.
 
 Hosts can:
 
@@ -396,9 +408,15 @@ Additional journeys:
 
 `Home → AI Trip Planner`
 
+`Home → Travel Trend Radar`
+
 `Home → SOS`
 
 `Profile → Messages & Inbox`
+
+`Profile → My Reports`
+
+`Package/Host Profile/Inbox → Report`
 
 ### Host
 
@@ -411,7 +429,44 @@ Additional journeys:
 
 ---
 
-## 18. Future Extensions
+## 18. Travel Radar Flow
+
+Entry point: `Home → Travel Trend Radar card` opens `/travel-radar` (`TravelTrendRadar.jsx`).
+
+The screen loads `GET /api/travel-radar`, which returns trend data (currently sourced from YouTube, with a server-side cache) plus AI-generated explanations of the trends.
+
+The multi-source radar upgrade is deferred (PLANNED) — the current YouTube implementation is intentionally kept stable.
+
+---
+
+## 19. Reporting Flow
+
+Travelers can file a moderation report from:
+
+* `Package Detail → Report` (a package or one of its reviews)
+* `Host Profile → Report` (the host or its linked user)
+* `Inbox → Report` (a conversation participant)
+
+Reports go through `POST /api/reports` (authenticated, rate-limited). Travelers track their own submissions at `Profile → My Reports` (`/my-reports`). Admins review and resolve reports at the Admin Dashboard.
+
+Only one open report per reporter per target is allowed (enforced by a partial unique index).
+
+---
+
+## 20. Admin Dashboard Flow
+
+IMPLEMENTED.
+
+1. A user whose `role` is `admin` logs in and is redirected to `/admin-dashboard`.
+2. Admin API requests are guarded by `requireAdmin`, which validates the JWT and re-reads the role from the database on every request.
+3. The dashboard provides sections for overview/analytics, users, hosts (verification status), packages, bookings, reviews, reports and the admin audit log.
+4. Every admin mutation is recorded in `admin_audit_log`.
+
+Host verification document upload and destination management are not implemented (PLANNED).
+
+---
+
+## 21. Future Extensions
 
 Planned future improvements include:
 
@@ -420,8 +475,7 @@ Planned future improvements include:
 * Real-time notifications
 * Active-trip communication
 * Guide/group communication after booking
-* Admin dashboard
-* Host verification workflow
+* Host verification document upload workflow
 * Advanced analytics
 * Production media storage
 * Enhanced safety and navigation features

@@ -60,7 +60,7 @@ External services are integrated where required for AI, weather, maps, and locat
 
 ## AI
 
-* Google Gemini API
+* Google Gemini API + OpenAI API (via `touristo/services/aiService.js`, server-side keys, retry + fallback)
 
 ## External APIs
 
@@ -146,6 +146,14 @@ Access to:
 * Customer Inquiries / Inbox
 * Host Profile
 
+### Admin
+
+Access to:
+
+* Admin Dashboard (`/admin-dashboard`)
+
+Admin API access is guarded by `requireAdmin`, which validates the JWT and then re-reads the account role from the database on every request (401 without/invalid token, 403 for non-admin, 503 when the role cannot be verified).
+
 ---
 
 # 6. API Architecture
@@ -161,15 +169,19 @@ Main endpoint groups include:
 ```text
 /api/users
 /api/hosts
-/api/packages
+/api/packages          (incl. POST /api/packages/ai/generate — host-only AI draft)
 /api/bookings
+/api/host/bookings
 /api/destinations
 /api/reviews
-/api/tour-guides
+/api/reports
+/api/tour-guides       (incl. POST /api/tour-guides/recommend — AI matching)
 /api/messages
 /api/trip-planner
 /api/weather
 /api/homepage-data
+/api/admin             (15 endpoints, all behind requireAdmin)
+/api/travel-radar
 ```
 
 ---
@@ -193,13 +205,25 @@ The messaging system is restricted to Traveler ↔ Host marketplace communicatio
 
 # 8. AI API
 
-Trip Planner:
+AI requests are handled by a shared service, `touristo/services/aiService.js`, not by calling a single vendor directly.
+
+* Providers: Google Gemini (`GEMINI_API_KEY`) and OpenAI (`OPENAI_API_KEY`), both server-side only.
+* Provider order follows `AI_PRIMARY_PROVIDER` when set; otherwise Gemini first, OpenAI second.
+* Per-attempt timeout 20s, overall deadline 30s, bounded retries on the primary provider, then a bounded single fallback to the secondary provider.
+* Structured output is parsed and validated; malformed output is returned as a typed `invalid_output` error instead of raw text.
+* Typed error codes map to safe HTTP statuses — keys, prompts and stack traces are never exposed.
+
+Endpoints:
 
 ```text
-POST /api/trip-planner
+POST /api/trip-planner                 (authenticated, AI rate-limited; DB-grounded:
+                                         server loads destinations+packages, model must return
+                                         {message, packageIds}, ids re-validated against the DB)
+POST /api/tour-guides/recommend        (authenticated, AI rate-limited)
+POST /api/packages/ai/generate         (host-only, AI rate-limited, response cached)
+GET  /api/packages/:id                 (AI review summary, cached in review_summaries)
+GET  /api/travel-radar                 (AI explanations over trend data)
 ```
-
-The backend sends travel-planning requests to Google Gemini and returns the generated response.
 
 ---
 
@@ -229,6 +253,8 @@ The PostgreSQL database should maintain relationships between:
 * Tour guides
 * Marketplace chats
 * Messages
+* Reports (moderation reports)
+* Admin audit log
 
 Foreign keys should protect relationships and maintain referential integrity.
 
@@ -292,10 +318,17 @@ The production architecture should keep:
 * API routing
 * Database credentials
 * JWT secret
-* Gemini API key
+* AI API keys (Gemini and OpenAI)
 * Weather API key
+* YouTube API key (Travel Radar)
+* CORS allowlist (`CORS_ORIGINS`)
 
 in secure environment configuration.
+
+Known deployment caveats:
+
+* Schema setup only runs on local `node index.js` — it never runs on Vercel (migration entrypoint: PLANNED).
+* Rate limits are in-memory and per-instance, so they do not coordinate across serverless instances (distributed rate limiting: PLANNED).
 
 ---
 
@@ -308,9 +341,10 @@ Future production development may include:
 * Email verification
 * Real-time notifications
 * Production media storage
-* Admin dashboard
 * Advanced monitoring
-* Automated testing
+* Distributed rate limiting
+* Database migration entrypoint
+* Automated unit/integration testing (smoke and probe scripts exist today; no test framework)
 * Logging/observability
 * Enhanced active-trip communication
 * Guide/group communication

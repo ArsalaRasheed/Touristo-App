@@ -1,23 +1,24 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
+const { authenticateToken, requireRole, syncRole } = require('../middleware/auth');
 
-// Get all users
-router.get('/', userController.getAllUsers);
-
-// Get user by ID
-router.get('/:id', userController.getUserById);
+// Get all users (admin only)
+router.get('/', authenticateToken, requireRole('admin'), userController.getAllUsers);
 
 // User login
 router.post('/login', userController.login);
 
-// Create a new user
+// Create a new user (public signup - role is restricted server-side)
 router.post('/', userController.createUser);
 
-// Update user
-router.put('/:id', userController.updateUser);
+// Get user by ID (self or admin)
+router.get('/:id', authenticateToken, syncRole, userController.getUserById);
 
-// Delete user
-router.delete('/:id', userController.deleteUser);
+// Update user (self or admin)
+router.put('/:id', authenticateToken, syncRole, userController.updateUser);
+
+// Delete user (self or admin)
+router.delete('/:id', authenticateToken, syncRole, userController.deleteUser);
 
 module.exports = router;

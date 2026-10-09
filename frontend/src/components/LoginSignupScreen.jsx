@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Eye,
@@ -62,7 +62,7 @@ const Field = ({
           required={required}
           autoComplete={autoComplete}
           placeholder={placeholder}
-          className={`w-full h-[52px] rounded-2xl border border-[color:var(--border-primary)] bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] placeholder:text-[color:var(--text-muted)] outline-none transition-all duration-200 ${
+          className={`w-full h-[52px] rounded-2xl border border-[color:var(--border-control)] bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] placeholder:text-[color:var(--text-muted)] outline-none transition-all duration-200 ${
             Icon ? 'pl-11' : 'pl-4'
           } ${children ? 'pr-12' : 'pr-4'} focus:border-[color:var(--brand-primary)] focus:bg-[color:var(--surface-primary)] focus:ring-4 focus:ring-[color:var(--brand-primary)]/10`}
         />
@@ -109,7 +109,7 @@ const TextAreaField = ({
           required={required}
           placeholder={placeholder}
           rows={3}
-          className={`w-full min-h-[96px] rounded-2xl border border-[color:var(--border-primary)] bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] placeholder:text-[color:var(--text-muted)] outline-none transition-all duration-200 resize-none ${
+          className={`w-full min-h-[96px] rounded-2xl border border-[color:var(--border-control)] bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] placeholder:text-[color:var(--text-muted)] outline-none transition-all duration-200 resize-none ${
             Icon ? 'pl-11' : 'pl-4'
           } pr-4 py-3.5 focus:border-[color:var(--brand-primary)] focus:bg-[color:var(--surface-primary)] focus:ring-4 focus:ring-[color:var(--brand-primary)]/10`}
         />
@@ -215,7 +215,9 @@ const LoginSignupScreen = () => {
 
         login(userData, token);
 
-        if (userData.role === 'host') {
+        if (userData.role === 'admin') {
+          navigate('/admin-dashboard');
+        } else if (userData.role === 'host') {
           navigate('/host-dashboard');
         } else {
           navigate('/home');
@@ -399,7 +401,7 @@ const LoginSignupScreen = () => {
   return (
     <div className="min-h-screen bg-[color:var(--bg-primary)] flex items-center justify-center px-4 py-8 sm:py-12">
 
-      <div className="w-full max-w-[1040px] grid lg:grid-cols-[0.9fr_1.1fr] overflow-hidden rounded-[30px] border border-[color:var(--border-primary)] bg-[color:var(--surface-primary)] shadow-[var(--shadow-lg)]">
+      <div className="w-full max-w-[1040px] grid lg:grid-cols-[0.9fr_1.1fr] overflow-hidden rounded-[30px] border border-[color:var(--border-light)] bg-[color:var(--surface-primary)] shadow-[var(--shadow-lg)]">
 
         {/* ======================================
             LEFT BRAND PANEL
@@ -492,7 +494,7 @@ const LoginSignupScreen = () => {
             <div className="flex items-center gap-2 mb-3">
               <span className="h-px w-7 bg-[color:var(--brand-gold)]" />
 
-              <span className="text-[11px] uppercase tracking-[0.18em] font-semibold text-[color:var(--brand-gold)]">
+              <span className="text-[11px] uppercase tracking-[0.18em] font-semibold text-[color:var(--brand-gold-ink)]">
                 Touristo
               </span>
             </div>
@@ -517,7 +519,7 @@ const LoginSignupScreen = () => {
               role="alert"
               className="mb-6 rounded-2xl border border-[color:var(--danger)]/20 bg-[color:var(--danger-soft)] px-4 py-3.5"
             >
-              <p className="text-sm leading-5 font-medium text-[color:var(--danger)]">
+              <p role="alert" className="text-sm leading-5 font-medium text-[color:var(--danger)]">
                 {error}
               </p>
             </div>
@@ -602,7 +604,7 @@ const LoginSignupScreen = () => {
                 <button
                   type="button"
                   onClick={() => navigate('/home')}
-                  className="w-full h-[50px] rounded-2xl border border-[color:var(--border-primary)] bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] font-semibold text-sm hover:bg-[color:var(--bg-secondary)] transition-colors"
+                  className="w-full h-[50px] rounded-2xl border border-[color:var(--border-light)] bg-[color:var(--surface-secondary)] text-[color:var(--text-primary)] font-semibold text-sm hover:bg-[color:var(--bg-secondary)] transition-colors"
                 >
                   Continue as Guest
                 </button>
@@ -644,7 +646,7 @@ const LoginSignupScreen = () => {
                     className={`relative min-h-[76px] rounded-2xl border text-left px-4 transition-all duration-200 ${
                       isTraveler
                         ? 'border-[color:var(--brand-primary)] bg-[color:var(--brand-primary-soft)]'
-                        : 'border-[color:var(--border-primary)] bg-[color:var(--surface-secondary)] hover:border-[color:var(--brand-primary)]/30'
+                        : 'border-[color:var(--border-light)] bg-[color:var(--surface-secondary)] hover:border-[color:var(--brand-primary)]/30'
                     }`}
                   >
                     <User
@@ -674,7 +676,7 @@ const LoginSignupScreen = () => {
                     className={`relative min-h-[76px] rounded-2xl border text-left px-4 transition-all duration-200 ${
                       !isTraveler
                         ? 'border-[color:var(--brand-primary)] bg-[color:var(--brand-primary-soft)]'
-                        : 'border-[color:var(--border-primary)] bg-[color:var(--surface-secondary)] hover:border-[color:var(--brand-primary)]/30'
+                        : 'border-[color:var(--border-light)] bg-[color:var(--surface-secondary)] hover:border-[color:var(--brand-primary)]/30'
                     }`}
                   >
                     <Building2

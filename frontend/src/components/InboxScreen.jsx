@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Flag, MoreHorizontal } from 'lucide-react';
 
-const API_BASE = '';
+import ReportDialog from './ReportDialog';
 
 
 export default function InboxScreen() {
@@ -19,7 +20,11 @@ export default function InboxScreen() {
     const [messageText, setMessageText] = useState('');
     const [error, setError] = useState('');
 
+    const [reportMenuOpen, setReportMenuOpen] = useState(false);
+    const [reportTarget, setReportTarget] = useState(null);
+
     const messagesEndRef = useRef(null);
+    const inboxLoadedRef = useRef(false);
 
     const token = localStorage.getItem('touristo_token');
     const storedUser = JSON.parse(
@@ -27,6 +32,15 @@ export default function InboxScreen() {
     );
 
     const isHost = storedUser?.role === 'host';
+
+    // The other participant in the conversation (never the signed-in user).
+    const partnerUserId = isHost
+        ? activeConversation?.traveler_id
+        : activeConversation?.partner_user_id;
+
+    const canReportPartner =
+        Boolean(partnerUserId) &&
+        Number(partnerUserId) !== Number(storedUser?.id);
 
     const messagingText = {
         headerTitle: isHost
@@ -80,91 +94,19 @@ export default function InboxScreen() {
     // AUTH HEADERS
     // =====================================================
 
-    const getHeaders = () => ({
+    const getHeaders = useCallback(() => ({
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`
-    });
+    }), [token]);
 
 
-    // =====================================================
-    // LOAD INBOX
-    // =====================================================
-
-    const loadInbox = async () => {
-        try {
-            setLoadingInbox(true);
-            setError('');
-
-            if (!token) {
-                navigate('/login');
-                return;
-            }
-
-            const response = await fetch(
-                `/api/messages/inbox`,
-                {
-                    headers: getHeaders()
-                }
-            );
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(
-                    result.message || 'Failed to load inbox'
-                );
-            }
-
-            const inboxData = Array.isArray(result.data)
-                ? result.data
-                : [];
-
-            setConversations(inboxData);
-
-            // Open conversation from URL if provided
-            const params = new URLSearchParams(
-                location.search
-            );
-
-            const requestedConversation =
-                params.get('conversation');
-
-            if (requestedConversation) {
-                const found = inboxData.find(
-                    conversation =>
-                        conversation.conversation_id ===
-                        requestedConversation
-                );
-
-                if (found) {
-                    await openConversation(found);
-                }
-            }
-
-        } catch (error) {
-
-            console.error(
-                'Inbox loading error:',
-                error
-            );
-
-            setError(
-                error.message ||
-                'Unable to load messages'
-            );
-
-        } finally {
-
-            setLoadingInbox(false);
-        }
-    };
 
 
     // =====================================================
     // LOAD CONVERSATION
     // =====================================================
 
-    const openConversation = async conversation => {
+    const openConversation = useCallback(async conversation => {
 
         try {
 
@@ -256,7 +198,80 @@ export default function InboxScreen() {
 
             setLoadingMessages(false);
         }
-    };
+    }, [getHeaders, navigate, location]);
+    // =====================================================
+    // LOAD INBOX
+    // =====================================================
+
+    const loadInbox = useCallback(async () => {
+        try {
+            setLoadingInbox(true);
+            setError('');
+
+            if (!token) {
+                navigate('/login');
+                return;
+            }
+
+            const response = await fetch(
+                `/api/messages/inbox`,
+                {
+                    headers: getHeaders()
+                }
+            );
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    result.message || 'Failed to load inbox'
+                );
+            }
+
+            const inboxData = Array.isArray(result.data)
+                ? result.data
+                : [];
+
+            setConversations(inboxData);
+
+            // Open conversation from URL if provided
+            const params = new URLSearchParams(
+                location.search
+            );
+
+            const requestedConversation =
+                params.get('conversation');
+
+            if (requestedConversation) {
+                const found = inboxData.find(
+                    conversation =>
+                        conversation.conversation_id ===
+                        requestedConversation
+                );
+
+                if (found) {
+                    await openConversation(found);
+                }
+            }
+
+        } catch (error) {
+
+            console.error(
+                'Inbox loading error:',
+                error
+            );
+
+            setError(
+                error.message ||
+                'Unable to load messages'
+            );
+
+        } finally {
+
+            setLoadingInbox(false);
+        }
+    }, [token, navigate, getHeaders, location, openConversation]);
+
 
 
     // =====================================================
@@ -346,8 +361,14 @@ export default function InboxScreen() {
     // =====================================================
 
     useEffect(() => {
+        if (inboxLoadedRef.current) {
+            return;
+        }
+
+        inboxLoadedRef.current = true;
+
         loadInbox();
-    }, []);
+    }, [loadInbox]);
 
 
     // =====================================================
@@ -428,13 +449,13 @@ export default function InboxScreen() {
     if (loadingInbox) {
 
         return (
-            <div className="min-h-screen bg-gray-50 pb-24">
+            <div className="min-h-screen bg-[color:var(--bg-primary)] pb-24">
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
 
-                    <div className="h-8 w-40 bg-gray-200 rounded-lg animate-pulse mb-6" />
+                    <div className="h-8 w-40 bg-[color:var(--bg-secondary)] rounded-lg animate-pulse mb-6" />
 
-                    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                    <div className="bg-white rounded-2xl shadow-[var(--shadow-sm)] overflow-hidden">
 
                         <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] min-h-[650px]">
 
@@ -445,11 +466,11 @@ export default function InboxScreen() {
                                         key={item}
                                         className="flex gap-3"
                                     >
-                                        <div className="w-12 h-12 rounded-full bg-gray-200 animate-pulse" />
+                                        <div className="w-12 h-12 rounded-full bg-[color:var(--bg-secondary)] animate-pulse" />
 
                                         <div className="flex-1">
-                                            <div className="h-4 bg-gray-200 rounded w-32 mb-2 animate-pulse" />
-                                            <div className="h-3 bg-gray-200 rounded w-44 animate-pulse" />
+                                            <div className="h-4 bg-[color:var(--bg-secondary)] rounded w-32 mb-2 animate-pulse" />
+                                            <div className="h-3 bg-[color:var(--bg-secondary)] rounded w-44 animate-pulse" />
                                         </div>
                                     </div>
                                 ))}
@@ -457,7 +478,7 @@ export default function InboxScreen() {
                             </div>
 
                             <div className="hidden md:flex items-center justify-center">
-                                <div className="text-gray-400">
+                                <div className="text-[color:var(--text-muted)]">
                                     Loading messages...
                                 </div>
                             </div>
@@ -478,7 +499,7 @@ export default function InboxScreen() {
     // =====================================================
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-24">
+        <div className="min-h-screen bg-[color:var(--bg-primary)] pb-24">
 
             {/* =========================================
                 HEADER
@@ -494,16 +515,16 @@ export default function InboxScreen() {
 
                             <button
                                 onClick={() => navigate(-1)}
-                                className="text-sm text-gray-500 hover:text-gray-800 mb-1"
+                                className="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] mb-1"
                             >
                                 ← Back
                             </button>
 
-                            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                            <h1 className="text-3xl tracking-[-0.03em] text-[color:var(--text-primary)]">
                                 {messagingText.headerTitle}
                             </h1>
 
-                            <p className="text-sm text-gray-500 mt-1">
+                            <p className="text-sm text-[color:var(--text-secondary)] mt-1">
                                 {messagingText.headerSubtitle}
                             </p>
 
@@ -524,7 +545,7 @@ export default function InboxScreen() {
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
 
-                    <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+                    <div role="alert" className="bg-[color:var(--danger-soft)] border border-[color:var(--danger)]/35 text-[color:var(--danger)] rounded-xl px-4 py-3 text-sm">
                         {error}
                     </div>
 
@@ -538,7 +559,7 @@ export default function InboxScreen() {
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5">
 
-                <div className="bg-white rounded-2xl shadow-sm border overflow-hidden">
+                <div className="bg-white rounded-2xl shadow-[var(--shadow-sm)] border overflow-hidden">
 
                     <div className="grid grid-cols-1 md:grid-cols-[330px_1fr] lg:grid-cols-[360px_1fr] h-[calc(100vh-190px)] min-h-[600px]">
 
@@ -563,11 +584,11 @@ export default function InboxScreen() {
 
                                 <div className="flex items-center justify-between">
 
-                                    <h2 className="font-semibold text-gray-900">
+                                    <h2 className="font-semibold text-[color:var(--text-primary)]">
                                         Conversations
                                     </h2>
 
-                                    <span className="text-xs text-gray-400">
+                                    <span className="text-xs text-[color:var(--text-muted)]">
                                         {conversations.length}
                                     </span>
 
@@ -582,15 +603,15 @@ export default function InboxScreen() {
 
                                     <div className="px-6 py-16 text-center">
 
-                                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center text-2xl">
+                                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[color:var(--bg-secondary)] flex items-center justify-center text-2xl">
                                             💬
                                         </div>
 
-                                        <h3 className="font-semibold text-gray-900">
+                                        <h3 className="font-semibold text-[color:var(--text-primary)]">
                                             {messagingText.emptyTitle}
                                         </h3>
 
-                                        <p className="text-sm text-gray-500 mt-2 leading-6">
+                                        <p className="text-sm text-[color:var(--text-secondary)] mt-2 leading-6">
                                             {messagingText.emptyDescription}
                                         </p>
 
@@ -598,7 +619,7 @@ export default function InboxScreen() {
                                             onClick={() =>
                                                 navigate(messagingText.emptyButtonRoute)
                                             }
-                                            className="mt-5 px-5 py-2.5 rounded-xl bg-[#436e0c] text-white text-sm font-semibold hover:opacity-90 transition"
+                                            className="mt-5 px-5 py-2.5 rounded-xl bg-[color:var(--brand-primary)] text-white text-sm font-semibold hover:opacity-90 transition"
                                         >
                                             {messagingText.emptyButton}
                                         </button>
@@ -638,8 +659,8 @@ export default function InboxScreen() {
                                                         transition
                                                         ${
                                                             isActive
-                                                                ? 'bg-[#436e0c]/10'
-                                                                : 'hover:bg-gray-50'
+                                                                ? 'bg-[color:var(--brand-primary)]/10'
+                                                                : 'hover:bg-[color:var(--bg-secondary)]'
                                                         }
                                                     `}
                                                 >
@@ -650,7 +671,7 @@ export default function InboxScreen() {
 
                                                         <div className="relative flex-shrink-0">
 
-                                                            <div className="w-12 h-12 rounded-full bg-[#436e0c] text-white flex items-center justify-center font-bold text-sm">
+                                                            <div className="w-12 h-12 rounded-full bg-[color:var(--brand-primary)] text-white flex items-center justify-center font-bold text-sm">
                                                                 {getInitials(
                                                                     getHostName(
                                                                         conversation
@@ -660,7 +681,7 @@ export default function InboxScreen() {
 
                                                             {unread > 0 && (
 
-                                                                <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                                                                <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-[color:var(--danger)] text-white text-[10px] font-bold flex items-center justify-center">
                                                                     {getUnreadCount(
                                                                         conversation
                                                                     )}
@@ -685,8 +706,8 @@ export default function InboxScreen() {
                                                                             text-sm
                                                                             ${
                                                                                 unread > 0
-                                                                                    ? 'font-bold text-gray-900'
-                                                                                    : 'font-semibold text-gray-800'
+                                                                                    ? 'font-bold text-[color:var(--text-primary)]'
+                                                                                    : 'font-semibold text-[color:var(--text-primary)]'
                                                                             }
                                                                         `}
                                                                     >
@@ -698,7 +719,7 @@ export default function InboxScreen() {
                                                                     {conversation.verified && (
 
                                                                         <span
-                                                                            className="text-[#436e0c] text-xs"
+                                                                            className="text-[color:var(--brand-primary)] text-xs"
                                                                             title="Verified host"
                                                                         >
                                                                             ✓
@@ -708,7 +729,7 @@ export default function InboxScreen() {
 
                                                                 </div>
 
-                                                                <span className="text-[10px] text-gray-400 flex-shrink-0">
+                                                                <span className="text-[10px] text-[color:var(--text-muted)] flex-shrink-0">
                                                                     {formatTime(
                                                                         conversation.updated_at
                                                                     )}
@@ -724,8 +745,8 @@ export default function InboxScreen() {
                                                                     truncate
                                                                     ${
                                                                         unread > 0
-                                                                            ? 'text-gray-700 font-medium'
-                                                                            : 'text-gray-500'
+                                                                            ? 'text-[color:var(--text-primary)] font-medium'
+                                                                            : 'text-[color:var(--text-secondary)]'
                                                                     }
                                                                 `}
                                                             >
@@ -738,11 +759,11 @@ export default function InboxScreen() {
 
                                                                 <div className="flex items-center gap-1 mt-1">
 
-                                                                    <span className="text-amber-500 text-xs">
+                                                                    <span className="text-[color:var(--warning)] text-xs">
                                                                         ★
                                                                     </span>
 
-                                                                    <span className="text-[11px] text-gray-400">
+                                                                    <span className="text-[11px] text-[color:var(--text-muted)]">
                                                                         {Number(
                                                                             conversation.rating_score
                                                                         ).toFixed(1)}
@@ -789,15 +810,15 @@ export default function InboxScreen() {
 
                                     <div className="text-center max-w-sm">
 
-                                        <div className="w-20 h-20 mx-auto rounded-full bg-gray-100 flex items-center justify-center text-3xl mb-5">
+                                        <div className="w-20 h-20 mx-auto rounded-full bg-[color:var(--bg-secondary)] flex items-center justify-center text-3xl mb-5">
                                             💬
                                         </div>
 
-                                        <h2 className="text-xl font-bold text-gray-900">
+                                        <h2 className="text-xl text-[color:var(--text-primary)]">
                                             {messagingText.panelTitle}
                                         </h2>
 
-                                        <p className="text-sm text-gray-500 mt-2 leading-6">
+                                        <p className="text-sm text-[color:var(--text-secondary)] mt-2 leading-6">
                                             {messagingText.panelDescription}
                                         </p>
 
@@ -823,13 +844,13 @@ export default function InboxScreen() {
                                                         null
                                                     )
                                                 }
-                                                className="md:hidden w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"
+                                                className="md:hidden w-9 h-9 rounded-full hover:bg-[color:var(--bg-secondary)] flex items-center justify-center text-[color:var(--text-secondary)]"
                                             >
                                                 ←
                                             </button>
 
 
-                                            <div className="w-11 h-11 rounded-full bg-[#436e0c] text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
+                                            <div className="w-11 h-11 rounded-full bg-[color:var(--brand-primary)] text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
                                                 {getInitials(
                                                     getHostName(
                                                         activeConversation
@@ -842,7 +863,7 @@ export default function InboxScreen() {
 
                                                 <div className="flex items-center gap-1.5">
 
-                                                    <h2 className="font-semibold text-gray-900 truncate">
+                                                    <h2 className="font-semibold text-[color:var(--text-primary)] truncate">
                                                         {getHostName(
                                                             activeConversation
                                                         )}
@@ -850,7 +871,7 @@ export default function InboxScreen() {
 
                                                     {activeConversation.verified && (
 
-                                                        <span className="text-[#436e0c] text-sm">
+                                                        <span className="text-[color:var(--brand-primary)] text-sm">
                                                             ✓
                                                         </span>
 
@@ -858,7 +879,7 @@ export default function InboxScreen() {
 
                                                 </div>
 
-                                                <p className="text-xs text-gray-500">
+                                                <p className="text-xs text-[color:var(--text-secondary)]">
                                                     {messagingText.otherPartyLabel}
                                                     {activeConversation.rating_score
                                                         ? ` • ★ ${Number(
@@ -868,6 +889,60 @@ export default function InboxScreen() {
                                                 </p>
 
                                             </div>
+
+                                            {canReportPartner && (
+                                                <div className="relative ml-auto">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setReportMenuOpen(open => !open)
+                                                        }
+                                                        aria-label="More conversation actions"
+                                                        aria-haspopup="menu"
+                                                        aria-expanded={reportMenuOpen}
+                                                        className="w-9 h-9 rounded-full flex items-center justify-center text-[color:var(--text-muted)] transition hover:bg-[color:var(--bg-secondary)] hover:text-[color:var(--danger)]"
+                                                    >
+                                                        <MoreHorizontal className="w-4 h-4" />
+                                                    </button>
+
+                                                    {reportMenuOpen && (
+                                                        <>
+                                                            <button
+                                                                type="button"
+                                                                aria-label="Close menu"
+                                                                onClick={() =>
+                                                                    setReportMenuOpen(false)
+                                                                }
+                                                                className="fixed inset-0 z-40 cursor-default"
+                                                            />
+
+                                                            <div
+                                                                role="menu"
+                                                                className="absolute right-0 z-50 mt-2 w-52 overflow-hidden rounded-2xl border border-[color:var(--border-light)] bg-[color:var(--surface-primary)] py-1 shadow-[var(--shadow-lg)]"
+                                                            >
+                                                                <button
+                                                                    type="button"
+                                                                    role="menuitem"
+                                                                    onClick={() => {
+                                                                        setReportMenuOpen(false);
+                                                                        setReportTarget({
+                                                                            targetType: 'user',
+                                                                            targetId: partnerUserId,
+                                                                            targetLabel: isHost
+                                                                                ? activeConversation?.traveler_name
+                                                                                : getHostName(activeConversation)
+                                                                        });
+                                                                    }}
+                                                                    className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-sm text-[color:var(--text-primary)] transition hover:bg-[color:var(--bg-secondary)]"
+                                                                >
+                                                                    <Flag className="w-4 h-4 text-[color:var(--danger)]" />
+                                                                    Report User
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            )}
 
                                         </div>
 
@@ -880,17 +955,17 @@ export default function InboxScreen() {
 
                                     {activeConversation.associated_package_id && (
 
-                                        <div className="px-4 py-3 bg-gray-50 border-b">
+                                        <div className="px-4 py-3 bg-[color:var(--bg-primary)] border-b">
 
                                             <div className="flex items-center justify-between gap-3">
 
                                                 <div className="min-w-0">
 
-                                                    <p className="text-[10px] uppercase tracking-wider font-semibold text-gray-400">
+                                                    <p className="text-[10px] uppercase tracking-wider font-semibold text-[color:var(--text-muted)]">
                                                         Package
                                                     </p>
 
-                                                    <p className="text-sm font-semibold text-gray-800 truncate">
+                                                    <p className="text-sm font-semibold text-[color:var(--text-primary)] truncate">
                                                         {activeConversation.package_title ||
                                                             'Package inquiry'}
                                                     </p>
@@ -903,7 +978,7 @@ export default function InboxScreen() {
                                                             `/package/${activeConversation.associated_package_id}`
                                                         )
                                                     }
-                                                    className="text-xs font-semibold text-[#436e0c] hover:underline flex-shrink-0"
+                                                    className="text-xs font-semibold text-[color:var(--brand-primary)] hover:underline flex-shrink-0"
                                                 >
                                                     View Package
                                                 </button>
@@ -919,22 +994,22 @@ export default function InboxScreen() {
                                         MESSAGES
                                     ========================== */}
 
-                                    <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 bg-gray-50">
+                                    <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 bg-[color:var(--bg-primary)]">
 
                                         {loadingMessages ? (
 
                                             <div className="space-y-4">
 
                                                 <div className="flex">
-                                                    <div className="w-44 h-12 rounded-2xl bg-gray-200 animate-pulse" />
+                                                    <div className="w-44 h-12 rounded-2xl bg-[color:var(--bg-secondary)] animate-pulse" />
                                                 </div>
 
                                                 <div className="flex justify-end">
-                                                    <div className="w-56 h-12 rounded-2xl bg-[#436e0c]/20 animate-pulse" />
+                                                    <div className="w-56 h-12 rounded-2xl bg-[color:var(--brand-primary)]/20 animate-pulse" />
                                                 </div>
 
                                                 <div className="flex">
-                                                    <div className="w-64 h-16 rounded-2xl bg-gray-200 animate-pulse" />
+                                                    <div className="w-64 h-16 rounded-2xl bg-[color:var(--bg-secondary)] animate-pulse" />
                                                 </div>
 
                                             </div>
@@ -949,11 +1024,11 @@ export default function InboxScreen() {
                                                         👋
                                                     </div>
 
-                                                    <h3 className="font-semibold text-gray-900">
+                                                    <h3 className="font-semibold text-[color:var(--text-primary)]">
                                                         {messagingText.startTitle}
                                                     </h3>
 
-                                                    <p className="text-sm text-gray-500 mt-1">
+                                                    <p className="text-sm text-[color:var(--text-secondary)] mt-1">
                                                         {messagingText.startDescription}
                                                     </p>
 
@@ -1021,8 +1096,8 @@ export default function InboxScreen() {
                                                                             leading-6
                                                                             ${
                                                                                 isMine
-                                                                                    ? 'bg-[#436e0c] text-white rounded-br-md'
-                                                                                    : 'bg-white text-gray-800 border rounded-bl-md shadow-sm'
+                                                                                    ? 'bg-[color:var(--brand-primary)] text-white rounded-br-md'
+                                                                                    : 'bg-white text-[color:var(--text-primary)] border rounded-bl-md shadow-[var(--shadow-sm)]'
                                                                             }
                                                                         `}
                                                                     >
@@ -1030,7 +1105,7 @@ export default function InboxScreen() {
                                                                             message.content}
                                                                     </div>
 
-                                                                    <span className="text-[10px] text-gray-400 mt-1 px-1">
+                                                                    <span className="text-[10px] text-[color:var(--text-muted)] mt-1 px-1">
                                                                         {formatTime(
                                                                             message.created_at
                                                                         )}
@@ -1071,6 +1146,7 @@ export default function InboxScreen() {
                                         <div className="flex items-end gap-2">
 
                                             <textarea
+                                            aria-label="Write a message"
                                                 value={messageText}
                                                 onChange={event =>
                                                     setMessageText(
@@ -1094,7 +1170,7 @@ export default function InboxScreen() {
                                                 }}
                                                 rows={1}
                                                 placeholder="Write a message..."
-                                                className="flex-1 resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#436e0c] focus:ring-2 focus:ring-[#436e0c]/10"
+                                                className="flex-1 resize-none rounded-xl border border-[color:var(--border-light)] px-4 py-3 text-sm outline-none focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[color:var(--brand-primary)]/10"
                                             />
 
 
@@ -1104,7 +1180,7 @@ export default function InboxScreen() {
                                                     !messageText.trim() ||
                                                     sending
                                                 }
-                                                className="w-12 h-12 rounded-xl bg-[#436e0c] text-white flex items-center justify-center font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition"
+                                                className="w-12 h-12 rounded-xl bg-[color:var(--brand-primary)] text-white flex items-center justify-center font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition"
                                             >
                                                 {sending
                                                     ? '...'
@@ -1113,7 +1189,7 @@ export default function InboxScreen() {
 
                                         </div>
 
-                                        <p className="text-[10px] text-gray-400 mt-2 px-1">
+                                        <p className="text-[10px] text-[color:var(--text-muted)] mt-2 px-1">
                                             Press Enter to send • Shift + Enter for a new line
                                         </p>
 
@@ -1130,6 +1206,15 @@ export default function InboxScreen() {
                 </div>
 
             </div>
+
+            {reportTarget && (
+                <ReportDialog
+                    targetType={reportTarget.targetType}
+                    targetId={reportTarget.targetId}
+                    targetLabel={reportTarget.targetLabel}
+                    onClose={() => setReportTarget(null)}
+                />
+            )}
 
         </div>
     );

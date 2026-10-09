@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 
 import {
@@ -112,7 +111,7 @@ const AboutScreen = () => {
 
           <div className="rounded-[28px] border border-[color:var(--border-light)] bg-[color:var(--surface-primary)] p-6 shadow-[var(--shadow-sm)] sm:p-8">
 
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--brand-gold)]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--brand-gold-ink)]">
               Our Mission
             </p>
 
@@ -167,7 +166,7 @@ const AboutScreen = () => {
 
           <div className="mb-5">
 
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--brand-gold)]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--brand-gold-ink)]">
               The Touristo Difference
             </p>
 
@@ -231,7 +230,7 @@ const AboutScreen = () => {
 
             <div>
 
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--brand-gold)]">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--brand-gold-ink)]">
                 Our Story
               </p>
 
@@ -278,7 +277,7 @@ const AboutScreen = () => {
 
             <div>
 
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--brand-gold)]">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--brand-gold-ink)]">
                 Start exploring
               </p>
 

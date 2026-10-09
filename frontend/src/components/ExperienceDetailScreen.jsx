@@ -1,11 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
   Clock3,
-  MapPin,
   Mountain,
   Star,
   Users,
@@ -17,6 +16,8 @@ import {
   Search,
   PackageOpen
 } from 'lucide-react';
+
+import { FALLBACK_IMAGE } from '../utils/images';
 
 const experiences = [
   {
@@ -263,10 +264,10 @@ const ExperienceDetailScreen = () => {
         <div className="max-w-4xl mx-auto text-center py-20">
           <PackageOpen
             size={52}
-            className="mx-auto mb-5 text-[color:var(--accent-primary)]"
+            className="mx-auto mb-5 text-[color:var(--brand-primary)]"
           />
 
-          <h1 className="text-2xl font-bold mb-2">
+          <h1 className="text-2xl mb-2">
             Experience not found
           </h1>
 
@@ -276,7 +277,7 @@ const ExperienceDetailScreen = () => {
 
           <button
             onClick={() => navigate('/experiences')}
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[color:var(--accent-primary)] text-[color:var(--nav-text)] font-semibold"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[color:var(--brand-primary)] text-[color:var(--text-inverse)] font-semibold"
           >
             <ArrowLeft size={18} />
             Back to Experiences
@@ -303,23 +304,26 @@ const ExperienceDetailScreen = () => {
 
       {/* Hero */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-5">
-        <div className="relative overflow-hidden rounded-3xl min-h-[360px] md:min-h-[440px] shadow-xl border border-[color:var(--border-primary)]">
+        <div className="relative overflow-hidden rounded-3xl min-h-[360px] md:min-h-[440px] shadow-[var(--shadow-xl)] border border-[color:var(--border-light)]">
           <img
-            src={experience.image}
+            src={experience.image || FALLBACK_IMAGE}
             alt={experience.name}
             className="absolute inset-0 w-full h-full object-cover"
+            onError={(event) => {
+              event.currentTarget.src = FALLBACK_IMAGE;
+            }}
           />
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/10" />
 
           <div className="relative min-h-[360px] md:min-h-[440px] flex items-end p-6 sm:p-10">
             <div className="max-w-3xl text-white">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-sm mb-4">
+              <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-black/25 backdrop-blur-xl border border-white/15 text-xs sm:text-sm font-semibold mb-4">
                 <Icon size={16} />
                 Curated Experience
               </div>
 
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight mb-4">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl leading-tight mb-4">
                 {experience.name}
               </h1>
 
@@ -334,12 +338,12 @@ const ExperienceDetailScreen = () => {
       {/* About + Highlights */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
         <div className="grid lg:grid-cols-[1.25fr_0.75fr] gap-6">
-          <div className="bg-[color:var(--surface-primary)] rounded-2xl border border-[color:var(--border-primary)] p-6 sm:p-8 shadow-sm">
+          <div className="bg-[color:var(--surface-primary)] rounded-2xl border border-[color:var(--border-light)] p-6 sm:p-8 shadow-[var(--shadow-sm)]">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-11 h-11 rounded-xl bg-[color:var(--accent-primary)]/10 flex items-center justify-center">
+              <div className="w-11 h-11 rounded-xl bg-[color:var(--brand-primary)]/10 flex items-center justify-center">
                 <Icon
                   size={22}
-                  className="text-[color:var(--accent-primary)]"
+                  className="text-[color:var(--brand-primary)]"
                 />
               </div>
 
@@ -348,7 +352,7 @@ const ExperienceDetailScreen = () => {
                   Explore
                 </p>
 
-                <h2 className="text-xl font-bold">
+                <h2 className="text-xl ">
                   About this experience
                 </h2>
               </div>
@@ -359,8 +363,8 @@ const ExperienceDetailScreen = () => {
             </p>
           </div>
 
-          <div className="bg-[color:var(--surface-primary)] rounded-2xl border border-[color:var(--border-primary)] p-6 sm:p-8 shadow-sm">
-            <h2 className="text-xl font-bold mb-5">
+          <div className="bg-[color:var(--surface-primary)] rounded-2xl border border-[color:var(--border-light)] p-6 sm:p-8 shadow-[var(--shadow-sm)]">
+            <h2 className="text-xl mb-5">
               Experience highlights
             </h2>
 
@@ -372,7 +376,7 @@ const ExperienceDetailScreen = () => {
                 >
                   <CheckCircle2
                     size={19}
-                    className="mt-0.5 shrink-0 text-[color:var(--accent-primary)]"
+                    className="mt-0.5 shrink-0 text-[color:var(--brand-primary)]"
                   />
 
                   <span className="text-sm text-[color:var(--text-secondary)]">
@@ -389,11 +393,11 @@ const ExperienceDetailScreen = () => {
       <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-12">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
           <div>
-            <p className="text-sm font-semibold text-[color:var(--accent-primary)] mb-1">
+            <p className="text-sm font-semibold text-[color:var(--brand-primary)] mb-1">
               AVAILABLE TOURS
             </p>
 
-            <h2 className="text-2xl sm:text-3xl font-bold">
+            <h2 className="text-2xl sm:text-3xl ">
               Find your experience
             </h2>
 
@@ -414,7 +418,7 @@ const ExperienceDetailScreen = () => {
             {[1, 2, 3].map((item) => (
               <div
                 key={item}
-                className="overflow-hidden rounded-2xl bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)] animate-pulse"
+                className="overflow-hidden rounded-2xl bg-[color:var(--surface-primary)] border border-[color:var(--border-light)] animate-pulse"
               >
                 <div className="h-52 bg-[color:var(--surface-secondary)]" />
                 <div className="p-5 space-y-4">
@@ -427,30 +431,30 @@ const ExperienceDetailScreen = () => {
             ))}
           </div>
         ) : error ? (
-          <div className="rounded-2xl border border-red-500/20 bg-[color:var(--surface-primary)] p-8 text-center">
-            <p className="font-semibold text-red-500 mb-2">
+          <div className="rounded-2xl border border-[color:var(--danger)]/20 bg-[color:var(--surface-primary)] p-8 text-center">
+            <p className="font-semibold text-[color:var(--danger)] mb-2">
               Unable to load tours
             </p>
 
-            <p className="text-sm text-[color:var(--text-secondary)] mb-5">
+            <p role="alert" className="text-sm text-[color:var(--text-secondary)] mb-5">
               {error}
             </p>
 
             <button
               onClick={() => window.location.reload()}
-              className="px-5 py-2.5 rounded-xl bg-[color:var(--accent-primary)] text-[color:var(--nav-text)] font-semibold"
+              className="px-5 py-2.5 rounded-xl bg-[color:var(--brand-primary)] text-[color:var(--text-inverse)] font-semibold"
             >
               Try Again
             </button>
           </div>
         ) : packages.length === 0 ? (
-          <div className="rounded-2xl border border-[color:var(--border-primary)] bg-[color:var(--surface-primary)] p-10 text-center">
+          <div className="rounded-2xl border border-[color:var(--border-light)] bg-[color:var(--surface-primary)] p-10 text-center">
             <Search
               size={42}
-              className="mx-auto mb-4 text-[color:var(--accent-primary)]"
+              className="mx-auto mb-4 text-[color:var(--brand-primary)]"
             />
 
-            <h3 className="text-xl font-bold mb-2">
+            <h3 className="text-xl mb-2">
               No matching tours yet
             </h3>
 
@@ -461,7 +465,7 @@ const ExperienceDetailScreen = () => {
 
             <Link
               to="/search"
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[color:var(--accent-primary)] text-[color:var(--nav-text)] font-semibold"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[color:var(--brand-primary)] text-[color:var(--text-inverse)] font-semibold"
             >
               Browse all tours
               <ArrowRight size={18} />
@@ -475,7 +479,7 @@ const ExperienceDetailScreen = () => {
                 key={pkg.id}
                 className="group block"
               >
-                <article className="h-full overflow-hidden rounded-2xl bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <article className="h-full overflow-hidden rounded-2xl bg-[color:var(--surface-primary)] border border-[color:var(--border-light)] shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-xl)] hover:-translate-y-1 transition-all duration-300">
                   <div className="relative h-52 overflow-hidden">
                     <img
                       src={getPackageImage(pkg, experience.image)}
@@ -490,7 +494,7 @@ const ExperienceDetailScreen = () => {
                         {pkg.location || pkg.destination || 'Pakistan'}
                       </span>
 
-                      <span className="px-3 py-1.5 rounded-full bg-[color:var(--accent-primary)] text-[color:var(--nav-text)] text-xs font-bold">
+                      <span className="px-3 py-1.5 rounded-full bg-[color:var(--brand-primary)] text-[color:var(--text-inverse)] text-xs font-bold">
                         {formatPrice(pkg.price)}
                       </span>
                     </div>
@@ -498,7 +502,7 @@ const ExperienceDetailScreen = () => {
 
                   <div className="p-5">
                     <div className="flex items-start justify-between gap-3 mb-2">
-                      <h3 className="font-bold text-lg leading-snug group-hover:text-[color:var(--accent-primary)] transition">
+                      <h3 className="text-lg leading-snug group-hover:text-[color:var(--brand-primary)] transition">
                         {pkg.title}
                       </h3>
                     </div>
@@ -519,7 +523,7 @@ const ExperienceDetailScreen = () => {
                         <span className="inline-flex items-center gap-1.5">
                           <Star
                             size={14}
-                            className="fill-current text-[color:var(--accent-primary)]"
+                            className="fill-current text-[color:var(--brand-primary)]"
                           />
                           {Number(pkg.host_rating).toFixed(1)}
                         </span>
@@ -533,7 +537,7 @@ const ExperienceDetailScreen = () => {
                       )}
                     </div>
 
-                    <div className="flex items-center justify-between pt-4 border-t border-[color:var(--border-primary)]">
+                    <div className="flex items-center justify-between pt-4 border-t border-[color:var(--border-light)]">
                       <div className="min-w-0">
                         <p className="text-xs text-[color:var(--text-secondary)]">
                           Hosted by
@@ -544,7 +548,7 @@ const ExperienceDetailScreen = () => {
                         </p>
                       </div>
 
-                      <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[color:var(--accent-primary)]">
+                      <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[color:var(--brand-primary)]">
                         View
                         <ArrowRight size={16} />
                       </span>

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -84,19 +84,19 @@ const HostDiscoveryScreen = () => {
   const getBadgeClass = (badge) => {
     switch (badge) {
       case 'Top Rated':
-        return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
+        return 'bg-[color:var(--warning)]/10 text-[color:var(--warning)] border-[color:var(--warning)]/20';
 
       case 'Highly Recommended':
-        return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
+        return 'bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)] border-[color:var(--brand-primary)]/20';
 
       case 'Rising Host':
-        return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20';
+        return 'bg-[color:var(--success)]/10 text-[color:var(--success)] border-[color:var(--success)]/20';
 
       case 'Trusted Operator':
-        return 'bg-purple-500/10 text-purple-600 border-purple-500/20';
+        return 'bg-[color:var(--brand-gold)]/10 text-[color:var(--warning)] border-[color:var(--brand-gold)]/20';
 
       default:
-        return 'bg-[color:var(--surface-secondary)] text-[color:var(--text-secondary)] border-[color:var(--border-primary)]';
+        return 'bg-[color:var(--surface-secondary)] text-[color:var(--text-secondary)] border-[color:var(--border-light)]';
     }
   };
 
@@ -134,12 +134,12 @@ const HostDiscoveryScreen = () => {
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5">
 
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[color:var(--accent-primary)]/10 text-[color:var(--accent-primary)] text-xs font-bold mb-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)] text-xs font-bold mb-3">
               <ShieldCheck size={15} />
               Trusted Marketplace
             </div>
 
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight">
+            <h1 className="text-3xl md:text-4xl tracking-[-0.03em]">
               Find Trusted Tour Operators
             </h1>
 
@@ -162,10 +162,11 @@ const HostDiscoveryScreen = () => {
           />
 
           <input
+          aria-label="Search tour companies or locations"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search tour companies or locations..."
-            className="w-full pl-12 pr-4 py-4 rounded-2xl bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)] outline-none focus:ring-2 focus:ring-[color:var(--accent-primary)] shadow-sm"
+            className="w-full pl-12 pr-4 py-4 rounded-2xl bg-[color:var(--surface-primary)] border border-[color:var(--border-light)] outline-none focus:ring-2 focus:ring-[color:var(--brand-primary)] shadow-[var(--shadow-sm)]"
           />
         </div>
 
@@ -174,7 +175,7 @@ const HostDiscoveryScreen = () => {
       {/* Error */}
       {error && (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-6">
-          <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4 text-red-500">
+          <div role="alert" className="rounded-2xl border border-[color:var(--danger)]/20 bg-[color:var(--danger)]/5 p-4 text-[color:var(--danger)]">
             {error}
           </div>
         </div>
@@ -193,7 +194,7 @@ const HostDiscoveryScreen = () => {
               />
             </div>
 
-            <h2 className="text-xl font-bold">
+            <h2 className="text-xl ">
               No tour operators found
             </h2>
 
@@ -226,12 +227,12 @@ const HostDiscoveryScreen = () => {
                   to={`/host-profile/${host.id}`}
                   className="group"
                 >
-                  <article className="h-full bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)] rounded-3xl p-6 hover:-translate-y-1 hover:shadow-xl transition duration-300">
+                  <article className="h-full bg-[color:var(--surface-primary)] border border-[color:var(--border-light)] rounded-3xl p-6 hover:-translate-y-1 hover:shadow-[var(--shadow-xl)] transition duration-300">
 
                     {/* Top */}
                     <div className="flex items-start gap-4">
 
-                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[color:var(--accent-primary)] to-[color:var(--accent-primary-hover)] flex items-center justify-center text-white font-black text-2xl shrink-0 shadow-lg">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[color:var(--brand-primary)] to-[color:var(--brand-primary-hover)] flex items-center justify-center text-white font-black text-2xl shrink-0 shadow-[var(--shadow-lg)]">
                         {getInitial(host.company_name)}
                       </div>
 
@@ -246,7 +247,7 @@ const HostDiscoveryScreen = () => {
                           {host.verified && (
                             <BadgeCheck
                               size={18}
-                              className="text-[color:var(--accent-primary)] shrink-0"
+                              className="text-[color:var(--brand-primary)] shrink-0"
                             />
                           )}
 
@@ -263,7 +264,7 @@ const HostDiscoveryScreen = () => {
 
                       <ArrowRight
                         size={20}
-                        className="text-[color:var(--text-secondary)] group-hover:text-[color:var(--accent-primary)] group-hover:translate-x-1 transition"
+                        className="text-[color:var(--text-secondary)] group-hover:text-[color:var(--brand-primary)] group-hover:translate-x-1 transition"
                       />
 
                     </div>
@@ -288,13 +289,13 @@ const HostDiscoveryScreen = () => {
                     </p>
 
                     {/* Stats */}
-                    <div className="grid grid-cols-3 gap-3 mt-5 pt-5 border-t border-[color:var(--border-primary)]">
+                    <div className="grid grid-cols-3 gap-3 mt-5 pt-5 border-t border-[color:var(--border-light)]">
 
                       <div>
                         <div className="flex items-center gap-1.5">
                           <Star
                             size={15}
-                            className="text-amber-500"
+                            className="text-[color:var(--warning)]"
                             fill="currentColor"
                           />
                           <span className="font-bold">
@@ -311,7 +312,7 @@ const HostDiscoveryScreen = () => {
                         <div className="flex items-center gap-1.5">
                           <BriefcaseBusiness
                             size={15}
-                            className="text-[color:var(--accent-primary)]"
+                            className="text-[color:var(--brand-primary)]"
                           />
                           <span className="font-bold">
                             {packageCount}
@@ -327,7 +328,7 @@ const HostDiscoveryScreen = () => {
                         <div className="flex items-center gap-1.5">
                           <Clock3
                             size={15}
-                            className="text-[color:var(--accent-primary)]"
+                            className="text-[color:var(--brand-primary)]"
                           />
                           <span className="font-bold">
                             {host.avgResponseTime
@@ -346,7 +347,7 @@ const HostDiscoveryScreen = () => {
                     {/* Footer */}
                     <div className="flex items-center justify-between mt-5">
 
-                      <span className="text-sm font-bold text-[color:var(--accent-primary)]">
+                      <span className="text-sm font-bold text-[color:var(--brand-primary)]">
                         View company
                       </span>
 

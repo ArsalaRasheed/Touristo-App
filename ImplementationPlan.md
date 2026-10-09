@@ -19,6 +19,7 @@ Implemented:
 * React Router navigation
 * Traveler navigation
 * Host navigation
+* Admin Dashboard screen (`/admin-dashboard`)
 * Protected routes
 * Destination discovery
 * Search
@@ -31,12 +32,14 @@ Implemented:
 * My Trips
 * Profile
 * Settings
-* Notifications
+* Notifications (interface only — placeholder data, no backend)
 * AI Trip Planner
 * Weather
 * Emergency SOS
 * Maps
 * Inbox / messaging
+* Travel Trend Radar (`/travel-radar`)
+* Reporting (`ReportDialog`, `/my-reports`)
 
 ---
 
@@ -50,7 +53,7 @@ Implemented:
 * User authentication
 * JWT authentication
 * bcrypt password hashing
-* Traveler/Host role handling
+* Traveler/Host/Admin role handling
 * Destination APIs
 * Package APIs
 * Booking APIs
@@ -58,8 +61,14 @@ Implemented:
 * Review APIs
 * Tour-guide APIs
 * Messaging APIs
-* AI Trip Planner API
+* AI Trip Planner API (DB-grounded structured output)
+* Host AI package builder API (`POST /api/packages/ai/generate`)
+* AI guide recommendation API (`POST /api/tour-guides/recommend`)
+* Reports API (`/api/reports`)
+* Admin API (`/api/admin`, 15 endpoints behind a fresh DB role check)
+* Travel Radar API (`/api/travel-radar`)
 * Weather API
+* Shared AI service with Gemini/OpenAI fallback (`touristo/services/aiService.js`)
 
 ---
 
@@ -69,15 +78,29 @@ Implemented:
 
 ### AI Trip Planner
 
-Uses Google Gemini to provide travel assistance and recommendations.
+Uses the shared AI service (Google Gemini with OpenAI fallback) to provide travel assistance and recommendations. The planner is DB-grounded: the server loads destinations/packages, the model must return `{message, packageIds}`, and ids are re-validated against the database before responding.
+
+### Host AI Package Builder
+
+`POST /api/packages/ai/generate` generates a review-before-publish draft for hosts. Rate-limited, cached, never writes to the database on its own.
+
+### AI Guide Recommendation
+
+`POST /api/tour-guides/recommend` matches travelers with guides.
 
 ### AI Review Summarization
 
-Processes package reviews and generates concise summaries.
+Processes package reviews and generates concise summaries, cached in `review_summaries`.
+
+### Travel Radar Explanations
+
+AI-generated explanations over trend data inside `GET /api/travel-radar`.
 
 ### Recommendation Logic
 
-Backend utilities support recommendation and comparison behavior based on available user/package information.
+Backend recommendation/host-ranking utilities support ranking based on available user/package information.
+
+> **Note:** package/guide *comparison* behavior is **not implemented** — `touristo/utils/packageComparison.js` is dead code (never imported) and the guide comparison screen was removed. Any future comparison UX should be rebuilt, not revived from that file.
 
 ---
 
@@ -174,24 +197,27 @@ Guide communication should become available only in the appropriate active/paid 
 
 ---
 
-# 4. Admin Dashboard — Next Major Phase
+# 4. Admin Dashboard — IMPLEMENTED
 
-The next major product phase is an Admin Dashboard.
+The Admin Dashboard is built: `AdminDashboardScreen.jsx` at `/admin-dashboard`, backed by 15 endpoints under `/api/admin`, all behind `requireAdmin` (fresh database role check per request), with mutations recorded in `admin_audit_log`.
 
-Planned admin functionality:
+Implemented admin functionality:
 
-* User management
-* Traveler management
-* Host management
-* Host verification
+* Platform statistics and analytics
+* User management (including role changes)
+* Host management and verification status decisions
 * Package moderation
 * Booking monitoring
 * Review moderation
+* Reports review/resolution
+* Audit-log inspection
+
+Still PLANNED in the admin area:
+
+* Destination management
 * Messaging monitoring
-* Platform analytics
-* Reports
-* Safety/abuse monitoring
-* Marketplace activity monitoring
+* Advanced analytics
+* Host verification document review (no document upload exists)
 
 ---
 
@@ -216,6 +242,10 @@ Before a production launch, the following areas should be strengthened:
 ---
 
 # 6. Testing Plan
+
+Current automated checks (live-server scripts, run from the repo root): `npm run test:security` (26 probes), `npm run test:packages` (24), `npm run test:ai` (12), `node scripts/package-image-probes.js` (16), `node scripts/ai-provider-tests.js` (15), `npm run test:e2e` (6 smoke checks; needs a local server on `:3000` and `.env` E2E credentials).
+
+There is still no unit/integration test framework (PLANNED).
 
 Testing should cover:
 
@@ -273,7 +303,7 @@ Testing should cover:
 # 7. Future Roadmap
 
 ```text
-Current MVP
+Current MVP (incl. Admin Dashboard + Reports)
      ↓
 UI/UX Polish
      ↓
@@ -283,9 +313,7 @@ Payment Integration
      ↓
 Notifications
      ↓
-Admin Dashboard
-     ↓
-Advanced Host Verification
+Advanced Host Verification (document upload)
      ↓
 Active Trip Communication
      ↓

@@ -213,6 +213,13 @@ exports.sendMessage = async (req, res) => {
             });
         }
 
+        if (messageText.trim().length > 2000) {
+            return res.status(400).json({
+                success: false,
+                message: 'Message cannot exceed 2000 characters'
+            });
+        }
+
         // ============================================
         // Find conversation
         // ============================================

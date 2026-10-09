@@ -85,6 +85,13 @@ async function setupSchema() {
         exclusions TEXT[],
         itinerary JSONB,  -- Adding itinerary field to store day-by-day information
         group_size VARCHAR(50), -- Adding group size information
+        highlights TEXT[],
+        activities TEXT[],
+        tags TEXT[],
+        target_traveler_type VARCHAR(80),
+        best_season VARCHAR(80),
+        safety_notes TEXT[],
+        seo_description VARCHAR(300),
         availability_start DATE,
         availability_end DATE,
         created_at TIMESTAMP DEFAULT NOW(),
@@ -93,6 +100,19 @@ async function setupSchema() {
     `;
     console.log('Executing command:', createPackagesTable);
     await query(createPackagesTable);
+
+    const packageSchemaColumns = [
+      "ADD COLUMN IF NOT EXISTS highlights TEXT[] DEFAULT '{}'::text[]",
+      "ADD COLUMN IF NOT EXISTS activities TEXT[] DEFAULT '{}'::text[]",
+      "ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}'::text[]",
+      "ADD COLUMN IF NOT EXISTS target_traveler_type VARCHAR(80)",
+      "ADD COLUMN IF NOT EXISTS best_season VARCHAR(80)",
+      "ADD COLUMN IF NOT EXISTS safety_notes TEXT[] DEFAULT '{}'::text[]",
+      "ADD COLUMN IF NOT EXISTS seo_description VARCHAR(300)"
+    ];
+    for (const columnDdl of packageSchemaColumns) {
+      await query(`ALTER TABLE packages ${columnDdl}`);
+    }
 
     await query(`
       CREATE TABLE IF NOT EXISTS bookings (
@@ -224,6 +244,98 @@ async function setupSchema() {
       WHERE message_text IS NULL;
     `);
 
+    /* ------------------------------------------------------------------ */
+    /* MODERATION - reports raised by users against content or hosts      */
+    /* ------------------------------------------------------------------ */
+
+    await query(`
+      CREATE TABLE IF NOT EXISTS reports (
+        id SERIAL PRIMARY KEY,
+        reporter_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        target_type VARCHAR(20) NOT NULL,
+        target_id INTEGER NOT NULL,
+        reason VARCHAR(60) NOT NULL,
+        details TEXT,
+        status VARCHAR(20) NOT NULL DEFAULT 'open',
+        resolution_note TEXT,
+        resolved_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        resolved_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW(),
+        CONSTRAINT reports_target_type_check
+          CHECK (target_type IN ('review', 'package', 'user', 'host')),
+        CONSTRAINT reports_status_check
+          CHECK (status IN ('open', 'resolved', 'dismissed'))
+      );
+    `);
+
+    await query(`
+      CREATE INDEX IF NOT EXISTS idx_reports_reporter_id
+      ON reports(reporter_id);
+    `);
+
+    await query(`
+      CREATE INDEX IF NOT EXISTS idx_reports_resolved_by
+      ON reports(resolved_by);
+    `);
+
+    await query(`
+      CREATE INDEX IF NOT EXISTS idx_reports_target
+      ON reports(target_type, target_id);
+    `);
+
+    await query(`
+      CREATE INDEX IF NOT EXISTS idx_reports_status_created
+      ON reports(status, created_at DESC);
+    `);
+
+    await query(`
+      CREATE INDEX IF NOT EXISTS idx_reports_open_created
+      ON reports(created_at DESC)
+      WHERE status = 'open';
+    `);
+
+    // One open report per reporter per target - blocks duplicate spam.
+    await query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS uq_reports_open_target
+      ON reports(reporter_id, target_type, target_id)
+      WHERE status = 'open';
+    `);
+
+    // Immutable audit trail of every admin mutation (role changes,
+    // verification decisions, deletions, report resolutions).
+    // actor_email is denormalized so the trail survives user deletion.
+    await query(`
+      CREATE TABLE IF NOT EXISTS admin_audit_log (
+        id SERIAL PRIMARY KEY,
+        actor_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        actor_email VARCHAR(255),
+        action VARCHAR(60) NOT NULL,
+        target_type VARCHAR(30) NOT NULL,
+        target_id INTEGER,
+        details JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    await query(`
+      CREATE INDEX IF NOT EXISTS idx_admin_audit_log_created
+      ON admin_audit_log(created_at DESC);
+    `);
+
+    await query(`
+      CREATE INDEX IF NOT EXISTS idx_admin_audit_log_actor
+      ON admin_audit_log(actor_id, created_at DESC);
+    `);
+
+    // Dashboard counts hosts with verification_status = 'pending' on
+    // every load - partial index keeps it tiny.
+    await query(`
+      CREATE INDEX IF NOT EXISTS idx_hosts_verification_pending
+      ON hosts(verification_status)
+      WHERE verification_status = 'pending';
+    `);
+
 // Performance indexes
     await query(`
       CREATE INDEX IF NOT EXISTS idx_marketplace_chats_traveler
@@ -267,6 +379,28 @@ async function setupSchema() {
     await query('CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON messages(sender_id);');
     await query('CREATE INDEX IF NOT EXISTS idx_messages_receiver_id ON messages(receiver_id);');
     await query('CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);');
+
+    // Additional performance indexes used by dashboard/admin/booking flows.
+    await query('CREATE INDEX IF NOT EXISTS idx_hosts_user_id ON hosts(user_id);');
+    await query('CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(status);');
+    await query('CREATE INDEX IF NOT EXISTS idx_packages_created_at ON packages(created_at DESC);');
+    await query('CREATE INDEX IF NOT EXISTS idx_review_summaries_package_id ON review_summaries(package_id);');
+
+    // A traveler can review a given package exactly once. Controller already
+    // blocks duplicates via a 409, but enforce it at the DB level too. On
+    // legacy databases that accumulated duplicates, keep the earliest review
+    // and drop the rest before creating the unique index.
+    await query(`
+      DELETE FROM reviews r
+      USING reviews r2
+      WHERE r.id > r2.id
+        AND r.user_id = r2.user_id
+        AND r.package_id = r2.package_id;
+    `);
+    await query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS uq_reviews_user_package
+      ON reviews(user_id, package_id);
+    `);
 
     console.log('Database schema setup completed successfully.');
   } catch (err) {

@@ -18,37 +18,78 @@ const weatherRoutes = require('./touristo/routes/weatherRoutes'); // New import
 const destinationRoutes = require('./touristo/routes/destinationRoutes'); // New import for destinations
 const messageRoutes = require('./touristo/routes/messageRoutes');
 const tourGuideRoutes = require('./touristo/routes/tourGuideRoutes');
+const itineraryRoutes = require('./touristo/routes/itineraryRoutes');
+const adminRoutes = require('./touristo/routes/adminRoutes');
+const reportRoutes = require('./touristo/routes/reportRoutes');
 const { authenticateToken } = require('./touristo/middleware/auth');
+const travelRadarRoutes =
+  require('./touristo/routes/travelRadarRoutes');
 
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false });
 const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 300, standardHeaders: true, legacyHeaders: false });
+// AI endpoints cost real money per call - keep them tight.
+const aiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 15, standardHeaders: true, legacyHeaders: false });
+// Package detail can generate an AI review summary on cache miss. The
+// cache absorbs repeat viewings, but a page-through of many different
+// packages would otherwise burn one AI call per package.
+const summaryLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 80, standardHeaders: true, legacyHeaders: false });
 
 // Initialize Express app
 const app = express();
 app.set('trust proxy', 1);
 
+// CORS: when CORS_ORIGINS is set (comma separated) only those origins are
+// allowed. When unset the API is open - acceptable for local development,
+// but production deployments MUST set it.
+const allowedOrigins = (process.env.CORS_ORIGINS || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(
+  cors(
+    allowedOrigins.length > 0
+      ? { origin: allowedOrigins, credentials: false }
+      : undefined
+  )
+);
+
 // Apply middleware
 app.use(helmet()); // Security headers
-app.use(cors()); // Enable CORS
 app.use(morgan('combined')); // Logging
 app.use(express.json({ limit: '12mb' })); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
 // Mount routes
 app.use('/api', apiLimiter);
-app.use('/api/users/login', authLimiter);
+// Rate-limit credential endpoints (login + signup) but not profile reads.
+app.use('/api/users', (req, res, next) =>
+  req.method === 'POST' ? authLimiter(req, res, next) : next()
+);
+// Tight limit on expensive AI endpoints.
+app.use(
+  ['/api/trip-planner', '/api/tour-guides/recommend', '/api/packages/ai/generate', '/api/travel-radar'],
+  aiLimiter
+);
 app.use('/api/users', userRoutes);
 app.use('/api/hosts', hostRoutes);
 app.use('/api/packages', packageRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/reports', reportRoutes);
 app.use('/api/host/bookings', hostBookingRoutes); // Mounting the new host bookings route
 app.use('/api', tripPlannerRoutes); // Add the new route
 app.use('/api', generalRoutes); // Add the general routes
 app.use('/api/weather', weatherRoutes); // Add the weather routes
 app.use('/api/destinations', destinationRoutes); // Add the destination routes
 app.use('/api/messages', messageRoutes);
+app.use('/api/itineraries', itineraryRoutes);
 app.use('/api/tour-guides', tourGuideRoutes);
+app.use('/api/admin', adminRoutes);
+app.use(
+  '/api/travel-radar',
+  travelRadarRoutes
+);
 
 // Health check endpoint
 app.get('/', (req, res) => {
@@ -63,6 +104,20 @@ app.use(/(.*)/, (req, res) => {
   res.status(404).json({
     status: 'fail',
     message: `Route ${req.originalUrl} not found`,
+  });
+});
+
+// Central error handler. Never leaks stack traces, SQL, or secrets to
+// the client - full details are logged server-side only.
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(err.status || 500).json({
+    status: 'error',
+    message:
+      err.status && err.status < 500
+        ? err.message
+        : 'Something went wrong. Please try again.',
   });
 });
 

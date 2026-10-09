@@ -21,6 +21,19 @@ if (process.env.DB_SSL_MODE === 'require') {
 // Create a connection pool
 const pool = new Pool(dbConfig);
 
+// Idle pooled connections can be dropped by the server/proxy. Without a
+// listener, pg emits an unhandled 'error' event and the process exits.
+pool.on('error', (err) => {
+  console.error('Unexpected PostgreSQL pool error:', err.message);
+});
+
+// Optional: close idle clients occasionally to avoid stale pooled connections
+pool.on('connect', (client) => {
+  client.on('error', (err) => {
+    console.error('Pooled client error:', err.message);
+  });
+});
+
 // Test the connection
 const connectDB = async () => {
   try {
@@ -32,8 +45,30 @@ const connectDB = async () => {
   }
 };
 
-// Export the pool and connection function
+// Export the pool, connection function and a transaction helper
 module.exports = {
   query: (text, params) => pool.query(text, params),
   connectDB,
+
+  // Runs several queries on ONE dedicated connection inside a transaction.
+  // Used by moderation actions where partial writes must never happen.
+  withTransaction: async (work) => {
+    const client = await pool.connect();
+
+    try {
+      await client.query('BEGIN');
+      const result = await work(client);
+      await client.query('COMMIT');
+      return result;
+    } catch (err) {
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackErr) {
+        console.error('Transaction rollback failed:', rollbackErr.message);
+      }
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
 };

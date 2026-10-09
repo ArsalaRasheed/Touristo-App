@@ -84,6 +84,7 @@ class MarketplaceMessage {
         h.company_name,
         h.verified,
         h.rating_score,
+        h.user_id AS partner_user_id,
 
         (
           SELECT COUNT(*)

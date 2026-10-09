@@ -45,8 +45,8 @@ Use semantic theme variables such as:
 --surface-secondary
 --text-primary
 --text-secondary
---border-primary
---accent-primary
+--border-light
+--brand-primary
 ```
 
 Components should remain consistent with the existing Touristo visual system.

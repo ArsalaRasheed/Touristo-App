@@ -8,9 +8,77 @@ const {
 
 const {
   uploadPackageImage,
-  deletePackageImage
+  deletePackageImage,
+  PackageImageValidationError,
+  PackageImageStorageError
 } =
   require('../utils/packageStorage');
+
+const aiService =
+  require('../services/aiService');
+
+
+/*
+|--------------------------------------------------------------------------
+| AI draft response cache
+|--------------------------------------------------------------------------
+| Identical requests from the same host inside the TTL are served from
+| memory instead of paying for another model call (cost control).
+*/
+const crypto = require('crypto');
+
+const AI_DRAFT_CACHE_TTL_MS =
+  5 * 60 * 1000;
+
+const AI_DRAFT_CACHE_MAX_ENTRIES = 50;
+
+const aiDraftCache = new Map();
+
+
+const buildDraftCacheKey = (
+  userId,
+  brief,
+  details
+) =>
+  crypto
+    .createHash('sha256')
+    .update(
+      `${userId}|${brief}|${JSON.stringify(details)}`
+    )
+    .digest('hex');
+
+
+const readDraftCache = key => {
+  const hit = aiDraftCache.get(key);
+
+  if (!hit) {
+    return null;
+  }
+
+  if (
+    Date.now() - hit.createdAt >
+    AI_DRAFT_CACHE_TTL_MS
+  ) {
+    aiDraftCache.delete(key);
+    return null;
+  }
+
+  return hit;
+};
+
+
+const writeDraftCache = (key, draft) => {
+  if (aiDraftCache.size >= AI_DRAFT_CACHE_MAX_ENTRIES) {
+    const oldestKey =
+      aiDraftCache.keys().next().value;
+    aiDraftCache.delete(oldestKey);
+  }
+
+  aiDraftCache.set(key, {
+    draft,
+    createdAt: Date.now()
+  });
+};
 
 
 /*
@@ -67,6 +135,79 @@ function normalizeArray(value) {
 
 
   return [];
+}
+
+
+/*
+ * Discovery/SEO fields accepted by create and update.
+ * Whitelisted, type-checked and length-capped so the values
+ * always fit the packages table columns.
+ */
+function sanitizeDiscoveryFields(body = {}) {
+
+  const cleanText = (value, maxLength) =>
+    typeof value === 'string'
+      ? value
+          .replace(
+            /[\u0000-\u001F\u007F]/g,
+            ' '
+          )
+          .replace(/\s+/g, ' ')
+          .trim()
+          .substring(0, maxLength)
+      : '';
+
+  const cleanList = (
+    value,
+    maxLength,
+    itemLength
+  ) =>
+    Array.isArray(value)
+      ? value
+          .map(item =>
+            cleanText(item, itemLength)
+          )
+          .filter(Boolean)
+          .slice(0, maxLength)
+      : [];
+
+  return {
+    highlights: cleanList(
+      body.highlights,
+      8,
+      160
+    ),
+
+    activities: cleanList(
+      body.activities,
+      12,
+      140
+    ),
+
+    tags: cleanList(body.tags, 10, 40),
+
+    target_traveler_type:
+      cleanText(
+        body.target_traveler_type,
+        80
+      ) || null,
+
+    best_season:
+      cleanText(body.best_season, 80) ||
+      null,
+
+    safety_notes: cleanList(
+      body.safety_notes,
+      8,
+      200
+    ),
+
+    seo_description:
+      cleanText(
+        body.seo_description,
+        160
+      ) || null
+  };
 }
 
 
@@ -224,6 +365,294 @@ function normalizeItinerary(
 
 /*
 |--------------------------------------------------------------------------
+| AI package draft sanitisation
+|--------------------------------------------------------------------------
+| Raw model output is NEVER trusted. Everything that reaches the host
+| passes through these helpers: types are coerced, lengths capped and
+| unknown keys dropped.
+|--------------------------------------------------------------------------
+*/
+
+const AI_MAX_BRIEF_LENGTH = 1200;
+const AI_MAX_LIST_ITEMS = 12;
+const AI_MAX_ITINERARY_DAYS = 30;
+
+
+const cleanAiString = (
+  value,
+  maxLength
+) => {
+  if (
+    typeof value !== 'string'
+  ) {
+    return '';
+  }
+
+  return value
+    .replace(
+      /[\u0000-\u001F\u007F]/g,
+      ' '
+    )
+    .replace(/\s+/g, ' ')
+    .trim()
+    .substring(0, maxLength);
+};
+
+
+const cleanAiList = (
+  value,
+  maxLength = AI_MAX_LIST_ITEMS,
+  itemLength = 180
+) => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map(item =>
+      cleanAiString(item, itemLength)
+    )
+    .filter(Boolean)
+    .slice(0, maxLength);
+};
+
+
+const cleanAiInt = (
+  value,
+  min,
+  max,
+  fallback = null
+) => {
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+
+  return Math.min(
+    max,
+    Math.max(
+      min,
+      Math.round(parsed)
+    )
+  );
+};
+
+
+const cleanAiItinerary = value => {
+  const days =
+    normalizeItinerary(value);
+
+  if (!Array.isArray(days)) {
+    return [];
+  }
+
+  return days
+    .map((entry, index) => {
+      if (
+        entry &&
+        typeof entry === 'object'
+      ) {
+        const day =
+          cleanAiInt(
+            entry.day,
+            1,
+            60,
+            index + 1
+          );
+
+        return {
+          day,
+
+          title:
+            cleanAiString(
+              entry.title,
+              120
+            ) ||
+            `Day ${day}`,
+
+          description:
+            cleanAiString(
+              entry.description,
+              800
+            )
+        };
+      }
+
+      return {
+        day: index + 1,
+        title: `Day ${index + 1}`,
+        description:
+          cleanAiString(
+            String(entry),
+            800
+          )
+        };
+    })
+    .filter(
+      entry => entry.description
+    )
+    .slice(0, AI_MAX_ITINERARY_DAYS);
+};
+
+
+/*
+ * Keeps the itinerary consistent with the final duration:
+ * trimmed to duration_days (never padded) and day numbers
+ * re-sequenced so they are unique and ordered.
+ */
+const reconcileDraftItinerary = draft => {
+  if (
+    !draft ||
+    !Array.isArray(draft.itinerary) ||
+    draft.itinerary.length === 0
+  ) {
+    return draft;
+  }
+
+  if (
+    draft.duration_days &&
+    draft.itinerary.length > draft.duration_days
+  ) {
+    draft.itinerary = draft.itinerary.slice(
+      0,
+      draft.duration_days
+    );
+  }
+
+  draft.itinerary = draft.itinerary.map(
+    (entry, index) => ({
+      ...entry,
+      day: index + 1,
+      title:
+        entry.title || `Day ${index + 1}`
+    })
+  );
+
+  return draft;
+};
+
+
+const sanitizeAiDraft = raw => {
+  if (
+    !raw ||
+    typeof raw !== 'object'
+  ) {
+    return null;
+  }
+
+  const draft = {
+    title: cleanAiString(
+      raw.title,
+      180
+    ),
+
+    description: cleanAiString(
+      raw.description,
+      3000
+    ),
+
+    destination: cleanAiString(
+      raw.destination,
+      120
+    ),
+
+    duration_days: cleanAiInt(
+      raw.duration_days,
+      1,
+      30,
+      null
+    ),
+
+    group_size: cleanAiString(
+      raw.group_size,
+      50
+    ),
+
+    target_traveler_type:
+      cleanAiString(
+        raw.target_traveler_type,
+        80
+      ),
+
+    highlights: cleanAiList(
+      raw.highlights,
+      8,
+      160
+    ),
+
+    activities: cleanAiList(
+      raw.activities,
+      12,
+      140
+    ),
+
+    inclusions: cleanAiList(
+      raw.inclusions
+    ),
+
+    exclusions: cleanAiList(
+      raw.exclusions
+    ),
+
+    itinerary: cleanAiItinerary(
+      raw.itinerary
+    ),
+
+    best_season: cleanAiString(
+      raw.best_season,
+      80
+    ),
+
+    safety_notes: cleanAiList(
+      raw.safety_notes,
+      8,
+      200
+    ),
+
+    seo_description: cleanAiString(
+      raw.seo_description,
+      160
+    ),
+
+    tags: cleanAiList(
+      raw.tags,
+      10,
+      40
+    ),
+
+    suggested_price: cleanAiInt(
+      raw.suggested_price,
+      1,
+      10000000,
+      null
+    )
+  };
+
+
+  /*
+   * A draft is only usable if the
+   * fields the package form requires
+   * are actually present.
+   */
+  reconcileDraftItinerary(draft);
+
+  const isComplete =
+    draft.title &&
+    draft.description &&
+    draft.destination &&
+    draft.duration_days &&
+    draft.itinerary.length > 0;
+
+
+  return isComplete
+    ? draft
+    : null;
+};
+
+
+/*
+|--------------------------------------------------------------------------
 | Host ownership
 |--------------------------------------------------------------------------
 */
@@ -354,7 +783,7 @@ const packageController = {
       return res.status(500).json({
         status: 'error',
         message:
-          err.message
+          'Failed to load package data'
       });
     }
   },
@@ -523,7 +952,7 @@ const packageController = {
       return res.status(500).json({
         status: 'error',
         message:
-          err.message
+          'Failed to load package data'
       });
     }
   },
@@ -609,7 +1038,7 @@ const packageController = {
       return res.status(500).json({
         status: 'error',
         message:
-          err.message
+          'Failed to load package data'
       });
     }
   },
@@ -662,7 +1091,7 @@ const packageController = {
       return res.status(500).json({
         status: 'error',
         message:
-          err.message
+          'Failed to load package data'
       });
     }
   },
@@ -716,6 +1145,13 @@ const packageController = {
         exclusions,
         itinerary,
         group_size,
+        highlights,
+        activities,
+        tags,
+        target_traveler_type,
+        best_season,
+        safety_notes,
+        seo_description,
         availability_start,
         availability_end
       } =
@@ -998,9 +1434,22 @@ const packageController = {
 
       const sanitizedGroupSize =
         typeof group_size === 'string'
-          ? group_size.trim()
-          : group_size ??
-            null;
+          ? group_size
+              .trim()
+              .substring(0, 50)
+          : group_size ?? null;
+
+
+      const discoveryFields =
+        sanitizeDiscoveryFields({
+          highlights,
+          activities,
+          tags,
+          target_traveler_type,
+          best_season,
+          safety_notes,
+          seo_description
+        });
 
 
       /*
@@ -1048,6 +1497,8 @@ const packageController = {
           group_size:
             sanitizedGroupSize,
 
+          ...discoveryFields,
+
           availability_start,
           availability_end
         });
@@ -1082,16 +1533,39 @@ const packageController = {
       );
 
 
-      return res.status(
-        err.message?.includes(
-          'Image'
-        )
-          ? 400
-          : 500
-      ).json({
+      if (
+        err instanceof
+        PackageImageValidationError
+      ) {
+
+        return res.status(400).json({
+          status: 'fail',
+          message: err.message
+        });
+      }
+
+
+      if (
+        err instanceof
+        PackageImageStorageError
+      ) {
+
+        return res.status(
+          err.causeStatus === 503
+            ? 503
+            : 502
+        ).json({
+          status: 'error',
+          message:
+            'Package image could not be uploaded. Please try again.'
+        });
+      }
+
+
+      return res.status(500).json({
         status: 'error',
         message:
-          err.message
+          'Failed to save package'
       });
     }
   },
@@ -1168,10 +1642,44 @@ const packageController = {
         exclusions,
         itinerary,
         group_size,
+        highlights,
+        activities,
+        tags,
+        target_traveler_type,
+        best_season,
+        safety_notes,
+        seo_description,
         availability_start,
         availability_end
       } =
         req.body;
+
+
+      /*
+       * Field length caps (protects storage and AI/trip-rendering output).
+       */
+      const textCaps = {
+        title: 200,
+        description: 4000,
+        location: 200,
+        destination: 200,
+        destination_name: 200,
+        group_size: 100,
+        seo_description: 400,
+        best_season: 200
+      };
+      for (const [fieldName, maxLen] of Object.entries(textCaps)) {
+        if (
+          req.body[fieldName] !== undefined &&
+          req.body[fieldName] !== null &&
+          String(req.body[fieldName]).length > maxLen
+        ) {
+          return res.status(400).json({
+            status: 'fail',
+            message: `${fieldName} must be ${maxLen} characters or fewer`
+          });
+        }
+      }
 
 
       /*
@@ -1421,20 +1929,49 @@ const packageController = {
         );
 
 
+      /*
+       * Title is a NOT NULL column - an update
+       * without it would fail at the driver level.
+       */
+      const sanitizedUpdateTitle =
+        typeof title === 'string'
+          ? title.trim()
+          : '';
+
+      if (!sanitizedUpdateTitle) {
+
+        return res.status(400).json({
+          status: 'fail',
+          message:
+            'Package title is required'
+        });
+      }
+
+
+      const discoveryFields =
+        sanitizeDiscoveryFields({
+          highlights,
+          activities,
+          tags,
+          target_traveler_type,
+          best_season,
+          safety_notes,
+          seo_description
+        });
+
+
       const updatedPackage =
         await Package.update(
           id,
           {
 
             title:
-              typeof title === 'string'
-                ? title.trim()
-                : title,
+              sanitizedUpdateTitle,
 
             description:
               typeof description === 'string'
                 ? description.trim()
-                : description,
+                : description ?? null,
 
             price:
               parsedPrice,
@@ -1471,8 +2008,12 @@ const packageController = {
 
             group_size:
               typeof group_size === 'string'
-                ? group_size.trim()
+                ? group_size
+                    .trim()
+                    .substring(0, 50)
                 : group_size,
+
+            ...discoveryFields,
 
             availability_start,
             availability_end
@@ -1515,16 +2056,39 @@ const packageController = {
       );
 
 
-      return res.status(
-        err.message?.includes(
-          'Image'
-        )
-          ? 400
-          : 500
-      ).json({
+      if (
+        err instanceof
+        PackageImageValidationError
+      ) {
+
+        return res.status(400).json({
+          status: 'fail',
+          message: err.message
+        });
+      }
+
+
+      if (
+        err instanceof
+        PackageImageStorageError
+      ) {
+
+        return res.status(
+          err.causeStatus === 503
+            ? 503
+            : 502
+        ).json({
+          status: 'error',
+          message:
+            'Package image could not be uploaded. Please try again.'
+        });
+      }
+
+
+      return res.status(500).json({
         status: 'error',
         message:
-          err.message
+          'Failed to save package'
       });
     }
   },
@@ -1607,7 +2171,510 @@ const packageController = {
       return res.status(500).json({
         status: 'error',
         message:
-          err.message
+          'Failed to load package data'
+      });
+    }
+  },
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | AI PACKAGE DRAFT
+  |--------------------------------------------------------------------------
+  | Host assist only. Nothing here writes to the database: the draft is
+  | returned to the host, who reviews every field before saving.
+  |--------------------------------------------------------------------------
+  */
+
+  async aiGeneratePackage(
+    req,
+    res
+  ) {
+    try {
+
+      if (
+        req.user?.role !== 'host'
+      ) {
+        return res.status(403).json({
+          status: 'fail',
+          message:
+            'Only host accounts can use the AI package builder'
+        });
+      }
+
+
+      const brief =
+        typeof req.body?.brief ===
+        'string'
+          ? req.body.brief.trim()
+          : '';
+
+
+      if (!brief) {
+        return res.status(400).json({
+          status: 'fail',
+          message:
+            'Describe the tour you want to build'
+        });
+      }
+
+
+      if (
+        brief.length >
+        AI_MAX_BRIEF_LENGTH
+      ) {
+        return res.status(400).json({
+          status: 'fail',
+
+          message:
+            `Brief must be ${AI_MAX_BRIEF_LENGTH} characters or fewer`
+        });
+      }
+
+
+      /*
+       * Optional structured trip details.
+       *
+       * Everything here is host input, never AI
+       * invention: the draft must match it exactly.
+       */
+      const cleanDetail = (value, maxLength) =>
+        typeof value === 'string'
+          ? value.trim().substring(0, maxLength)
+          : '';
+
+
+      const cleanDetailInt = (value, min, max) => {
+        const parsed = parseInt(value, 10);
+
+        return (
+          Number.isFinite(parsed) &&
+          parsed >= min &&
+          parsed <= max
+        )
+          ? parsed
+          : null;
+      };
+
+
+      const rawDetails =
+        req.body?.details &&
+        typeof req.body.details === 'object'
+          ? req.body.details
+          : {};
+
+
+      const details = {
+        destination:
+          cleanDetail(rawDetails.destination, 80),
+
+        duration_days:
+          cleanDetailInt(rawDetails.duration_days, 1, 30),
+
+        budget_per_person:
+          cleanDetailInt(
+            rawDetails.budget_per_person,
+            1000,
+            10000000
+          ),
+
+        travelers:
+          cleanDetailInt(rawDetails.travelers, 1, 50),
+
+        travel_style:
+          cleanDetail(rawDetails.travel_style, 60),
+
+        activities:
+          cleanDetail(rawDetails.activities, 400),
+
+        accommodation:
+          cleanDetail(rawDetails.accommodation, 60),
+
+        transport:
+          cleanDetail(rawDetails.transport, 60)
+      };
+
+
+      const detailLines = [];
+
+      if (details.destination) {
+        detailLines.push(
+          `- Destination: ${details.destination}`
+        );
+      }
+
+      if (details.duration_days) {
+        detailLines.push(
+          `- Duration: ${details.duration_days} days`
+        );
+      }
+
+      if (details.budget_per_person) {
+        detailLines.push(
+          `- Budget per person: PKR ${details.budget_per_person}`
+        );
+      }
+
+      if (details.travelers) {
+        detailLines.push(
+          `- Travelers: ${details.travelers}`
+        );
+      }
+
+      if (details.travel_style) {
+        detailLines.push(
+          `- Travel style: ${details.travel_style}`
+        );
+      }
+
+      if (details.activities) {
+        detailLines.push(
+          `- Must include activities: ${details.activities}`
+        );
+      }
+
+      if (details.accommodation) {
+        detailLines.push(
+          `- Accommodation: ${details.accommodation}`
+        );
+      }
+
+      if (details.transport) {
+        detailLines.push(
+          `- Transport: ${details.transport}`
+        );
+      }
+
+
+      const structuredBlock =
+        detailLines.length
+          ? `\nHOST-PROVIDED TRIP DETAILS\nThese are the host's own requirements. The draft MUST match them exactly and must not contradict them:\n${detailLines.join('\n')}\n`
+          : '';
+
+
+      if (
+        !aiService.isAiConfigured()
+      ) {
+        return res.status(503).json({
+          status: 'error',
+          message:
+            'AI service is not configured'
+        });
+      }
+
+
+      /*
+       * Identical request inside the cache TTL
+       * is answered from memory (cost control).
+       */
+      const draftCacheKey =
+        buildDraftCacheKey(
+          req.user.id,
+          brief,
+          details
+        );
+
+      const cachedDraft =
+        readDraftCache(draftCacheKey);
+
+      if (cachedDraft) {
+        return res.status(200).json({
+          status: 'success',
+
+          data: {
+            draft: cachedDraft.draft,
+
+            generatedAt:
+              new Date(
+                cachedDraft.createdAt
+              ).toISOString(),
+
+            published: false,
+            cached: true
+          }
+        });
+      }
+
+
+      /*
+       * Real Touristo context.
+       *
+       * Only marketplace metadata is used:
+       * destination names, the host's own
+       * company name and the shape of the
+       * host's own packages.
+       */
+      let destinationNames = [];
+      let companyName = null;
+      let existingPackages = [];
+
+
+      try {
+        const destinationsResult =
+          await query(
+            `
+              SELECT name
+              FROM destinations
+              ORDER BY name ASC
+              LIMIT 60
+            `
+          );
+
+
+        destinationNames =
+          destinationsResult.rows
+            .map(row => row.name)
+            .filter(Boolean);
+      } catch (contextErr) {
+        console.error(
+          'AI builder destination context failed:',
+          contextErr.message
+        );
+      }
+
+
+      try {
+        const hostResult =
+          await query(
+            `
+              SELECT company_name
+              FROM hosts
+              WHERE user_id = $1
+              LIMIT 1
+            `,
+            [req.user.id]
+          );
+
+
+        companyName =
+          hostResult.rows[0]
+            ?.company_name || null;
+
+
+        const packagesResult =
+          await query(
+            `
+              SELECT
+                p.title,
+                p.destination,
+                p.duration_days,
+                p.group_size
+              FROM packages p
+              INNER JOIN hosts h
+                ON h.id = p.host_id
+              WHERE h.user_id = $1
+              ORDER BY p.created_at DESC
+              LIMIT 5
+            `,
+            [req.user.id]
+          );
+
+
+        existingPackages =
+          packagesResult.rows;
+      } catch (contextErr) {
+        console.error(
+          'AI builder host context failed:',
+          contextErr.message
+        );
+      }
+
+
+      const prompt = `
+You are the package architect for Touristo, a Pakistani
+tourism marketplace that connects tour companies with
+travelers.
+
+A tour company owner has described a tour they want to
+publish. Produce a structured DRAFT that they will review
+and edit before publishing.
+
+HOST BRIEF:
+"""
+${brief}
+"""
+${structuredBlock}
+TOURISTO CONTEXT
+Company name: ${
+        companyName || 'not provided'
+      }
+
+Known Touristo destinations (prefer one of these when the
+brief matches):
+${
+        destinationNames.length
+          ? destinationNames.join(', ')
+          : 'none listed'
+      }
+
+Existing packages from this host (match their style, do not
+copy them):
+${
+        existingPackages.length
+          ? JSON.stringify(
+              existingPackages
+            )
+          : 'none yet'
+      }
+
+RULES
+- Output ONLY valid JSON. No markdown, no commentary.
+- Never invent certifications, licenses, awards, ratings,
+  reviews, availability, dates or statistics.
+- Do not decide the final price. Only return
+  "suggested_price" (integer PKR) when a budget is given
+  in the brief or the HOST-PROVIDED TRIP DETAILS, and
+  never let it exceed the budget per person; otherwise
+  return null.
+- When HOST-PROVIDED TRIP DETAILS are present, honour
+  every field exactly: destination, duration, travelers,
+  travel style, activities, accommodation and transport.
+  Do not contradict them anywhere in the draft.
+- Write in English.
+- Everything must be realistic for travel in Pakistan.
+- Safety notes must be practical and destination relevant.
+- Itinerary must have one entry per day, day numbered from 1,
+  and must match "duration_days" exactly.
+- seo_description: one search-friendly sentence, max 160 chars.
+- tags: 3-10 short lowercase search tags.
+
+RETURN EXACTLY THIS SHAPE:
+{
+  "title": "string, max 120 chars",
+  "description": "string, 200-900 chars, compelling but accurate",
+  "destination": "string",
+  "duration_days": 3,
+  "group_size": "e.g. 4-8 people, max 50 chars",
+  "target_traveler_type": "e.g. Families",
+  "highlights": ["string"],
+  "activities": ["string"],
+  "inclusions": ["string"],
+  "exclusions": ["string"],
+  "itinerary": [
+    { "day": 1, "title": "string", "description": "string" }
+  ],
+  "best_season": "string",
+  "safety_notes": ["string"],
+  "seo_description": "string, max 160 chars",
+  "tags": ["string"],
+  "suggested_price": null
+}
+`;
+
+
+      let parsed = null;
+
+
+      try {
+        const result =
+          await aiService.generateJson({
+            prompt,
+            temperature: 0.7,
+            maxOutputTokens: 4096
+          });
+
+        parsed = result.data;
+      } catch (aiErr) {
+        if (
+          aiErr instanceof
+          aiService.AIError
+        ) {
+          return res.status(
+            aiErr.status
+          ).json({
+            status: 'error',
+            code: aiErr.code,
+            message: aiErr.message
+          });
+        }
+
+        console.error(
+          'AI package generation failed:',
+          aiErr
+        );
+
+        return res.status(503).json({
+          status: 'error',
+          code: 'unavailable',
+          message:
+            'AI package generation is temporarily unavailable. Please try again.'
+        });
+      }
+
+
+      const draft =
+        sanitizeAiDraft(parsed);
+
+
+      if (!draft) {
+        return res.status(422).json({
+          status: 'fail',
+          message:
+            'The AI returned an incomplete package draft. Please try again.'
+        });
+      }
+
+
+      /*
+       * Host-provided structured details win over
+       * whatever the model produced - the draft can
+       * never contradict the host's own inputs.
+       */
+      if (details.destination) {
+        draft.destination = details.destination;
+      }
+
+      if (details.duration_days) {
+        draft.duration_days = details.duration_days;
+      }
+
+      if (details.travelers) {
+        draft.group_size = `${details.travelers} people`;
+      }
+
+      if (
+        details.budget_per_person &&
+        draft.suggested_price &&
+        draft.suggested_price >
+          details.budget_per_person
+      ) {
+        draft.suggested_price =
+          details.budget_per_person;
+      }
+
+      reconcileDraftItinerary(draft);
+
+      writeDraftCache(
+        draftCacheKey,
+        draft
+      );
+
+
+      return res.status(200).json({
+        status: 'success',
+
+        data: {
+          draft,
+
+          generatedAt:
+            new Date().toISOString(),
+
+          published: false
+        }
+      });
+
+    } catch (err) {
+
+      console.error(
+        'Error in aiGeneratePackage:',
+        err
+      );
+
+
+      return res.status(500).json({
+        status: 'error',
+        message:
+          'Failed to generate a package draft'
       });
     }
   }

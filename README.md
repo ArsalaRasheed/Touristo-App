@@ -2,7 +2,7 @@
 
 ## Pakistan Tourism Marketplace
 
-Touristo is a full-stack tourism marketplace designed to connect **travelers with tour companies across Pakistan**. The platform allows travelers to discover destinations, explore tour packages, compare hosts and guides, plan trips with AI assistance, make bookings, communicate with tour companies, manage trips, and access travel-safety features.
+Touristo is a full-stack tourism marketplace designed to connect **travelers with tour companies across Pakistan**. The platform allows travelers to discover destinations, explore tour packages, evaluate hosts and guides, plan trips with AI assistance, make bookings, communicate with tour companies, manage trips, and access travel-safety features.
 
 Touristo follows an **asset-light marketplace model**: Touristo does not operate tours itself. Instead, it provides a digital marketplace where travelers can discover and communicate with tour companies and hosts.
 
@@ -15,10 +15,11 @@ Touristo follows an **asset-light marketplace model**: Touristo does not operate
 
 ## 👤 Authentication & User Roles
 
-Touristo currently supports two primary user roles:
+Touristo currently supports three user roles:
 
 * **Traveler**
 * **Tour Company / Host**
+* **Admin**
 
 ### Current Authentication
 
@@ -51,17 +52,19 @@ Travelers can currently:
 * View tour company/host profiles
 * Explore available experiences
 * Browse tour guides
-* Compare guide information
+* View guide information
 * Use AI Trip Planner
 * View package reviews and ratings
 * View AI-generated review summaries where available
+* File moderation reports against reviews, packages, users or hosts (`/my-reports`)
+* Explore Travel Trend Radar insights (`/travel-radar`)
 * Make package bookings
 * Manage trips through My Trips
 * Communicate with tour companies/hosts
 * Access weather information
 * Use Emergency SOS/location-sharing features
 * Manage profile and account settings
-* Receive notification information through the application interface
+* See the Notifications interface (currently placeholder data — no notifications backend yet)
 
 ---
 
@@ -89,6 +92,24 @@ Tour companies can currently:
 
 ---
 
+# 🛡️ Admin Experience
+
+Admin users can currently:
+
+* Sign in with an account whose `role` is `admin` (the role is re-checked against the database on every admin request)
+* Open the Admin Dashboard at `/admin-dashboard`
+* View platform overview statistics and analytics
+* Manage users (including role changes)
+* Manage host verification status
+* Moderate packages and reviews (delete)
+* Monitor bookings
+* Review and resolve user reports
+* Inspect the admin audit log (`admin_audit_log`)
+
+All 15 admin API endpoints live under `/api/admin` and are guarded by `requireAdmin`.
+
+---
+
 # 🔎 Search & Discovery
 
 Touristo provides multiple discovery mechanisms including:
@@ -101,8 +122,9 @@ Touristo provides multiple discovery mechanisms including:
 * Host rating information
 * Featured packages
 * Recommended packages
-* Package comparison indicators
 * Experience-based discovery
+
+> **Note:** side-by-side package comparison UI and the guide comparison screen are **not implemented** — `GuideComparisonScreen` was removed and `touristo/utils/packageComparison.js` is dead code (never imported).
 
 The goal is to make it easier for travelers to compare tourism options before booking.
 
@@ -175,7 +197,7 @@ Travelers can currently:
 * Select a package
 * Select number of travelers
 * Select a start date
-* Add special requests
+* Enter special requests in the form (note: the backend does not persist them — there is no `special_requests` column; PLANNED)
 * Select a displayed payment method
 * View calculated booking totals
 * Submit bookings
@@ -243,7 +265,7 @@ Future trip-based communication may introduce guide/group communication after a 
 
 # 🤖 AI Trip Planner
 
-Touristo includes an AI-powered travel assistant using the **Google Gemini API**.
+Touristo includes an AI-powered travel assistant backed by a shared AI service that uses **Google Gemini and OpenAI** (server-side keys only, with bounded retries and provider fallback).
 
 Travelers can:
 
@@ -255,9 +277,21 @@ Travelers can:
 * Use Roman Urdu
 * Receive concise travel recommendations
 
+The planner is **database-grounded**: the server loads destinations and packages from the database into the prompt, the model must answer with `{message, packageIds}`, and the server re-validates every returned package id against the loaded catalog before responding — so the model cannot invent package ids or prices.
+
 The backend provides:
 
-`POST /api/trip-planner`
+`POST /api/trip-planner` (authenticated, AI rate-limited)
+
+---
+
+# 🧠 Host AI Package Builder
+
+Hosts can generate a draft tour package from a short brief:
+
+`POST /api/packages/ai/generate` (host-only, authenticated, rate-limited, short-lived response cache)
+
+The AI output is a **draft for review** — hosts must review and publish it themselves; the endpoint never writes to the database on its own.
 
 ---
 
@@ -305,9 +339,10 @@ Travelers can:
 * Browse tour guides
 * View guide specialties
 * View guide ratings
-* Compare guides
 * Search/filter guides
-* Receive preference-based guide matching
+* Receive AI-based matching recommendations (`POST /api/tour-guides/recommend`)
+
+Side-by-side guide comparison is **not implemented** — the guide comparison screen was removed from the app.
 
 Hosts can:
 
@@ -410,6 +445,18 @@ The current system is primarily intended for destination/location awareness rath
 
 ---
 
+# 📡 Travel Trend Radar
+
+Touristo includes a Travel Radar screen at `/travel-radar` (`TravelTrendRadar.jsx`) fed by `GET /api/travel-radar`.
+
+Current state:
+
+* Sourced from **YouTube trend data** (`YOUTUBE_API_KEY`), with a server-side cache
+* Includes AI-generated explanations of the trends (server-side keys)
+* A multi-source radar upgrade is **deferred (PLANNED)** — the current implementation is intentionally kept stable
+
+---
+
 # 👤 Profile, Settings & Notifications
 
 Touristo includes:
@@ -424,7 +471,7 @@ Touristo includes:
 * About Touristo
 * Contact Touristo
 
-Some settings and notification functionality is still being expanded toward persistent backend-based behavior.
+Some settings functionality is still being expanded toward persistent backend-based behavior. The Notifications screen currently shows **placeholder data** — there is no notifications backend (PLANNED).
 
 ---
 
@@ -463,9 +510,12 @@ The application communicates with PostgreSQL through the Node.js backend.
 
 ## AI
 
-* Google Gemini API
+* Shared AI service (`touristo/services/aiService.js`) — Google Gemini + OpenAI, server-side keys, 20s per-attempt / 30s overall timeouts, bounded retries with provider fallback, typed errors
 * AI Trip Planner
+* Host AI package builder (`POST /api/packages/ai/generate`)
+* AI guide recommendations (`POST /api/tour-guides/recommend`)
 * AI Review Summarization
+* Travel Radar AI explanations
 * Recommendation-related functionality
 
 ## External Services
@@ -492,6 +542,8 @@ Touristo-App/
 │
 ├── frontend/
 │   ├── src/
+│   │   ├── api/
+│   │   │   └── client.js
 │   │   ├── components/
 │   │   ├── context/
 │   │   ├── utils/
@@ -505,7 +557,17 @@ Touristo-App/
 │   ├── middleware/
 │   ├── models/
 │   ├── routes/
+│   ├── services/
+│   │   └── aiService.js
 │   └── utils/
+│
+├── scripts/
+│   ├── ai-package-builder-tests.js
+│   ├── ai-provider-tests.js
+│   ├── e2e-smoke.js
+│   ├── package-image-probes.js
+│   ├── package-probes.js
+│   └── security-probes.js
 │
 ├── api/
 │   └── index.js
@@ -528,7 +590,7 @@ The application currently uses database entities including:
 
 | Table               | Purpose                            |
 | ------------------- | ---------------------------------- |
-| `users`             | Traveler and host accounts         |
+| `users`             | Traveler, host and admin accounts  |
 | `hosts`             | Tour company profiles              |
 | `destinations`      | Pakistani destination information  |
 | `packages`          | Tour package listings              |
@@ -538,6 +600,8 @@ The application currently uses database entities including:
 | `tour_guides`       | Tour guides associated with hosts  |
 | `messages`          | Marketplace messages               |
 | `marketplace_chats` | Traveler-host conversation records |
+| `reports`           | User moderation reports            |
+| `admin_audit_log`   | Immutable admin action trail       |
 
 Foreign-key relationships connect users, hosts, packages, bookings, reviews, guides and marketplace conversations.
 
@@ -548,7 +612,7 @@ Foreign-key relationships connect users, hosts, packages, bookings, reviews, gui
 The current authentication flow is:
 
 ```text
-Traveler / Host
+Traveler / Host / Admin
        │
        ▼
    Registration
@@ -570,7 +634,9 @@ Traveler / Host
        │
        ├── Traveler
        │
-       └── Host
+       ├── Host
+       │
+       └── Admin (role re-checked against the database on every /api/admin request)
 ```
 
 The current system provides role-based authentication and protected application routes.
@@ -629,6 +695,7 @@ GET     /api/packages/host/:hostId
 POST    /api/packages
 PUT     /api/packages/:id
 DELETE  /api/packages/:id
+POST    /api/packages/ai/generate        (host-only, AI rate-limited)
 ```
 
 ### Bookings
@@ -667,6 +734,7 @@ DELETE  /api/reviews/:id
 GET     /api/tour-guides
 GET     /api/tour-guides/:id
 GET     /api/tour-guides/host/:hostId
+POST    /api/tour-guides/recommend       (AI, authenticated)
 POST    /api/tour-guides
 PUT     /api/tour-guides/:id
 DELETE  /api/tour-guides/:id
@@ -701,34 +769,126 @@ GET     /api/weather/coordinates?lat=<lat>&lon=<lon>
 GET     /api/homepage-data
 ```
 
+### Host Bookings
+
+```text
+GET     /api/host/bookings/host/:hostId  (authenticated)
+```
+
+### Reports (moderation)
+
+```text
+GET     /api/reports/mine
+POST    /api/reports
+```
+
+### Admin (all behind `requireAdmin` — fresh database role check)
+
+```text
+GET     /api/admin/dashboard
+GET     /api/admin/analytics
+GET     /api/admin/audit
+GET     /api/admin/users
+PATCH   /api/admin/users/:id/role
+GET     /api/admin/hosts
+PATCH   /api/admin/hosts/:id/verification-status
+GET     /api/admin/packages
+DELETE  /api/admin/packages/:id
+GET     /api/admin/bookings
+PATCH   /api/admin/bookings/:id/status
+GET     /api/admin/reviews
+DELETE  /api/admin/reviews/:id
+GET     /api/admin/reports
+PATCH   /api/admin/reports/:id/status
+```
+
+### Travel Radar
+
+```text
+GET     /api/travel-radar                 (AI explanations, server-cached)
+```
+
 ---
 
-# 🚀 Next Development Phase
+# 🧪 Testing
 
-The current MVP provides the core marketplace foundation. The next phase will focus on transforming the prototype into a stronger production-ready tourism marketplace.
+The repository ships several runnable check scripts (run from the repo root). All suites are live-server checks — they need a running backend (`node index.js` on `:3000`) and `.env` credentials:
 
-## 👨‍💼 1. Admin Dashboard
+| Command | What it checks | Count |
+| --- | --- | --- |
+| `npm run test:security` | `scripts/security-probes.js` — auth/authorization probes (password hashes, booking ownership, PII scrubbing, AI endpoints, guide ownership) | 26 probes |
+| `npm run test:packages` | `scripts/package-probes.js` — package CRUD with the newer columns + AI generate guards | 24 probes |
+| `npm run test:ai` | `scripts/ai-package-builder-tests.js` — stubbed-AI host package builder behavior | 12 checks |
+| `node scripts/package-image-probes.js` | package image upload/persistence probes | 16 probes |
+| `node scripts/ai-provider-tests.js` | AI service unit tests: retry, fallback, timeouts, structured-output parsing | 15 tests |
+| `npm run test:e2e` | `scripts/e2e-smoke.js` — real-login smoke (requires `.env` `E2E_*` credentials; admin checks run only when admin creds are set) | 6 checks |
 
-A dedicated **Admin Dashboard** will be developed in the next phase.
+---
 
-Planned functionality includes:
+# ⚙️ Environment Variables
 
-* Admin authentication
-* Admin dashboard
-* User management
-* Traveler management
-* Host management
-* Tour company management
-* Host verification/approval
-* Package moderation
-* Destination management
+**Server-side only** (root `.env`, loaded by `dotenv` — never send these to the browser):
+
+```text
+PORT
+DB_HOST
+DB_PORT
+DB_NAME
+DB_USER
+DB_PASSWORD
+DB_SSL_MODE
+JWT_SECRET
+GEMINI_API_KEY          (AI — server-side only)
+OPENAI_API_KEY          (AI — server-side only)
+AI_PRIMARY_PROVIDER     (optional: "gemini" or "openai" — controls provider order/fallback)
+GEMINI_MODEL            (optional override, default gemini-3.5-flash)
+OPENAI_MODEL            (optional override, default gpt-4o-mini)
+OPENWEATHER_API_KEY
+YOUTUBE_API_KEY
+SUPABASE_URL
+SUPABASE_SECRET_KEY     (alias: SUPABASE_SERVICE_ROLE_KEY — package image storage)
+SUPABASE_STORAGE_BUCKET (optional override for the package-image bucket)
+CORS_ORIGINS            (comma-separated allowlist; unset = open API, fine locally, must be set in production)
+```
+
+**Frontend** (Vite, `frontend/.env`):
+
+```text
+VITE_API_URL            (optional; when unset the dev proxy forwards /api to http://localhost:3000)
+```
+
+> **Rule:** AI keys must **never** be `VITE_`-prefixed. Any `VITE_` variable is embedded in the public JS bundle. All Gemini/OpenAI calls happen in `touristo/services/aiService.js` on the server.
+
+E2E-only variables (never committed): `E2E_TRAVELER_EMAIL`, `E2E_TRAVELER_PASSWORD`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`, `E2E_BASE_URL`.
+
+---
+
+# 🚀 Roadmap & Next Development Phase
+
+The current MVP provides the core marketplace foundation. The Admin Dashboard (item 1) has already shipped; the remaining phases below focus on transforming the prototype into a stronger production-ready tourism marketplace.
+
+## 👨‍💼 1. Admin Dashboard — ✅ Implemented
+
+The **Admin Dashboard is implemented** — `AdminDashboardScreen.jsx` at `/admin-dashboard`, backed by 15 endpoints under `/api/admin` (all guarded by `requireAdmin`, which re-reads the account role from the database on every request) plus the `admin_audit_log` action trail.
+
+Currently supported:
+
+* Platform statistics and analytics
+* User management (including role changes)
+* Traveler/host management
+* Host verification status decisions
+* Package moderation (delete)
 * Booking monitoring
-* Review moderation
-* Guide management
+* Review moderation (delete)
+* Reports review/resolution workflow
+* Audit-log inspection
+
+Still PLANNED for the admin area:
+
+* Destination management
 * Messaging monitoring where appropriate
-* Platform statistics
-* Reports and analytics
-* Platform-level controls
+* Deeper reports and analytics
+* Host verification document review (no document upload exists yet)
 
 ---
 
@@ -782,17 +942,15 @@ Planned notification improvements:
 
 ## 🏢 5. Host Verification System
 
-A production-grade host verification workflow will be introduced.
+**Partial today:** hosts carry `verification_status` / `verified` columns, admins can set the status from the dashboard, and a verified badge is displayed — but there is **no document upload** and no status history.
 
-Potential features:
+Still to be introduced:
 
 * Business verification
 * License/registration verification
-* Document submission
-* Admin review
-* Approval/rejection workflow
-* Verified host badge
-* Host verification status tracking
+* Document submission (**not implemented**)
+* Request-changes workflow
+* Status history/audit for verification decisions (beyond `admin_audit_log`)
 
 ---
 
@@ -945,7 +1103,7 @@ The UI includes:
 The following areas are intentionally considered future development rather than completed production functionality:
 
 * Live payment gateway integration
-* Advanced admin dashboard
+* Host verification document upload (status columns + admin decisions exist; document upload does not)
 * Forgot/reset password system
 * Production-grade authentication hardening
 * Full host verification workflow
@@ -956,9 +1114,9 @@ The following areas are intentionally considered future development rather than 
 * Real emergency dispatch integration
 * Full turn-by-turn navigation
 * Production media/file storage
-* Complete review submission and moderation system
+* Complete review submission and moderation system (basic submission, admin deletion and report triage exist; verified-booking reviews, photo reviews and full moderation tooling are PLANNED)
 * Advanced analytics dashboard
-* Full automated testing
+* Unit/integration test framework (probe and smoke suites exist — see Testing)
 * Advanced AI package personalization
 
 ---
@@ -994,9 +1152,12 @@ The repository also contains supporting project documentation:
 
 * `PRD.md` — Product Requirements Document
 * `TRD.md` — Technical Requirements Document
+* `Architecture.md` — Architecture map
 * `BackendSchema.md` — Database and backend schema
 * `AppFlow.md` — Application flow
 * `ImplementationPlan.md` — Development planning
+* `IMPLEMENTATION_STATUS.md` — living status tracker
+* `PRODUCTION_GAP_ANALYSIS.md` — point-in-time baseline audit (2026-10-06)
 * `UIUXDesignBrief.md` — UI/UX direction
 
 ---
@@ -1009,7 +1170,7 @@ The repository also contains supporting project documentation:
 **Frontend:** React + Vite + Tailwind CSS
 **Backend:** Node.js + Express
 **Database:** Supabase PostgreSQL
-**AI:** Google Gemini
+**AI:** Google Gemini + OpenAI (server-side via `touristo/services/aiService.js`)
 **Weather:** OpenWeatherMap
 **Maps:** Leaflet + OpenStreetMap
 **Deployment:** Vercel

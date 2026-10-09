@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 
 import {
@@ -103,7 +102,7 @@ const PaymentMethodsScreen = () => {
               Back to Profile
             </Link>
 
-            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[color:var(--brand-gold)]">
+            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[color:var(--brand-gold-ink)]">
               Payments
             </span>
 
@@ -118,7 +117,7 @@ const PaymentMethodsScreen = () => {
 
             <div>
 
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[color:var(--brand-gold)]">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[color:var(--brand-gold-ink)]">
                 Payment Methods
               </p>
 
@@ -276,7 +275,7 @@ const PaymentMethodsScreen = () => {
 
           <div className="flex items-start gap-4">
 
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--brand-gold-soft)] text-[color:var(--brand-gold)]">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--brand-gold-soft)] text-[color:var(--brand-gold-ink)]">
               <Info className="h-5 w-5" />
             </div>
 

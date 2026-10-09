@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -69,12 +68,12 @@ const ExperiencesScreen = () => {
 
         {/* Header */}
         <div className="max-w-2xl mb-8">
-          <div className="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--accent-primary)] mb-3">
+          <div className="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--brand-primary)] mb-3">
             <Sparkles size={17} />
             CURATED FOR TRAVELERS
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3">
+          <h1 className="text-3xl sm:text-4xl tracking-tight mb-3">
             Discover Experiences
           </h1>
 
@@ -96,7 +95,7 @@ const ExperiencesScreen = () => {
                 to={`/experiences/${experience.id}`}
                 className="group block"
               >
-                <article className="overflow-hidden rounded-2xl bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <article className="overflow-hidden rounded-2xl bg-[color:var(--surface-primary)] border border-[color:var(--border-light)] shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-xl)] hover:-translate-y-1 transition-all duration-300">
 
                   {/* Image */}
                   <div className="relative h-56 overflow-hidden">
@@ -113,7 +112,7 @@ const ExperiencesScreen = () => {
                     </div>
 
                     <div className="absolute bottom-4 left-5 right-5">
-                      <h2 className="text-xl font-bold text-white">
+                      <h2 className="text-xl text-white">
                         {experience.name}
                       </h2>
                     </div>
@@ -125,12 +124,12 @@ const ExperiencesScreen = () => {
                       {experience.description}
                     </p>
 
-                    <div className="flex items-center justify-between mt-5 pt-4 border-t border-[color:var(--border-primary)]">
-                      <span className="text-sm font-semibold text-[color:var(--accent-primary)]">
+                    <div className="flex items-center justify-between mt-5 pt-4 border-t border-[color:var(--border-light)]">
+                      <span className="text-sm font-semibold text-[color:var(--brand-primary)]">
                         Explore experience
                       </span>
 
-                      <span className="w-9 h-9 rounded-full bg-[color:var(--accent-primary)]/10 flex items-center justify-center text-[color:var(--accent-primary)] group-hover:bg-[color:var(--accent-primary)] group-hover:text-[color:var(--nav-text)] transition">
+                      <span className="w-9 h-9 rounded-full bg-[color:var(--brand-primary)]/10 flex items-center justify-center text-[color:var(--brand-primary)] group-hover:bg-[color:var(--brand-primary)] group-hover:text-[color:var(--text-inverse)] transition">
                         <ArrowRight size={17} />
                       </span>
                     </div>

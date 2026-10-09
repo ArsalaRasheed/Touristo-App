@@ -160,9 +160,9 @@ async function seedDatabase() {
       const existingHost = await query('SELECT id FROM hosts WHERE user_id = $1', [hostData.user_id]);
       if (existingHost.rows.length === 0) {
         await query(`
-          INSERT INTO hosts (user_id, company_name, description, location, license_number, verified, rating_score)
-          VALUES ($1, $2, $3, $4, $5, $6, $7)
-        `, [hostData.user_id, hostData.company_name, hostData.description, hostData.location, hostData.license_number, true, (Math.random() * 2 + 3).toFixed(2)]);
+          INSERT INTO hosts (user_id, company_name, description, location, license_number, verified, verification_status, rating_score)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `, [hostData.user_id, hostData.company_name, hostData.description, hostData.location, hostData.license_number, true, 'verified', (Math.random() * 2 + 3).toFixed(2)]);
         console.log(`Created host: ${hostData.company_name}`);
       } else {
         console.log(`Host already exists: ${hostData.company_name}`);
@@ -252,12 +252,17 @@ async function seedDatabase() {
     }
     
     // Create a sample booking for testing
-    const existingBooking = await query('SELECT id FROM bookings WHERE user_id = 1 LIMIT 1');
-    if (existingBooking.rows.length === 0) {
+    const sampleTravelerId = reviewerId;
+    const existingBooking = sampleTravelerId
+      ? await query('SELECT id FROM bookings WHERE user_id = $1 LIMIT 1', [sampleTravelerId])
+      : { rows: [{ id: 'skip' }] };
+    if (existingBooking.rows[0]?.id === 'skip') {
+      // no traveler available - nothing to seed
+    } else if (existingBooking.rows.length === 0) {
       await query(`
         INSERT INTO bookings (user_id, package_id, travel_date, travelers, total_price, status)
-        VALUES (1, 1, CURRENT_DATE + INTERVAL '30 days', 2, 45000, 'confirmed')
-      `);
+        VALUES ($1, 1, CURRENT_DATE + INTERVAL '30 days', 2, 45000, 'confirmed')
+      `, [sampleTravelerId]);
       console.log('Created sample booking for testing');
     } else {
       console.log('Sample booking already exists');

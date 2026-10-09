@@ -1,10 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   ArrowRight,
   CalendarDays,
-  Check,
   Clock3,
   Heart,
   MapPin,
@@ -16,8 +15,11 @@ import {
   X,
   CheckCircle2,
   Navigation,
-  BriefcaseBusiness
+  BriefcaseBusiness,
+  Flag
 } from 'lucide-react';
+
+import ReportDialog from './ReportDialog';
 
 const FALLBACK_IMAGE =
   'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1600&q=85';
@@ -44,6 +46,8 @@ const PackageDetailScreen = () => {
   const [saved, setSaved] = useState(false);
 
   const [chatLoading, setChatLoading] = useState(false);
+
+  const [reportTarget, setReportTarget] = useState(null);
 
   /*
   |--------------------------------------------------------------------------
@@ -311,15 +315,15 @@ const PackageDetailScreen = () => {
       <div className="min-h-screen bg-[color:var(--bg-primary)] text-[color:var(--text-primary)]">
         <div className="max-w-xl mx-auto px-4 py-20 text-center">
 
-          <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-5">
-            <X className="text-red-500" size={28} />
+          <div className="w-16 h-16 rounded-full bg-[color:var(--danger)]/10 flex items-center justify-center mx-auto mb-5">
+            <X className="text-[color:var(--danger)]" size={28} />
           </div>
 
-          <h1 className="text-2xl font-bold mb-2">
+          <h1 className="text-2xl mb-2">
             Unable to load package
           </h1>
 
-          <p className="text-[color:var(--text-secondary)] mb-7">
+          <p role="alert" className="text-[color:var(--text-secondary)] mb-7">
             {error}
           </p>
 
@@ -327,7 +331,7 @@ const PackageDetailScreen = () => {
 
             <button
               onClick={() => navigate(-1)}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-[color:var(--border-primary)] font-semibold"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-[color:var(--border-light)] font-semibold"
             >
               <ArrowLeft size={18} />
               Go Back
@@ -335,7 +339,7 @@ const PackageDetailScreen = () => {
 
             <button
               onClick={() => window.location.reload()}
-              className="px-5 py-3 rounded-xl bg-[color:var(--accent-primary)] text-[color:var(--nav-text)] font-semibold"
+              className="px-5 py-3 rounded-xl bg-[color:var(--brand-primary)] text-[color:var(--text-inverse)] font-semibold"
             >
               Try Again
             </button>
@@ -381,7 +385,7 @@ const PackageDetailScreen = () => {
             HERO
         ====================================================== */}
 
-        <section className="relative overflow-hidden rounded-3xl h-[320px] md:h-[430px] shadow-xl">
+        <section className="relative overflow-hidden rounded-[28px] sm:rounded-[34px] h-[340px] sm:h-[430px] lg:h-[500px] shadow-[var(--shadow-lg)] border border-[color:var(--border-light)]">
 
           <img
             src={
@@ -389,10 +393,13 @@ const PackageDetailScreen = () => {
               FALLBACK_IMAGE
             }
             alt={packageData.title}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700"
+            onError={(event) => {
+              event.currentTarget.src = FALLBACK_IMAGE;
+            }}
           />
 
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/5" />
 
           {/* Image counter */}
           {packageImages.length > 1 && (
@@ -407,17 +414,17 @@ const PackageDetailScreen = () => {
             <div className="max-w-4xl text-white">
 
               {packageData.destination && (
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-sm mb-4">
+                <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-black/25 backdrop-blur-xl border border-white/15 text-xs sm:text-sm font-semibold mb-4">
                   <MapPin size={15} />
                   {packageData.destination}
                 </div>
               )}
 
-              <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold leading-tight mb-4">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl tracking-tight leading-tight mb-4 drop-shadow-lg">
                 {packageData.title}
               </h1>
 
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-white/90">
+              <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 text-xs sm:text-sm text-white/85">
 
                 <span className="inline-flex items-center gap-1.5">
                   <Clock3 size={16} />
@@ -432,7 +439,7 @@ const PackageDetailScreen = () => {
                 <span className="inline-flex items-center gap-1.5">
                   <Star
                     size={16}
-                    className="fill-current text-[color:var(--accent-primary)]"
+                    className="fill-current text-[color:var(--brand-primary)]"
                   />
                   {Number(packageData.avg_rating || 0).toFixed(1)}
                   <span className="text-white/70">
@@ -489,7 +496,7 @@ const PackageDetailScreen = () => {
           <main>
 
             {/* Title / Price */}
-            <div className="bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)] rounded-2xl p-5 sm:p-7 mb-6">
+            <div className="bg-[color:var(--surface-primary)] border border-[color:var(--border-light)] rounded-[26px] p-5 sm:p-7 mb-6 shadow-[var(--shadow-sm)]">
 
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-5">
 
@@ -500,20 +507,20 @@ const PackageDetailScreen = () => {
 
                   <div className="flex items-center gap-3">
 
-                    <div className="w-11 h-11 rounded-full bg-[color:var(--accent-primary)]/10 flex items-center justify-center text-[color:var(--accent-primary)] font-bold">
+                    <div className="w-12 h-12 rounded-2xl bg-[color:var(--brand-primary-soft)] flex items-center justify-center text-[color:var(--brand-primary)] font-bold">
                       {getInitial(hostName)}
                     </div>
 
                     <div>
                       <div className="flex items-center gap-2">
-                        <h2 className="font-bold">
+                        <h2 className="">
                           {hostName}
                         </h2>
 
                         {packageData.host_verified && (
                           <ShieldCheck
                             size={17}
-                            className="text-[color:var(--accent-primary)]"
+                            className="text-[color:var(--brand-primary)]"
                           />
                         )}
                       </div>
@@ -528,7 +535,7 @@ const PackageDetailScreen = () => {
 
                 <div className="sm:text-right">
 
-                  <div className="text-2xl sm:text-3xl font-bold text-[color:var(--accent-primary)]">
+                  <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[color:var(--brand-primary)]">
                     {formatPrice(packageData.price)}
                   </div>
 
@@ -563,7 +570,7 @@ const PackageDetailScreen = () => {
                     }
                   }
                 }}
-                className="flex items-center justify-center gap-2 bg-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary-hover)] text-[color:var(--nav-text)] py-3.5 px-5 rounded-xl font-bold transition shadow-sm"
+                className="flex items-center justify-center gap-2 bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary-hover)] text-[color:var(--text-inverse)] py-3.5 px-5 rounded-xl font-bold transition shadow-[var(--shadow-sm)]"
               >
                 Book Now
                 <ArrowRight size={18} />
@@ -572,7 +579,7 @@ const PackageDetailScreen = () => {
               <button
                 onClick={handleChatWithHost}
                 disabled={chatLoading}
-                className="flex items-center justify-center gap-2 border-2 border-[color:var(--accent-primary)] text-[color:var(--accent-primary)] hover:bg-[color:var(--accent-primary)] hover:text-[color:var(--nav-text)] py-3.5 px-5 rounded-xl font-bold transition disabled:opacity-60"
+                className="flex items-center justify-center gap-2 border-2 border-[color:var(--brand-primary)] text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)] hover:text-[color:var(--text-inverse)] py-3.5 px-5 rounded-xl font-bold transition disabled:opacity-60"
               >
                 <MessageCircle size={18} />
 
@@ -583,9 +590,9 @@ const PackageDetailScreen = () => {
 
               <button
                 onClick={() => setSaved(!saved)}
-                className={`flex items-center justify-center gap-2 border border-[color:var(--border-primary)] py-3.5 px-5 rounded-xl font-semibold transition ${
+                className={`flex items-center justify-center gap-2 border border-[color:var(--border-light)] py-3.5 px-5 rounded-xl font-semibold transition ${
                   saved
-                    ? 'text-[color:var(--accent-primary)] bg-[color:var(--accent-primary)]/10'
+                    ? 'text-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]/10'
                     : 'text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]'
                 }`}
               >
@@ -602,9 +609,9 @@ const PackageDetailScreen = () => {
                 TABS
             ================================================== */}
 
-            <div className="bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)] rounded-2xl overflow-hidden">
+            <div className="bg-[color:var(--surface-primary)] border border-[color:var(--border-light)] rounded-[26px] overflow-hidden shadow-[var(--shadow-sm)]">
 
-              <div className="overflow-x-auto border-b border-[color:var(--border-primary)]">
+              <div className="overflow-x-auto border-b border-[color:var(--border-light)]">
 
                 <div className="flex min-w-max">
 
@@ -620,7 +627,7 @@ const PackageDetailScreen = () => {
                       onClick={() => setActiveTab(key)}
                       className={`px-5 py-4 text-sm font-semibold whitespace-nowrap transition ${
                         activeTab === key
-                          ? 'text-[color:var(--accent-primary)] border-b-2 border-[color:var(--accent-primary)]'
+                          ? 'text-[color:var(--brand-primary)] border-b-2 border-[color:var(--brand-primary)]'
                           : 'text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]'
                       }`}
                     >
@@ -640,7 +647,7 @@ const PackageDetailScreen = () => {
                 {activeTab === 'overview' && (
                   <div>
 
-                    <h2 className="text-xl font-bold mb-4">
+                    <h2 className="text-xl mb-4">
                       About This Package
                     </h2>
 
@@ -652,7 +659,7 @@ const PackageDetailScreen = () => {
                     <div className="grid md:grid-cols-2 gap-7">
 
                       <div>
-                        <h3 className="font-bold mb-4">
+                        <h3 className="mb-4">
                           What's Included
                         </h3>
 
@@ -665,7 +672,7 @@ const PackageDetailScreen = () => {
                               >
                                 <CheckCircle2
                                   size={19}
-                                  className="mt-0.5 shrink-0 text-[color:var(--accent-primary)]"
+                                  className="mt-0.5 shrink-0 text-[color:var(--brand-primary)]"
                                 />
 
                                 <span className="text-sm text-[color:var(--text-secondary)]">
@@ -682,7 +689,7 @@ const PackageDetailScreen = () => {
                       </div>
 
                       <div>
-                        <h3 className="font-bold mb-4">
+                        <h3 className="mb-4">
                           What's Not Included
                         </h3>
 
@@ -695,7 +702,7 @@ const PackageDetailScreen = () => {
                               >
                                 <X
                                   size={19}
-                                  className="mt-0.5 shrink-0 text-red-500"
+                                  className="mt-0.5 shrink-0 text-[color:var(--danger)]"
                                 />
 
                                 <span className="text-sm text-[color:var(--text-secondary)]">
@@ -722,7 +729,7 @@ const PackageDetailScreen = () => {
                 {activeTab === 'details' && (
                   <div>
 
-                    <h2 className="text-xl font-bold mb-5">
+                    <h2 className="text-xl mb-5">
                       Package Details
                     </h2>
 
@@ -731,7 +738,7 @@ const PackageDetailScreen = () => {
                       <div className="p-5 rounded-xl bg-[color:var(--surface-secondary)]">
                         <Clock3
                           size={20}
-                          className="text-[color:var(--accent-primary)] mb-3"
+                          className="text-[color:var(--brand-primary)] mb-3"
                         />
                         <p className="text-xs text-[color:var(--text-secondary)] mb-1">
                           Duration
@@ -744,7 +751,7 @@ const PackageDetailScreen = () => {
                       <div className="p-5 rounded-xl bg-[color:var(--surface-secondary)]">
                         <Users
                           size={20}
-                          className="text-[color:var(--accent-primary)] mb-3"
+                          className="text-[color:var(--brand-primary)] mb-3"
                         />
                         <p className="text-xs text-[color:var(--text-secondary)] mb-1">
                           Group Size
@@ -757,7 +764,7 @@ const PackageDetailScreen = () => {
                       <div className="p-5 rounded-xl bg-[color:var(--surface-secondary)]">
                         <MapPin
                           size={20}
-                          className="text-[color:var(--accent-primary)] mb-3"
+                          className="text-[color:var(--brand-primary)] mb-3"
                         />
                         <p className="text-xs text-[color:var(--text-secondary)] mb-1">
                           Destination
@@ -770,7 +777,7 @@ const PackageDetailScreen = () => {
                       <div className="p-5 rounded-xl bg-[color:var(--surface-secondary)]">
                         <Navigation
                           size={20}
-                          className="text-[color:var(--accent-primary)] mb-3"
+                          className="text-[color:var(--brand-primary)] mb-3"
                         />
                         <p className="text-xs text-[color:var(--text-secondary)] mb-1">
                           Location
@@ -785,7 +792,7 @@ const PackageDetailScreen = () => {
                     {/* Host */}
                     <div className="mt-7">
 
-                      <h3 className="font-bold mb-4">
+                      <h3 className="mb-4">
                         Host Information
                       </h3>
 
@@ -793,20 +800,20 @@ const PackageDetailScreen = () => {
 
                         <div className="flex items-center gap-4">
 
-                          <div className="w-14 h-14 rounded-full bg-[color:var(--accent-primary)]/10 flex items-center justify-center text-xl font-bold text-[color:var(--accent-primary)]">
+                          <div className="w-14 h-14 rounded-full bg-[color:var(--brand-primary)]/10 flex items-center justify-center text-xl font-bold text-[color:var(--brand-primary)]">
                             {getInitial(hostName)}
                           </div>
 
                           <div>
                             <div className="flex items-center gap-2">
-                              <h4 className="font-bold">
+                              <h4 className="">
                                 {hostName}
                               </h4>
 
                               {packageData.host_verified && (
                                 <ShieldCheck
                                   size={17}
-                                  className="text-[color:var(--accent-primary)]"
+                                  className="text-[color:var(--brand-primary)]"
                                 />
                               )}
                             </div>
@@ -814,7 +821,7 @@ const PackageDetailScreen = () => {
                             <div className="flex items-center gap-2 mt-1 text-sm text-[color:var(--text-secondary)]">
                               <Star
                                 size={14}
-                                className="fill-current text-[color:var(--accent-primary)]"
+                                className="fill-current text-[color:var(--brand-primary)]"
                               />
                               {Number(
                                 packageData.host_rating || 0
@@ -832,7 +839,7 @@ const PackageDetailScreen = () => {
 
                         <button
                           onClick={handleChatWithHost}
-                          className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[color:var(--accent-primary)] text-[color:var(--accent-primary)] font-semibold hover:bg-[color:var(--accent-primary)] hover:text-[color:var(--nav-text)] transition"
+                          className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[color:var(--brand-primary)] text-[color:var(--brand-primary)] font-semibold hover:bg-[color:var(--brand-primary)] hover:text-[color:var(--text-inverse)] transition"
                         >
                           <MessageCircle size={17} />
                           Ask Host
@@ -851,7 +858,7 @@ const PackageDetailScreen = () => {
                 {activeTab === 'itinerary' && (
                   <div>
 
-                    <h2 className="text-xl font-bold mb-6">
+                    <h2 className="text-xl mb-6">
                       Trip Itinerary
                     </h2>
 
@@ -864,21 +871,21 @@ const PackageDetailScreen = () => {
                             className="relative pl-12"
                           >
 
-                            <div className="absolute left-0 top-0 w-9 h-9 rounded-full bg-[color:var(--accent-primary)] text-[color:var(--nav-text)] flex items-center justify-center font-bold text-sm">
+                            <div className="absolute left-0 top-0 w-10 h-10 rounded-2xl bg-[color:var(--brand-primary)] text-[color:var(--text-inverse)] flex items-center justify-center font-bold text-sm shadow-[var(--shadow-sm)]">
                               {day.day || index + 1}
                             </div>
 
                             {index < itinerary.length - 1 && (
-                              <div className="absolute left-[17px] top-9 bottom-[-20px] w-px bg-[color:var(--border-primary)]" />
+                              <div className="absolute left-[17px] top-9 bottom-[-20px] w-px bg-[color:var(--border-light)]" />
                             )}
 
-                            <div className="p-5 rounded-2xl bg-[color:var(--surface-secondary)]">
+                            <div className="p-5 sm:p-6 rounded-[22px] bg-[color:var(--surface-secondary)] border border-[color:var(--border-light)]">
 
-                              <p className="text-xs font-semibold uppercase tracking-wider text-[color:var(--accent-primary)] mb-1">
+                              <p className="text-xs font-semibold uppercase tracking-wider text-[color:var(--brand-primary)] mb-1">
                                 Day {day.day || index + 1}
                               </p>
 
-                              <h3 className="font-bold mb-2">
+                              <h3 className="mb-2">
                                 {day.title || 'Day Activity'}
                               </h3>
 
@@ -897,10 +904,10 @@ const PackageDetailScreen = () => {
                       <div className="text-center py-12">
                         <CalendarDays
                           size={40}
-                          className="mx-auto mb-4 text-[color:var(--accent-primary)]"
+                          className="mx-auto mb-4 text-[color:var(--brand-primary)]"
                         />
 
-                        <h3 className="font-bold mb-2">
+                        <h3 className="mb-2">
                           Itinerary coming soon
                         </h3>
 
@@ -923,11 +930,11 @@ const PackageDetailScreen = () => {
                     <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-6">
 
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-[color:var(--accent-primary)] mb-1">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-[color:var(--brand-primary)] mb-1">
                           YOUR ON-TRIP TEAM
                         </p>
 
-                        <h2 className="text-xl font-bold">
+                        <h2 className="text-xl ">
                           Tour Guides
                         </h2>
                       </div>
@@ -944,7 +951,7 @@ const PackageDetailScreen = () => {
                         {[1, 2].map((item) => (
                           <div
                             key={item}
-                            className="animate-pulse rounded-2xl border border-[color:var(--border-primary)] p-5"
+                            className="animate-pulse rounded-2xl border border-[color:var(--border-light)] p-5"
                           >
                             <div className="flex gap-4">
                               <div className="w-16 h-16 rounded-full bg-[color:var(--surface-secondary)]" />
@@ -963,7 +970,7 @@ const PackageDetailScreen = () => {
                       <div className="rounded-2xl bg-[color:var(--surface-secondary)] p-6 text-center">
                         <UserRound
                           size={36}
-                          className="mx-auto mb-3 text-[color:var(--accent-primary)]"
+                          className="mx-auto mb-3 text-[color:var(--brand-primary)]"
                         />
 
                         <p className="font-semibold mb-1">
@@ -979,10 +986,10 @@ const PackageDetailScreen = () => {
 
                         <UserRound
                           size={42}
-                          className="mx-auto mb-4 text-[color:var(--accent-primary)]"
+                          className="mx-auto mb-4 text-[color:var(--brand-primary)]"
                         />
 
-                        <h3 className="font-bold mb-2">
+                        <h3 className="mb-2">
                           No tour guides listed yet
                         </h3>
 
@@ -998,7 +1005,7 @@ const PackageDetailScreen = () => {
                         {tourGuides.map((guide) => (
                           <article
                             key={guide.id}
-                            className="rounded-2xl border border-[color:var(--border-primary)] bg-[color:var(--surface-primary)] p-5 hover:shadow-lg transition"
+                            className="rounded-[24px] border border-[color:var(--border-light)] bg-[color:var(--surface-primary)] p-5 sm:p-6 shadow-[var(--shadow-xs)] hover:shadow-[var(--shadow-md)] hover:-translate-y-1 transition-all duration-300"
                           >
 
                             <div className="flex items-start gap-4">
@@ -1024,14 +1031,14 @@ const PackageDetailScreen = () => {
 
                                 <div className="flex items-center justify-between gap-3">
 
-                                  <h3 className="font-bold truncate">
+                                  <h3 className="truncate">
                                     {guide.name || 'Tour Guide'}
                                   </h3>
 
                                   <div className="inline-flex items-center gap-1 shrink-0 text-sm">
                                     <Star
                                       size={14}
-                                      className="fill-current text-[color:var(--accent-primary)]"
+                                      className="fill-current text-[color:var(--brand-primary)]"
                                     />
                                     {Number(
                                       guide.rating || 0
@@ -1040,7 +1047,7 @@ const PackageDetailScreen = () => {
 
                                 </div>
 
-                                <p className="text-sm text-[color:var(--accent-primary)] font-medium mt-1">
+                                <p className="text-sm text-[color:var(--brand-primary)] font-medium mt-1">
                                   {guide.specialty ||
                                     'Tour & Travel Guide'}
                                 </p>
@@ -1049,7 +1056,7 @@ const PackageDetailScreen = () => {
 
                             </div>
 
-                            <div className="mt-5 pt-4 border-t border-[color:var(--border-primary)] flex items-center gap-2 text-xs text-[color:var(--text-secondary)]">
+                            <div className="mt-5 pt-4 border-t border-[color:var(--border-light)] flex items-center gap-2 text-xs text-[color:var(--text-secondary)]">
 
                               <BriefcaseBusiness size={14} />
 
@@ -1083,7 +1090,7 @@ const PackageDetailScreen = () => {
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
 
                       <div>
-                        <h2 className="text-xl font-bold">
+                        <h2 className="text-xl ">
                           Traveler Reviews
                         </h2>
 
@@ -1096,7 +1103,7 @@ const PackageDetailScreen = () => {
 
                         <Star
                           size={20}
-                          className="fill-current text-[color:var(--accent-primary)]"
+                          className="fill-current text-[color:var(--brand-primary)]"
                         />
 
                         <span className="text-xl font-bold">
@@ -1119,10 +1126,10 @@ const PackageDetailScreen = () => {
                         <div className="flex items-center gap-2 mb-2">
                           <Star
                             size={17}
-                            className="text-[color:var(--accent-primary)]"
+                            className="text-[color:var(--brand-primary)]"
                           />
 
-                          <h3 className="font-bold">
+                          <h3 className="">
                             AI Review Summary
                           </h3>
                         </div>
@@ -1144,12 +1151,12 @@ const PackageDetailScreen = () => {
                         {packageData.reviews.map((review) => (
                           <article
                             key={review.id}
-                            className="p-5 rounded-2xl bg-[color:var(--surface-secondary)]"
+                            className="p-5 sm:p-6 rounded-[22px] bg-[color:var(--surface-secondary)] border border-[color:var(--border-light)]"
                           >
 
                             <div className="flex items-start gap-3 mb-3">
 
-                              <div className="w-10 h-10 rounded-full bg-[color:var(--accent-primary)]/10 flex items-center justify-center text-sm font-bold text-[color:var(--accent-primary)] shrink-0">
+                              <div className="w-10 h-10 rounded-full bg-[color:var(--brand-primary)]/10 flex items-center justify-center text-sm font-bold text-[color:var(--brand-primary)] shrink-0">
                                 {getInitial(
                                   review.reviewer_name,
                                   'U'
@@ -1158,7 +1165,7 @@ const PackageDetailScreen = () => {
 
                               <div className="min-w-0">
 
-                                <h4 className="font-bold">
+                                <h4 className="">
                                   {review.reviewer_name ||
                                     'Anonymous'}
                                 </h4>
@@ -1177,7 +1184,7 @@ const PackageDetailScreen = () => {
                                           Number(
                                             review.rating || 0
                                           )
-                                            ? 'fill-current text-[color:var(--accent-primary)]'
+                                            ? 'fill-current text-[color:var(--brand-primary)]'
                                             : 'text-[color:var(--text-secondary)]'
                                         }
                                       />
@@ -1200,6 +1207,26 @@ const PackageDetailScreen = () => {
                                 'No comment provided.'}
                             </p>
 
+                            <div className="mt-3 flex justify-end">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setReportTarget({
+                                    targetType: 'review',
+                                    targetId: review.id,
+                                    targetLabel: `Review by ${
+                                      review.reviewer_name ||
+                                      'Anonymous'
+                                    }`
+                                  })
+                                }
+                                className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-semibold text-[color:var(--text-muted)] transition hover:bg-[color:var(--danger-soft)] hover:text-[color:var(--danger)]"
+                              >
+                                <Flag size={13} />
+                                Report
+                              </button>
+                            </div>
+
                           </article>
                         ))}
 
@@ -1209,10 +1236,10 @@ const PackageDetailScreen = () => {
 
                         <Star
                           size={42}
-                          className="mx-auto mb-4 text-[color:var(--accent-primary)]"
+                          className="mx-auto mb-4 text-[color:var(--brand-primary)]"
                         />
 
-                        <h3 className="font-bold mb-2">
+                        <h3 className="mb-2">
                           No reviews yet
                         </h3>
 
@@ -1237,13 +1264,13 @@ const PackageDetailScreen = () => {
 
           <aside className="lg:sticky lg:top-6 lg:self-start">
 
-            <div className="rounded-2xl bg-[color:var(--surface-primary)] border border-[color:var(--border-primary)] shadow-sm p-5">
+            <div className="rounded-[26px] bg-[color:var(--surface-primary)] border border-[color:var(--border-light)] shadow-[var(--shadow-md)] p-5 sm:p-6">
 
               <p className="text-xs uppercase tracking-wider text-[color:var(--text-secondary)] mb-2">
                 From
               </p>
 
-              <div className="text-3xl font-bold text-[color:var(--accent-primary)]">
+              <div className="text-3xl font-bold text-[color:var(--brand-primary)]">
                 {formatPrice(packageData.price)}
               </div>
 
@@ -1279,7 +1306,7 @@ const PackageDetailScreen = () => {
                   <span className="inline-flex items-center gap-1 font-semibold">
                     <Star
                       size={14}
-                      className="fill-current text-[color:var(--accent-primary)]"
+                      className="fill-current text-[color:var(--brand-primary)]"
                     />
                     {Number(
                       packageData.avg_rating || 0
@@ -1305,7 +1332,7 @@ const PackageDetailScreen = () => {
                     }
                   }
                 }}
-                className="w-full flex items-center justify-center gap-2 bg-[color:var(--accent-primary)] text-[color:var(--nav-text)] py-3.5 rounded-xl font-bold hover:bg-[color:var(--accent-primary-hover)] transition"
+                className="w-full flex items-center justify-center gap-2 bg-[color:var(--brand-primary)] text-[color:var(--text-inverse)] py-3.5 rounded-xl font-bold hover:bg-[color:var(--brand-primary-hover)] transition"
               >
                 Book This Tour
                 <ArrowRight size={18} />
@@ -1314,7 +1341,7 @@ const PackageDetailScreen = () => {
               <button
                 onClick={handleChatWithHost}
                 disabled={chatLoading}
-                className="w-full mt-3 flex items-center justify-center gap-2 border border-[color:var(--accent-primary)] text-[color:var(--accent-primary)] py-3.5 rounded-xl font-semibold hover:bg-[color:var(--accent-primary)] hover:text-[color:var(--nav-text)] transition disabled:opacity-60"
+                className="w-full mt-3 flex items-center justify-center gap-2 border border-[color:var(--brand-primary)] text-[color:var(--brand-primary)] py-3.5 rounded-xl font-semibold hover:bg-[color:var(--brand-primary)] hover:text-[color:var(--text-inverse)] transition disabled:opacity-60"
               >
                 <MessageCircle size={18} />
 
@@ -1323,10 +1350,10 @@ const PackageDetailScreen = () => {
                   : 'Ask Host a Question'}
               </button>
 
-              <div className="flex items-center gap-2 mt-5 pt-5 border-t border-[color:var(--border-primary)] text-xs text-[color:var(--text-secondary)]">
+              <div className="flex items-center gap-2 mt-5 pt-5 border-t border-[color:var(--border-light)] text-xs text-[color:var(--text-secondary)]">
                 <ShieldCheck
                   size={16}
-                  className="text-[color:var(--accent-primary)]"
+                  className="text-[color:var(--brand-primary)]"
                 />
 
                 <span>
@@ -1334,12 +1361,36 @@ const PackageDetailScreen = () => {
                 </span>
               </div>
 
+              <button
+                type="button"
+                onClick={() =>
+                  setReportTarget({
+                    targetType: 'package',
+                    targetId: packageData.id,
+                    targetLabel: packageData.title
+                  })
+                }
+                className="mt-4 inline-flex w-full items-center justify-center gap-2 text-xs font-semibold text-[color:var(--text-muted)] transition hover:text-[color:var(--danger)]"
+              >
+                <Flag size={14} />
+                Report this package
+              </button>
+
             </div>
 
           </aside>
 
         </div>
       </div>
+
+      {reportTarget && (
+        <ReportDialog
+          targetType={reportTarget.targetType}
+          targetId={reportTarget.targetId}
+          targetLabel={reportTarget.targetLabel}
+          onClose={() => setReportTarget(null)}
+        />
+      )}
     </div>
   );
 };

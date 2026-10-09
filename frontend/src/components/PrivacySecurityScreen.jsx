@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -101,7 +100,7 @@ const PrivacySecurityScreen = () => {
               Back to Profile
             </Link>
 
-            <span className="text-[11px] uppercase tracking-[0.2em] font-bold text-[color:var(--brand-gold)]">
+            <span className="text-[11px] uppercase tracking-[0.2em] font-bold text-[color:var(--brand-gold-ink)]">
               Security
             </span>
 
@@ -116,7 +115,7 @@ const PrivacySecurityScreen = () => {
 
             <div>
 
-              <p className="text-xs uppercase tracking-[0.2em] font-bold text-[color:var(--brand-gold)]">
+              <p className="text-xs uppercase tracking-[0.2em] font-bold text-[color:var(--brand-gold-ink)]">
                 Privacy & Security
               </p>
 
@@ -247,7 +246,7 @@ const PrivacySecurityScreen = () => {
 
             <div className="flex items-start gap-3 p-4 rounded-2xl bg-[color:var(--brand-gold-soft)] border border-[color:var(--brand-gold-light)]">
 
-              <Info className="w-5 h-5 shrink-0 mt-0.5 text-[color:var(--brand-gold)]" />
+              <Info className="w-5 h-5 shrink-0 mt-0.5 text-[color:var(--brand-gold-ink)]" />
 
               <p className="text-xs sm:text-sm leading-5 text-[color:var(--text-secondary)]">
                 Password change and password recovery require
@@ -368,7 +367,7 @@ const PrivacySecurityScreen = () => {
 
         <div className="flex items-start gap-3 px-1 pb-4">
 
-          <KeyRound className="w-4 h-4 mt-0.5 shrink-0 text-[color:var(--brand-gold)]" />
+          <KeyRound className="w-4 h-4 mt-0.5 shrink-0 text-[color:var(--brand-gold-ink)]" />
 
           <p className="text-xs leading-5 text-[color:var(--text-muted)]">
             Touristo keeps authentication credentials separate

@@ -24,20 +24,49 @@ const ALLOWED_IMAGE_TYPES = {
 
 /*
 |--------------------------------------------------------------------------
+| Typed errors
+|--------------------------------------------------------------------------
+|
+| Validation errors are a 4xx problem with the request. Storage errors
+| are an infrastructure problem - the caller must never leak Supabase
+| internals to the client, so the public message stays generic.
+|--------------------------------------------------------------------------
+*/
+
+class PackageImageValidationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'PackageImageValidationError';
+  }
+}
+
+class PackageImageStorageError extends Error {
+  constructor(message, status = 502) {
+    super(message);
+    this.name = 'PackageImageStorageError';
+    this.causeStatus = status;
+  }
+}
+
+
+/*
+|--------------------------------------------------------------------------
 | Validate Storage Configuration
 |--------------------------------------------------------------------------
 */
 
 function validateStorageConfig() {
   if (!SUPABASE_URL) {
-    throw new Error(
-      'SUPABASE_URL environment variable is missing'
+    throw new PackageImageStorageError(
+      'SUPABASE_URL environment variable is missing',
+      503
     );
   }
 
   if (!SUPABASE_KEY) {
-    throw new Error(
-      'SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY environment variable is missing'
+    throw new PackageImageStorageError(
+      'SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY environment variable is missing',
+      503
     );
   }
 }
@@ -114,8 +143,9 @@ async function ensureBucket() {
       const errorText =
         await updateResponse.text();
 
-      throw new Error(
-        `Could not configure Supabase Storage bucket: ${errorText}`
+      throw new PackageImageStorageError(
+        `Could not configure Supabase Storage bucket: ${errorText}`,
+        updateResponse.status
       );
     }
 
@@ -166,8 +196,9 @@ async function ensureBucket() {
       const errorText =
         await createResponse.text();
 
-      throw new Error(
-        `Could not create Supabase Storage bucket: ${errorText}`
+      throw new PackageImageStorageError(
+        `Could not create Supabase Storage bucket: ${errorText}`,
+        createResponse.status
       );
     }
 
@@ -178,8 +209,9 @@ async function ensureBucket() {
   const errorText =
     await checkResponse.text();
 
-  throw new Error(
-    `Could not access Supabase Storage bucket: ${errorText}`
+  throw new PackageImageStorageError(
+    `Could not access Supabase Storage bucket: ${errorText}`,
+    checkResponse.status
   );
 }
 
@@ -202,7 +234,7 @@ async function uploadPackageImage({
     typeof imageData !== 'string' ||
     !imageData.trim()
   ) {
-    throw new Error(
+    throw new PackageImageValidationError(
       'No image data was provided'
     );
   }
@@ -215,7 +247,7 @@ async function uploadPackageImage({
     ALLOWED_IMAGE_TYPES[imageType];
 
   if (!extension) {
-    throw new Error(
+    throw new PackageImageValidationError(
       'Only JPG, PNG, WEBP and GIF images are allowed'
     );
   }
@@ -245,7 +277,7 @@ async function uploadPackageImage({
       );
 
     if (!match) {
-      throw new Error(
+      throw new PackageImageValidationError(
         'Invalid image data'
       );
     }
@@ -256,7 +288,7 @@ async function uploadPackageImage({
     if (
       detectedType !== imageType
     ) {
-      throw new Error(
+      throw new PackageImageValidationError(
         'Image type does not match image data'
       );
     }
@@ -290,7 +322,7 @@ async function uploadPackageImage({
       );
 
   } catch {
-    throw new Error(
+    throw new PackageImageValidationError(
       'Invalid base64 image data'
     );
   }
@@ -303,7 +335,7 @@ async function uploadPackageImage({
     !buffer ||
     buffer.length === 0
   ) {
-    throw new Error(
+    throw new PackageImageValidationError(
       'Uploaded image is empty'
     );
   }
@@ -312,7 +344,7 @@ async function uploadPackageImage({
     buffer.length >
     MAX_IMAGE_SIZE
   ) {
-    throw new Error(
+    throw new PackageImageValidationError(
       'Image must be 5 MB or smaller'
     );
   }
@@ -382,8 +414,9 @@ async function uploadPackageImage({
     const errorText =
       await uploadResponse.text();
 
-    throw new Error(
-      `Image upload failed: ${errorText}`
+    throw new PackageImageStorageError(
+      `Image upload failed: ${errorText}`,
+      uploadResponse.status
     );
   }
 
@@ -458,5 +491,7 @@ module.exports = {
   uploadPackageImage,
   deletePackageImage,
   MAX_IMAGE_SIZE,
-  STORAGE_BUCKET
+  STORAGE_BUCKET,
+  PackageImageValidationError,
+  PackageImageStorageError
 };
