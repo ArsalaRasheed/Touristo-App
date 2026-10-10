@@ -227,13 +227,34 @@ const HostDiscoveryScreen = () => {
                   to={`/host-profile/${host.id}`}
                   className="group"
                 >
-                  <article className="h-full bg-[color:var(--surface-primary)] border border-[color:var(--border-light)] rounded-3xl p-6 hover:-translate-y-1 hover:shadow-[var(--shadow-xl)] transition duration-300">
+                  <article className="h-full bg-[color:var(--surface-primary)] border border-[color:var(--border-light)] rounded-3xl p-6 overflow-hidden hover:-translate-y-1 hover:shadow-[var(--shadow-xl)] transition duration-300">
+
+                    {/* Cover */}
+                    {host.cover_image_url && (
+                      <div className="-mx-6 -mt-6 mb-5 h-28 overflow-hidden bg-[color:var(--surface-secondary)]">
+                        <img
+                          src={host.cover_image_url}
+                          alt={`${host.company_name || 'Company'} cover`}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
 
                     {/* Top */}
                     <div className="flex items-start gap-4">
 
-                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[color:var(--brand-primary)] to-[color:var(--brand-primary-hover)] flex items-center justify-center text-white font-black text-2xl shrink-0 shadow-[var(--shadow-lg)]">
-                        {getInitial(host.company_name)}
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[color:var(--brand-primary)] to-[color:var(--brand-primary-hover)] flex items-center justify-center text-white font-black text-2xl shrink-0 shadow-[var(--shadow-lg)] overflow-hidden">
+                        {host.logo_url ? (
+                          <img
+                            src={host.logo_url}
+                            alt={host.company_name || 'Company logo'}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          getInitial(host.company_name)
+                        )}
                       </div>
 
                       <div className="flex-1 min-w-0">

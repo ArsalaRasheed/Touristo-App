@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import {
+  compressImage,
+  fileToBase64,
+  IMAGE_PRESETS
+} from '../utils/imageCompression';
 
 import {
   ArrowLeft,
@@ -12,7 +17,10 @@ import {
   Save,
   CheckCircle2,
   AlertCircle,
-  Loader2
+  Loader2,
+  Building2,
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react';
 
 
@@ -77,7 +85,105 @@ const Field = ({
 
 /* ============================================================
    EDIT PROFILE SCREEN
-============================================================ */
+   ============================================================ */
+
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+
+const ALLOWED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif'
+];
+
+
+/* ============================================================
+   BRANDING IMAGE UPLOADER
+   ============================================================ */
+
+const BrandingUploader = ({
+  inputId,
+  label,
+  hint,
+  previewUrl,
+  fallback,
+  variant = 'logo',
+  uploading = false,
+  onSelect
+}) => {
+  const isCover = variant === 'cover';
+  const isAvatar = variant === 'avatar';
+
+  return (
+    <div>
+      <p className="mb-2 text-sm font-semibold text-[color:var(--text-primary)]">
+        {label}
+      </p>
+
+      <div
+        className={`relative overflow-hidden border border-dashed border-[color:var(--border-light)] bg-[color:var(--surface-secondary)] ${
+          isCover
+            ? 'h-40 w-full rounded-2xl sm:h-44'
+            : isAvatar
+              ? 'h-24 w-24 rounded-full'
+              : 'h-32 w-32 rounded-2xl'
+        }`}
+      >
+        {previewUrl ? (
+          <img
+            src={previewUrl}
+            alt={label}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-[color:var(--text-muted)]">
+            <span
+              className={`font-semibold text-[color:var(--brand-primary)] ${
+                isCover ? 'text-3xl' : 'text-2xl'
+              }`}
+            >
+              {fallback}
+            </span>
+            <ImageIcon className="h-4 w-4" />
+          </div>
+        )}
+
+        {uploading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+            <Loader2 className="h-6 w-6 animate-spin text-white" />
+          </div>
+        )}
+      </div>
+
+      <label
+        htmlFor={inputId}
+        className={`btn btn-secondary mt-3 cursor-pointer ${
+          uploading ? 'pointer-events-none opacity-60' : ''
+        }`}
+      >
+        <Upload className="h-4 w-4" />
+        {previewUrl ? 'Replace' : 'Upload'}
+      </label>
+
+      <input
+        id={inputId}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        className="hidden"
+        onChange={onSelect}
+      />
+
+      <p className="mt-1.5 text-xs leading-5 text-[color:var(--text-muted)]">
+        {hint}
+      </p>
+    </div>
+  );
+};
+
+
+/* ============================================================
+   EDIT PROFILE SCREEN
+   ============================================================ */
 
 const EditProfileScreen = () => {
   const navigate = useNavigate();
@@ -105,6 +211,15 @@ const EditProfileScreen = () => {
     created_at: ''
   });
 
+  const [hostData, setHostData] = useState(null);
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState('');
+  const [avatarSuccess, setAvatarSuccess] = useState('');
+  const [brandingUploading, setBrandingUploading] = useState('');
+  const [brandingError, setBrandingError] = useState('');
+  const [brandingSuccess, setBrandingSuccess] = useState('');
+
 
   /* ============================================================
      LOAD CURRENT USER
@@ -120,14 +235,34 @@ const EditProfileScreen = () => {
         setLoading(true);
         setError('');
 
-        const response = await fetch(
-          `/api/users/${user.id}`,
-          {
-            headers: {
-              ...getAuthHeader()
+        const [response, hostDataResult] = await Promise.all([
+          fetch(
+            `/api/users/${user.id}`,
+            {
+              headers: {
+                ...getAuthHeader()
+              }
             }
-          }
-        );
+          ),
+          user.role === 'host'
+            ? fetch(
+                `/api/hosts/user/${user.id}`,
+                {
+                  headers: {
+                    ...getAuthHeader()
+                  }
+                }
+              )
+                .then((res) => (res.ok ? res.json() : null))
+                .catch((hostErr) => {
+                  console.error(
+                    'Error loading company profile:',
+                    hostErr
+                  );
+                  return null;
+                })
+            : Promise.resolve(null)
+        ]);
 
         const result = await response.json();
 
@@ -153,6 +288,8 @@ const EditProfileScreen = () => {
           phone: currentUser.phone || ''
         });
 
+        setAvatarUrl(currentUser.avatar_url || '');
+
         setAccountInfo({
           role: currentUser.role || user.role || '',
           created_at:
@@ -160,6 +297,10 @@ const EditProfileScreen = () => {
             user.created_at ||
             ''
         });
+
+        if (hostDataResult?.data?.host) {
+          setHostData(hostDataResult.data.host);
+        }
 
       } catch (err) {
         console.error(
@@ -181,6 +322,8 @@ const EditProfileScreen = () => {
           email: user?.email || '',
           phone: user?.phone || ''
         });
+
+        setAvatarUrl(user?.avatar_url || '');
 
         setAccountInfo({
           role: user?.role || '',
@@ -217,6 +360,203 @@ const EditProfileScreen = () => {
 
     if (success) {
       setSuccess('');
+    }
+  };
+
+
+  /* ============================================================
+     PROFILE PHOTO UPLOAD
+  ============================================================ */
+
+  const handleAvatarChange = async (event) => {
+    const file = event.target.files?.[0];
+
+    event.target.value = '';
+
+    if (!file) {
+      return;
+    }
+
+    setAvatarError('');
+    setAvatarSuccess('');
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      setAvatarError(
+        'Please select a JPG, PNG, WEBP or GIF image.'
+      );
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_SIZE) {
+      setAvatarError('Image must be 5 MB or smaller.');
+      return;
+    }
+
+    try {
+      setAvatarUploading(true);
+
+      const compressed = await compressImage(file, IMAGE_PRESETS.avatar);
+      const dataUrl = await fileToBase64(compressed);
+
+      const response = await fetch(
+        `/api/users/${user.id}/avatar`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeader()
+          },
+          body: JSON.stringify({
+            image_data: dataUrl,
+            image_name: compressed.name,
+            image_type: compressed.type
+          })
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result?.message ||
+          'Unable to upload the profile photo.'
+        );
+      }
+
+      const updatedUser = result?.data?.user;
+
+      if (!updatedUser) {
+        throw new Error(
+          'Profile photo was uploaded, but updated user data was not returned.'
+        );
+      }
+
+      setAvatarUrl(updatedUser.avatar_url || result?.data?.image_url || '');
+
+      /*
+       * Keep AuthContext + localStorage synchronized so the
+       * new photo shows across the app immediately.
+       */
+      const updatedAuthUser = {
+        ...user,
+        ...updatedUser
+      };
+
+      login(
+        updatedAuthUser,
+        localStorage.getItem('touristo_token')
+      );
+
+      setAvatarSuccess(
+        'Your profile photo has been updated.'
+      );
+    } catch (err) {
+      console.error('Avatar upload error:', err);
+
+      setAvatarError(
+        err.message || 'Unable to upload the profile photo.'
+      );
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
+
+  /* ============================================================
+     COMPANY BRANDING UPLOAD (logo / cover)
+  ============================================================ */
+
+  const handleBrandingChange = async (kind, event) => {
+    const file = event.target.files?.[0];
+
+    event.target.value = '';
+
+    if (!file) {
+      return;
+    }
+
+    setBrandingError('');
+    setBrandingSuccess('');
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      setBrandingError(
+        'Please select a JPG, PNG, WEBP or GIF image.'
+      );
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_SIZE) {
+      setBrandingError('Image must be 5 MB or smaller.');
+      return;
+    }
+
+    if (!hostData?.id) {
+      setBrandingError(
+        'Your company profile could not be found.'
+      );
+      return;
+    }
+
+    try {
+      setBrandingUploading(kind);
+
+      const compressed = await compressImage(file, IMAGE_PRESETS.branding);
+      const dataUrl = await fileToBase64(compressed);
+
+      const response = await fetch(
+        `/api/hosts/${hostData.id}/images`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeader()
+          },
+          body: JSON.stringify({
+            kind,
+            image_data: dataUrl,
+            image_name: compressed.name,
+            image_type: compressed.type
+          })
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result?.message ||
+          'Unable to upload the image.'
+        );
+      }
+
+      const updatedHost = result?.data?.host;
+
+      if (updatedHost) {
+        setHostData(updatedHost);
+      } else if (result?.data?.image_url) {
+        const field =
+          kind === 'cover' ? 'cover_image_url' : 'logo_url';
+
+        setHostData((previous) =>
+          previous
+            ? { ...previous, [field]: result.data.image_url }
+            : previous
+        );
+      }
+
+      setBrandingSuccess(
+        kind === 'cover'
+          ? 'Cover photo updated successfully.'
+          : 'Company logo updated successfully.'
+      );
+    } catch (err) {
+      console.error('Branding upload error:', err);
+
+      setBrandingError(
+        err.message || 'Unable to upload the image.'
+      );
+    } finally {
+      setBrandingUploading('');
     }
   };
 
@@ -373,6 +713,14 @@ const EditProfileScreen = () => {
       ? 'Tour Company'
       : 'Traveler';
 
+  const isHost = accountInfo.role === 'host';
+
+  const companyInitial =
+    (hostData?.company_name || displayName || 'T')
+      .trim()
+      .charAt(0)
+      .toUpperCase();
+
   const memberSince =
     accountInfo.created_at
       ? new Date(
@@ -444,11 +792,27 @@ const EditProfileScreen = () => {
 
             <div className="flex items-center gap-4">
 
-              <div className="w-20 h-20 rounded-[24px] bg-[color:var(--brand-primary)] flex items-center justify-center shadow-[var(--shadow-md)] shrink-0">
+              <div
+                className={`w-20 h-20 rounded-[24px] bg-[color:var(--brand-primary)] flex items-center justify-center overflow-hidden shadow-[var(--shadow-md)] shrink-0`}
+              >
 
-                <span className="text-3xl font-semibold text-white">
-                  {initial}
-                </span>
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={`${displayName} profile photo`}
+                    className="h-full w-full object-cover"
+                  />
+                ) : isHost && hostData?.logo_url ? (
+                  <img
+                    src={hostData.logo_url}
+                    alt={`${hostData.company_name} logo`}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="text-3xl font-semibold text-white">
+                    {initial}
+                  </span>
+                )}
 
               </div>
 
@@ -615,12 +979,12 @@ const EditProfileScreen = () => {
 
 
             {/* ----------------------------------------------
-                PHOTO NOTE
+                PROFILE PHOTO
             ---------------------------------------------- */}
 
-            <div className="mt-6 p-4 rounded-2xl bg-[color:var(--brand-primary-soft)] border border-[color:var(--border-light)]">
+            <div className="mt-6 p-5 rounded-2xl bg-[color:var(--brand-primary-soft)] border border-[color:var(--border-light)]">
 
-              <div className="flex gap-3">
+              <div className="flex gap-3 mb-4">
 
                 <div className="w-9 h-9 rounded-xl bg-[color:var(--surface-primary)] text-[color:var(--brand-primary)] flex items-center justify-center shrink-0">
                   <UserRound className="w-4 h-4" />
@@ -633,12 +997,51 @@ const EditProfileScreen = () => {
                   </p>
 
                   <p className="mt-1 text-xs sm:text-sm leading-5 text-[color:var(--text-secondary)]">
-                    Profile photo upload will be available after the profile image storage setup is completed.
+                    This photo appears on your account profile.
+                    JPG, PNG, WEBP or GIF up to 5 MB.
                   </p>
 
                 </div>
 
               </div>
+
+              <BrandingUploader
+                inputId="account-photo-upload"
+                label={
+                  avatarUrl
+                    ? 'Your current photo'
+                    : 'No photo yet'
+                }
+                previewUrl={avatarUrl}
+                fallback={initial}
+                variant="avatar"
+                uploading={avatarUploading}
+                onSelect={handleAvatarChange}
+              />
+
+              {avatarError && (
+                <div className="mt-3 flex items-start gap-3 p-4 rounded-2xl bg-[color:var(--danger-soft)] border border-[color:var(--danger)]/15 text-[color:var(--danger)]">
+
+                  <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+
+                  <p role="alert" className="text-sm leading-5">
+                    {avatarError}
+                  </p>
+
+                </div>
+              )}
+
+              {avatarSuccess && (
+                <div className="mt-3 flex items-start gap-3 p-4 rounded-2xl bg-[color:var(--success-soft)] border border-[color:var(--success)]/15 text-[color:var(--success)]">
+
+                  <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+
+                  <p className="text-sm leading-5">
+                    {avatarSuccess}
+                  </p>
+
+                </div>
+              )}
 
             </div>
 
@@ -715,6 +1118,104 @@ const EditProfileScreen = () => {
           </div>
 
         </form>
+
+
+        {/* ====================================================
+            COMPANY BRANDING (hosts only)
+        ==================================================== */}
+
+        {isHost && (
+          <section className="mt-6 bg-[color:var(--surface-primary)] border border-[color:var(--border-light)] rounded-[28px] shadow-[var(--shadow-sm)] overflow-hidden">
+
+            <div className="p-6 sm:p-8">
+
+              <div className="flex items-center gap-3 mb-6">
+
+                <div className="w-10 h-10 rounded-xl bg-[color:var(--brand-gold-soft)] text-[color:var(--brand-gold-ink)] flex items-center justify-center">
+                  <Building2 className="w-5 h-5" />
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold">
+                    Company Branding
+                  </h2>
+
+                  <p className="text-sm text-[color:var(--text-secondary)]">
+                    Add your logo and a cover photo so travelers
+                    recognise your company.
+                  </p>
+                </div>
+
+              </div>
+
+              {hostData ? (
+                <div className="space-y-6">
+
+                  <BrandingUploader
+                    inputId="company-cover-upload"
+                    label="Cover Photo"
+                    hint="Shown behind your company name on your public profile. JPG, PNG, WEBP or GIF up to 5 MB."
+                    previewUrl={hostData.cover_image_url}
+                    fallback={companyInitial}
+                    variant="cover"
+                    uploading={brandingUploading === 'cover'}
+                    onSelect={(event) =>
+                      handleBrandingChange('cover', event)
+                    }
+                  />
+
+                  <BrandingUploader
+                    inputId="company-logo-upload"
+                    label="Company Logo"
+                    hint="A square logo works best. JPG, PNG, WEBP or GIF up to 5 MB."
+                    previewUrl={hostData.logo_url}
+                    fallback={companyInitial}
+                    variant="logo"
+                    uploading={brandingUploading === 'logo'}
+                    onSelect={(event) =>
+                      handleBrandingChange('logo', event)
+                    }
+                  />
+
+                  {brandingError && (
+                    <div className="flex items-start gap-3 p-4 rounded-2xl bg-[color:var(--danger-soft)] border border-[color:var(--danger)]/15 text-[color:var(--danger)]">
+
+                      <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+
+                      <p
+                        role="alert"
+                        className="text-sm leading-5"
+                      >
+                        {brandingError}
+                      </p>
+
+                    </div>
+                  )}
+
+                  {brandingSuccess && (
+                    <div className="flex items-start gap-3 p-4 rounded-2xl bg-[color:var(--success-soft)] border border-[color:var(--success)]/15 text-[color:var(--success)]">
+
+                      <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+
+                      <p className="text-sm leading-5">
+                        {brandingSuccess}
+                      </p>
+
+                    </div>
+                  )}
+
+                </div>
+              ) : (
+                <p className="text-sm text-[color:var(--text-secondary)]">
+                  Your company profile could not be loaded, so
+                  branding uploads are unavailable right now.
+                </p>
+              )}
+
+            </div>
+
+          </section>
+        )}
 
       </div>
 

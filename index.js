@@ -21,6 +21,7 @@ const tourGuideRoutes = require('./touristo/routes/tourGuideRoutes');
 const itineraryRoutes = require('./touristo/routes/itineraryRoutes');
 const adminRoutes = require('./touristo/routes/adminRoutes');
 const reportRoutes = require('./touristo/routes/reportRoutes');
+const sosRoutes = require('./touristo/routes/sosRoutes');
 const { authenticateToken } = require('./touristo/middleware/auth');
 const travelRadarRoutes =
   require('./touristo/routes/travelRadarRoutes');
@@ -86,6 +87,7 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/itineraries', itineraryRoutes);
 app.use('/api/tour-guides', tourGuideRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/sos', sosRoutes);
 app.use(
   '/api/travel-radar',
   travelRadarRoutes

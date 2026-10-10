@@ -17,7 +17,7 @@ const HomeScreen = () => {
   const navigate = useNavigate();
 
   const heroImage =
-    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=2200&q=85';
+    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1600&q=80';
 
    // Handle search submission
   const handleSearch = (e) => {

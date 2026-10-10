@@ -324,18 +324,38 @@ const HostProfileScreen = () => {
       <section className="max-w-6xl mx-auto px-4 sm:px-6 mt-5">
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[color:var(--brand-primary)] via-[color:var(--brand-primary-hover)] to-[color:var(--text-primary)] min-h-[280px]">
 
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-white blur-3xl" />
-            <div className="absolute -bottom-32 -left-20 w-80 h-80 rounded-full bg-black blur-3xl" />
-          </div>
+          {hostData.cover_image_url ? (
+            <>
+              <img
+                src={hostData.cover_image_url}
+                alt={`${hostData.company_name || 'Company'} cover`}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/25" />
+            </>
+          ) : (
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-white blur-3xl" />
+              <div className="absolute -bottom-32 -left-20 w-80 h-80 rounded-full bg-black blur-3xl" />
+            </div>
+          )}
 
           <div className="relative z-10 p-6 sm:p-8 md:p-10 flex flex-col md:flex-row gap-7 items-start md:items-center">
 
             {/* Logo */}
-            <div className="w-28 h-28 sm:w-32 sm:h-32 shrink-0 rounded-3xl bg-white/15 backdrop-blur-md border border-white/25 flex items-center justify-center shadow-[var(--shadow-xl)]">
-              <span className="text-5xl font-black text-white">
-                {getInitial(hostData.company_name)}
-              </span>
+            <div className="w-28 h-28 sm:w-32 sm:h-32 shrink-0 rounded-3xl bg-white/15 backdrop-blur-md border border-white/25 flex items-center justify-center shadow-[var(--shadow-xl)] overflow-hidden">
+              {hostData.logo_url ? (
+                <img
+                  src={hostData.logo_url}
+                  alt={`${hostData.company_name || 'Company'} logo`}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-5xl font-black text-white">
+                  {getInitial(hostData.company_name)}
+                </span>
+              )}
             </div>
 
             <div className="flex-1 text-white">
@@ -544,6 +564,7 @@ const HostProfileScreen = () => {
                           src={pkg.image || FALLBACK_PACKAGE_IMAGE}
                           alt={pkg.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                          loading="lazy"
                           onError={(event) => {
                             event.currentTarget.src = FALLBACK_PACKAGE_IMAGE;
                           }}
@@ -591,6 +612,7 @@ const HostProfileScreen = () => {
                         src={pkg.image || FALLBACK_PACKAGE_IMAGE}
                         alt={pkg.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                        loading="lazy"
                         onError={(event) => {
                           event.currentTarget.src = FALLBACK_PACKAGE_IMAGE;
                         }}
@@ -727,6 +749,7 @@ const HostProfileScreen = () => {
                             src={guide.photo}
                             alt={guide.name}
                             className="w-full h-full object-cover"
+                            loading="lazy"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-xl font-black text-[color:var(--brand-primary)]">

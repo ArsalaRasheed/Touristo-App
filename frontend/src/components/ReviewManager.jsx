@@ -546,6 +546,7 @@ const ReviewManager = ({ userId }) => {
                           'Tour package'
                         }
                         className="w-16 h-16 rounded-xl object-cover shrink-0"
+                        loading="lazy"
                       />
                     ) : (
                       <div className="w-16 h-16 rounded-xl bg-[color:var(--brand-primary)]/10 flex items-center justify-center shrink-0">

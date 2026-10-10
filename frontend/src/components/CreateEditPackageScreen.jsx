@@ -12,12 +12,19 @@ import {
 } from '../context/AuthContext';
 
 import {
+  compressImage,
+  IMAGE_PRESETS
+} from '../utils/imageCompression';
+
+import {
   Sparkles,
   Wand2,
   RefreshCw,
   Check,
   X,
-  Info
+  Info,
+  Users,
+  Star
 } from 'lucide-react';
 
 
@@ -196,6 +203,124 @@ const CreateEditPackageScreen = () => {
 
   const isEditMode =
     Boolean(editId);
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | Assigned tour guides
+  |--------------------------------------------------------------------------
+  */
+
+  const [hostGuides, setHostGuides] =
+    useState([]);
+
+  const [guidesLoading, setGuidesLoading] =
+    useState(false);
+
+  const [selectedGuideIds, setSelectedGuideIds] =
+    useState([]);
+
+
+  const toggleGuide = guideId =>
+    setSelectedGuideIds(previous =>
+      previous.includes(guideId)
+        ? previous.filter(id => id !== guideId)
+        : [...previous, guideId]
+    );
+
+
+  useEffect(() => {
+
+    let cancelled = false;
+
+    const loadHostGuides =
+      async () => {
+
+        try {
+
+          setGuidesLoading(true);
+
+          const hostResponse =
+            await fetch(
+              `/api/hosts/user/${user.id}`,
+              {
+                headers:
+                  getAuthHeader()
+              }
+            );
+
+          if (!hostResponse.ok) {
+            return;
+          }
+
+          const hostData =
+            await hostResponse.json();
+
+          const hostId =
+            hostData.data?.host?.id;
+
+          if (!hostId || cancelled) {
+            return;
+          }
+
+          const guidesResponse =
+            await fetch(
+              `/api/tour-guides/host/${hostId}`
+            );
+
+          if (!guidesResponse.ok || cancelled) {
+            return;
+          }
+
+          const guidesData =
+            await guidesResponse.json();
+
+          if (cancelled) {
+            return;
+          }
+
+          setHostGuides(
+            guidesData?.data || []
+          );
+
+          if (isEditMode) {
+
+            const packageGuidesResponse =
+              await fetch(
+                `/api/packages/${editId}/guides`
+              );
+
+            if (!packageGuidesResponse.ok) {
+              return;
+            }
+
+            const packageGuidesData =
+              await packageGuidesResponse.json();
+
+            if (!cancelled) {
+
+              setSelectedGuideIds(
+                packageGuidesData?.data?.assignedGuideIds ||
+                  []
+              );
+            }
+          }
+        } catch {
+          // Guides are optional - do not block the form.
+        } finally {
+
+          if (!cancelled) {
+            setGuidesLoading(false);
+          }
+        }
+      };
+
+    loadHostGuides();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, editId, isEditMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   /*
@@ -596,14 +721,21 @@ const CreateEditPackageScreen = () => {
 
       try {
 
+        const compressed =
+          await compressImage(
+            file,
+            IMAGE_PRESETS.package
+          );
+
+
         const dataUrl =
           await fileToDataUrl(
-            file
+            compressed
           );
 
 
         setImageFile(
-          file
+          compressed
         );
 
 
@@ -1143,6 +1275,9 @@ const CreateEditPackageScreen = () => {
           itinerary:
             formData.itinerary
         };
+
+        packageData.guide_ids =
+          selectedGuideIds;
 
 
         /*
@@ -2156,6 +2291,104 @@ Shopping`}
               />
 
             </div>
+
+          </div>
+
+
+          {/* TOUR GUIDES */}
+
+          <div className="space-y-4 rounded-xl border border-[color:var(--border-light)] bg-[color:var(--surface-secondary)] p-5">
+
+            <div>
+              <p className="text-sm font-semibold text-[color:var(--text-primary)]">
+                Assigned Tour Guides
+              </p>
+              <p className="mt-1 text-xs text-[color:var(--text-muted)]">
+                Choose which of your tour guides are assigned to this package.
+                Travelers will see them on the package page and can compare them with AI.
+              </p>
+            </div>
+
+            {guidesLoading ? (
+              <p className="text-sm text-[color:var(--text-muted)]">
+                Loading your tour guides...
+              </p>
+            ) : hostGuides.length === 0 ? (
+              <p className="text-sm text-[color:var(--text-muted)]">
+                No tour guides added to your company yet. Add guides from your company profile first.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+                {hostGuides.map(guide => {
+
+                  const selected =
+                    selectedGuideIds.includes(guide.id);
+
+                  return (
+                    <button
+                      key={guide.id}
+                      type="button"
+                      onClick={() =>
+                        toggleGuide(guide.id)
+                      }
+                      className={`flex items-center gap-3 p-3 rounded-xl border text-left transition ${
+                        selected
+                          ? 'border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]/5'
+                          : 'border-[color:var(--border-control)] bg-[color:var(--surface-primary)]'
+                      }`}
+                    >
+                      <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 bg-[color:var(--surface-secondary)] flex items-center justify-center">
+                        <Users
+                          size={18}
+                          className="text-[color:var(--text-secondary)]"
+                        />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-[color:var(--text-primary)] truncate">
+                          {guide.name || 'Tour Guide'}
+                        </p>
+
+                        <p className="text-xs text-[color:var(--text-secondary)] truncate">
+                          {guide.specialty || 'Tour & Travel Guide'}
+                          {Number(guide.rating) > 0 && (
+                            <span className="inline-flex items-center gap-1 ml-2">
+                              <Star
+                                size={12}
+                                className="fill-current text-[color:var(--brand-primary)]"
+                              />
+                              {Number(guide.rating).toFixed(1)}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+
+                      <div
+                        className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 border ${
+                          selected
+                            ? 'bg-[color:var(--brand-primary)] border-[color:var(--brand-primary)] text-white'
+                            : 'border-[color:var(--border-control)] text-transparent'
+                        }`}
+                      >
+                        <Check size={14} />
+                      </div>
+                    </button>
+                  );
+                })}
+
+              </div>
+            )}
+
+            {selectedGuideIds.length > 0 && (
+              <p className="text-xs text-[color:var(--text-secondary)]">
+                {selectedGuideIds.length}{' '}
+                {selectedGuideIds.length === 1
+                  ? 'guide assigned'
+                  : 'guides assigned'}{' '}
+                to this package
+              </p>
+            )}
 
           </div>
 

@@ -2,6 +2,11 @@ const Host = require('../models/Host');
 const { query } = require('../config/database');
 const { getHostWithRanking, getAllHostsWithRanking } = require('../utils/hostRanking');
 const { sanitizeHost, isAdmin } = require('../middleware/accessControl');
+const {
+  uploadHostImage,
+  PackageImageValidationError,
+  PackageImageStorageError
+} = require('../utils/packageStorage');
 
 const GENERIC_ERROR = 'Something went wrong. Please try again.';
 
@@ -338,6 +343,12 @@ const hostController = {
           existing.company_address
         ),
 
+        // Branding images are managed by the dedicated upload
+        // endpoint; preserve whatever is already stored.
+        logo_url: existing.logo_url,
+
+        cover_image_url: existing.cover_image_url,
+
         // Verification is admin controlled only and can never be
         // set from this endpoint, regardless of the request body.
         verification_status:
@@ -362,6 +373,96 @@ const hostController = {
       res.status(500).json({
         status: 'error',
         message: 'Something went wrong. Please try again.',
+      });
+    }
+  },
+
+  // Upload or replace a host branding image (logo or cover photo)
+  async uploadHostBrandingImage(req, res) {
+    try {
+      const { id } = req.params;
+
+      const existing = await Host.findById(id);
+
+      if (!existing) {
+        return res.status(404).json({
+          status: 'fail',
+          message: 'Host not found',
+        });
+      }
+
+      const isOwner =
+        Number(existing.user_id) === Number(req.user?.id);
+
+      if (!isOwner && !isAdmin(req)) {
+        return res.status(403).json({
+          status: 'fail',
+          message:
+            'You are not authorized to update this host profile',
+        });
+      }
+
+      const {
+        kind,
+        image_data,
+        image_name,
+        image_type,
+      } = req.body || {};
+
+      if (kind !== 'logo' && kind !== 'cover') {
+        return res.status(400).json({
+          status: 'fail',
+          message: "Image kind must be either 'logo' or 'cover'",
+        });
+      }
+
+      const uploaded = await uploadHostImage({
+        imageData: image_data,
+        imageName: image_name,
+        imageType: image_type,
+        kind,
+      });
+
+      const column =
+        kind === 'cover' ? 'cover_image_url' : 'logo_url';
+
+      const result = await query(
+        `UPDATE hosts SET ${column} = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
+        [uploaded.url, id]
+      );
+
+      res.status(200).json({
+        status: 'success',
+        data: {
+          host: sanitizeHost(new Host(result.rows[0]), req),
+          image_url: uploaded.url,
+          kind,
+        },
+      });
+    } catch (err) {
+      if (err instanceof PackageImageValidationError) {
+        return res.status(400).json({
+          status: 'fail',
+          message: err.message,
+        });
+      }
+
+      if (err instanceof PackageImageStorageError) {
+        console.error(
+          'Host branding image storage error:',
+          err.message
+        );
+        return res.status(502).json({
+          status: 'error',
+          message:
+            'Could not store the image right now. Please try again.',
+        });
+      }
+
+      console.error('Error in uploadHostBrandingImage:', err);
+      res.status(500).json({
+        status: 'error',
+        message: GENERIC_ERROR,
       });
     }
   },

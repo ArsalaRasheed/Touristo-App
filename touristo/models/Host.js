@@ -10,6 +10,8 @@ class Host {
     this.license_number = data.license_number;
     this.cnic_or_business_registration = data.cnic_or_business_registration; // New field
     this.company_address = data.company_address; // New field
+    this.logo_url = data.logo_url; // Company logo (public URL)
+    this.cover_image_url = data.cover_image_url; // Company cover/banner image
     this.verification_status = data.verification_status; // New field
     this.verified = data.verified;
     this.rating_score = data.rating_score;
@@ -19,7 +21,7 @@ class Host {
 
   static async findAll() {
     const result = await query(`
-      SELECT h.id, h.user_id, h.company_name, h.description, h.location, h.license_number, h.cnic_or_business_registration, h.company_address, h.verification_status, h.verified, h.rating_score, h.created_at
+      SELECT h.id, h.user_id, h.company_name, h.description, h.location, h.license_number, h.cnic_or_business_registration, h.company_address, h.logo_url, h.cover_image_url, h.verification_status, h.verified, h.rating_score, h.created_at
       FROM hosts h
       ORDER BY h.created_at DESC
     `);
@@ -28,7 +30,7 @@ class Host {
 
   static async findById(id) {
     const result = await query(`
-      SELECT h.id, h.user_id, h.company_name, h.description, h.location, h.license_number, h.cnic_or_business_registration, h.company_address, h.verification_status, h.verified, h.rating_score, h.created_at, h.updated_at
+      SELECT h.id, h.user_id, h.company_name, h.description, h.location, h.license_number, h.cnic_or_business_registration, h.company_address, h.logo_url, h.cover_image_url, h.verification_status, h.verified, h.rating_score, h.created_at, h.updated_at
       FROM hosts h
       WHERE h.id = $1
     `, [id]);
@@ -38,7 +40,7 @@ class Host {
 
   static async findByUserId(userId) {
     const result = await query(`
-      SELECT h.id, h.user_id, h.company_name, h.description, h.location, h.license_number, h.cnic_or_business_registration, h.company_address, h.verification_status, h.verified, h.rating_score, h.created_at, h.updated_at
+      SELECT h.id, h.user_id, h.company_name, h.description, h.location, h.license_number, h.cnic_or_business_registration, h.company_address, h.logo_url, h.cover_image_url, h.verification_status, h.verified, h.rating_score, h.created_at, h.updated_at
       FROM hosts h
       WHERE h.user_id = $1
     `, [userId]);
@@ -56,10 +58,10 @@ class Host {
   }
 
   static async update(id, hostData) {
-    const { company_name, description, location, license_number, cnic_or_business_registration, company_address, verification_status, verified } = hostData;
+    const { company_name, description, location, license_number, cnic_or_business_registration, company_address, logo_url, cover_image_url, verification_status, verified } = hostData;
     const result = await query(
-      'UPDATE hosts SET company_name = $1, description = $2, location = $3, license_number = $4, cnic_or_business_registration = $5, company_address = $6, verification_status = $7, verified = $8, updated_at = NOW() WHERE id = $9 RETURNING *',
-      [company_name, description, location, license_number, cnic_or_business_registration, company_address, verification_status, verified, id]
+      'UPDATE hosts SET company_name = $1, description = $2, location = $3, license_number = $4, cnic_or_business_registration = $5, company_address = $6, logo_url = $7, cover_image_url = $8, verification_status = $9, verified = $10, updated_at = NOW() WHERE id = $11 RETURNING *',
+      [company_name, description, location, license_number, cnic_or_business_registration, company_address, logo_url, cover_image_url, verification_status, verified, id]
     );
     if (result.rows.length === 0) return null;
     return new Host(result.rows[0]);

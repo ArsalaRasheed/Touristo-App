@@ -179,6 +179,7 @@ const ManageTourGuidesScreen = () => {
                       src={guide.photo}
                       alt=""
                       className="h-11 w-11 shrink-0 rounded-full object-cover"
+                      loading="lazy"
                     />
                   ) : (
                     <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-primary-soft)] text-sm font-semibold text-[color:var(--brand-primary)]">

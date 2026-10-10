@@ -1,111 +1,110 @@
 /*
 |--------------------------------------------------------------------------
-| Package Image Library
+| Seeded Package Image Library
 |--------------------------------------------------------------------------
 |
-| These images are assigned to the current package IDs visible in the
-| packages table.
+| Single source of truth for the images attached to the demo packages that
+| seedData.js creates. Keyed by package title so the same value is reused
+| by:
 |
-| Package IDs 1-9:
+|   - touristo/utils/seedData.js           (fresh seeds)
+|   - scripts/backfill-package-images.js  (existing databases)
+|   - touristo/models/Package.js          (read-time safety net)
 |
-| 1  Hunza Cultural Heritage Tour
-| 2  Skardu Mountain Adventure
-| 3  Hunza Luxury Experience
-| 4  Swat Valley Trekking Adventure
-| 5  Gwadar Coastal Adventure
-| 6  Skardu Mountain Expedition
-| 7  Lahore Historical Tour
-| 8  Mohenjo-daro Archaeological Tour
-| 9  Naran Kaghan Scenic Tour
-|
+| Every URL is a Pexels CDN link (hotlink friendly, no API key required)
+| and was verified to return HTTP 200.
 |--------------------------------------------------------------------------
 */
 
-const PACKAGE_IMAGE_OVERRIDES = {
-  /*
-   * 1 — Hunza Cultural Heritage Tour
-   */
-  1:
-    'https://images.unsplash.com/photo-1514558427911-8e293bebf18c?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-4.1.0&q=85&w=1600',
+const PACKAGE_IMAGES = {
+  'Hunza Cultural Heritage Tour':
+    'https://images.pexels.com/photos/35302565/pexels-photo-35302565.jpeg?auto=compress&cs=tinysrgb&w=1280',
 
-  /*
-   * 2 — Skardu Mountain Adventure
-   */
-  2:
-    'https://images.unsplash.com/photo-1708350579415-cf524f3504ad?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-4.1.0&q=85&w=1600',
+  'Skardu Mountain Adventure':
+    'https://images.pexels.com/photos/33784883/pexels-photo-33784883.jpeg?auto=compress&cs=tinysrgb&w=1280',
 
-  /*
-   * 3 — Hunza Luxury Experience
-   */
-  3:
-    'https://images.unsplash.com/photo-1683548632549-8fa44ce4f10e?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-4.1.0&q=85&w=1600',
+  'Hunza Luxury Experience':
+    'https://images.pexels.com/photos/30355168/pexels-photo-30355168.jpeg?auto=compress&cs=tinysrgb&w=1280',
 
-  /*
-   * 4 — Swat Valley Trekking Adventure
-   */
-  4:
-    'https://images.unsplash.com/photo-1724142923909-fc4b0c3a2a32?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-4.1.0&q=85&w=1600',
+  'Swat Valley Trekking Adventure':
+    'https://images.pexels.com/photos/37385405/pexels-photo-37385405.jpeg?auto=compress&cs=tinysrgb&w=1280',
 
-  /*
-   * 5 — Gwadar Coastal Adventure
-   */
-  5:
-    'https://images.unsplash.com/photo-1698736277820-7eb872a1d751?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-4.1.0&q=85&w=1600',
+  'Gwadar Coastal Adventure':
+    'https://images.pexels.com/photos/12180798/pexels-photo-12180798.jpeg?auto=compress&cs=tinysrgb&w=1280',
 
-  /*
-   * 6 — Skardu Mountain Expedition
-   */
-  6:
-    'https://images.unsplash.com/photo-1702895095207-397632b3ab97?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-4.1.0&q=85&w=1600',
+  'Skardu Mountain Expedition':
+    'https://images.pexels.com/photos/33837898/pexels-photo-33837898.jpeg?auto=compress&cs=tinysrgb&w=1280',
 
-  /*
-   * 7 — Lahore Historical Tour
-   */
-  7:
-    'https://images.unsplash.com/photo-1722953035460-d61752458d8b?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-4.1.0&q=85&w=1600',
+  'Lahore Historical Tour':
+    'https://images.pexels.com/photos/6255712/pexels-photo-6255712.jpeg?auto=compress&cs=tinysrgb&w=1280',
 
-  /*
-   * 8 — Mohenjo-daro Archaeological Tour
-   */
-  8:
-    'https://images.unsplash.com/photo-1608717310359-3a1e90a53504?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-4.1.0&q=85&w=1600',
+  'Mohenjo-daro Archaeological Tour':
+    'https://images.pexels.com/photos/25548851/pexels-photo-25548851.jpeg?auto=compress&cs=tinysrgb&w=1280',
 
-  /*
-   * 9 — Naran Kaghan Scenic Tour
-   */
-  9:
-    'https://images.unsplash.com/photo-1660659652868-14957fad6a17?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-4.1.0&q=85&w=1600'
+  'Naran Kaghan Scenic Tour':
+    'https://images.pexels.com/photos/32889687/pexels-photo-32889687.jpeg?auto=compress&cs=tinysrgb&w=1280',
+
+  'Babusar Top Adventure':
+    'https://images.pexels.com/photos/38667203/pexels-photo-38667203.jpeg?auto=compress&cs=tinysrgb&w=1280'
 };
 
 
 /*
 |--------------------------------------------------------------------------
-| Resolve Package Image
+| Legacy images
 |--------------------------------------------------------------------------
 |
-| For the existing packages 1-9, use the corrected curated image.
-|
-| For any future package that does not have an override, keep using the
-| image saved in the database.
-|
+| The first seed shipped a handful of Unsplash photos that were either
+| duplicated across packages or dead (404). A stored image that still points
+| at one of these ids is treated as "not custom" and safe to replace.
 |--------------------------------------------------------------------------
 */
 
-function getPackageImage(packageId, storedImage) {
-  const id = Number(packageId);
+const LEGACY_PACKAGE_IMAGE_IDS = [
+  '1506905925346-21bda4d32df4',
+  '1547471080-7cc2caa01a7e',
+  '1551632811-561732d1e306',
+  '1507525428034-b723cf961d3e',
+  '1464822759023-fed622ff2c3b',
+  '1584285417130-12d00386b4fa'
+];
 
-  if (
-    Number.isInteger(id) &&
-    PACKAGE_IMAGE_OVERRIDES[id]
-  ) {
-    return PACKAGE_IMAGE_OVERRIDES[id];
+function isLegacyPackageImage(image) {
+  if (typeof image !== 'string' || image.trim() === '') {
+    return true;
   }
 
-  return storedImage || null;
+  return LEGACY_PACKAGE_IMAGE_IDS.some(id => image.includes(id));
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Resolve package image
+|--------------------------------------------------------------------------
+|
+| A host-uploaded / custom image ALWAYS wins. Only missing or known-legacy
+| images are swapped for the curated seeded image of that package.
+|--------------------------------------------------------------------------
+*/
+
+function resolveSeededPackageImage(title, storedImage) {
+  if (isLegacyPackageImage(storedImage)) {
+    return PACKAGE_IMAGES[title] || storedImage || null;
+  }
+
+  return storedImage;
+}
+
+function getSeededPackageImage(title) {
+  return PACKAGE_IMAGES[title] || null;
 }
 
 
 module.exports = {
-  PACKAGE_IMAGE_OVERRIDES,
-  getPackageImage
+  PACKAGE_IMAGES,
+  LEGACY_PACKAGE_IMAGE_IDS,
+  isLegacyPackageImage,
+  resolveSeededPackageImage,
+  getSeededPackageImage
 };

@@ -27,7 +27,7 @@ const experiences = [
     description:
       'Explore Pakistan’s spectacular northern mountains through scenic treks, cultural encounters, high-altitude adventures and breathtaking viewpoints.',
     image:
-      'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&q=80',
     icon: Mountain,
     keywords: [
       'mountain',
@@ -54,7 +54,7 @@ const experiences = [
     description:
       'Step into Pakistan’s rich cultural heritage with historical landmarks, ancient civilizations, traditional communities and authentic local experiences.',
     image:
-      'https://images.unsplash.com/photo-1597944356808-424870f8e6f5?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1597944356808-424870f8e6f5?auto=format&fit=crop&w=1200&q=80',
     icon: Landmark,
     keywords: [
       'cultural',
@@ -80,7 +80,7 @@ const experiences = [
     description:
       'Escape to Pakistan’s coastline for beaches, ocean views, relaxing stays and memorable coastal adventures.',
     image:
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
     icon: Waves,
     keywords: [
       'coastal',
@@ -105,7 +105,7 @@ const experiences = [
     description:
       'Reconnect with nature through forests, valleys, wildlife areas and scenic outdoor exploration across Pakistan.',
     image:
-      'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1200&q=80',
     icon: Trees,
     keywords: [
       'wildlife',
@@ -130,7 +130,7 @@ const experiences = [
     description:
       'Discover the flavors of Pakistan through regional cuisine, famous local dishes, food streets and authentic culinary experiences.',
     image:
-      'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1200&q=80',
     icon: Utensils,
     keywords: [
       'food',
@@ -156,7 +156,7 @@ const experiences = [
     description:
       'For travelers looking for excitement, discover outdoor adventures, challenging landscapes and action-packed activities.',
     image:
-      'https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1400&q=85',
+      'https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1200&q=80',
     icon: Bike,
     keywords: [
       'adventure',
@@ -485,6 +485,7 @@ const ExperienceDetailScreen = () => {
                       src={getPackageImage(pkg, experience.image)}
                       alt={pkg.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
                     />
 
                     <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />

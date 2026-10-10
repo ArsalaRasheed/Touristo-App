@@ -44,7 +44,15 @@ const ProfileScreen = () => {
           throw new Error('User not authenticated');
         }
 
-        const userDataResult = await apiFetch(`/api/users/${user.id}`);
+        const [userDataResult, hostDataResult] = await Promise.all([
+          apiFetch(`/api/users/${user.id}`),
+          user.role === 'host'
+            ? apiFetch(`/api/hosts/user/${user.id}`).catch((hostErr) => {
+                console.error('Error fetching company profile:', hostErr);
+                return null;
+              })
+            : Promise.resolve(null)
+        ]);
 
         const enhancedUserData = {
           ...userDataResult.data.user,
@@ -57,15 +65,8 @@ const ProfileScreen = () => {
 
         setUserData(enhancedUserData);
 
-        if (user.role === 'host') {
-          try {
-            const hostDataResult = await apiFetch(
-              `/api/hosts/user/${user.id}`
-            );
-            setHostData(hostDataResult.data.host);
-          } catch (hostErr) {
-            console.error('Error fetching company profile:', hostErr);
-          }
+        if (hostDataResult?.data?.host) {
+          setHostData(hostDataResult.data.host);
         }
       } catch (err) {
         console.error('Error fetching user data:', err);
@@ -204,11 +205,25 @@ const ProfileScreen = () => {
 
               <div className="relative shrink-0">
 
-                <div className="flex h-24 w-24 items-center justify-center rounded-[28px] bg-[color:var(--brand-primary)] shadow-[var(--shadow-lg)] sm:h-28 sm:w-28">
+                <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-[28px] bg-[color:var(--brand-primary)] shadow-[var(--shadow-lg)] sm:h-28 sm:w-28">
 
-                  <span className="text-4xl font-semibold text-white sm:text-5xl">
-                    {initial}
-                  </span>
+                  {userData?.avatar_url ? (
+                    <img
+                      src={userData.avatar_url}
+                      alt={`${displayName} profile photo`}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : isHost && hostData?.logo_url ? (
+                    <img
+                      src={hostData.logo_url}
+                      alt={`${displayName} logo`}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-4xl font-semibold text-white sm:text-5xl">
+                      {initial}
+                    </span>
+                  )}
 
                 </div>
 

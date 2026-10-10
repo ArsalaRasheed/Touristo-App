@@ -17,32 +17,38 @@ import {
 } from 'lucide-react';
 
 const FALLBACK_IMAGE =
-  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1600&q=85';
+  'https://images.pexels.com/photos/27468879/pexels-photo-27468879.jpeg?auto=compress&cs=tinysrgb&w=1200';
 
 const destinationImages = {
   'hunza valley':
-    'https://images.unsplash.com/photo-1589308078059-be1415eab4c3?auto=format&fit=crop&w=1600&q=90',
+    'https://images.pexels.com/photos/31839253/pexels-photo-31839253.jpeg?auto=compress&cs=tinysrgb&w=1200',
 
   skardu:
-    'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?auto=format&fit=crop&w=1600&q=90',
+    'https://images.pexels.com/photos/35302567/pexels-photo-35302567.jpeg?auto=compress&cs=tinysrgb&w=1200',
 
   'swat valley':
-    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1600&q=90',
+    'https://images.pexels.com/photos/37385405/pexels-photo-37385405.jpeg?auto=compress&cs=tinysrgb&w=1200',
 
   naran:
-    'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=90',
+    'https://images.pexels.com/photos/32889687/pexels-photo-32889687.jpeg?auto=compress&cs=tinysrgb&w=1200',
 
   'babusar top':
-    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1600&q=90',
+    'https://images.pexels.com/photos/38667203/pexels-photo-38667203.jpeg?auto=compress&cs=tinysrgb&w=1200',
 
   lahore:
-    'https://images.unsplash.com/photo-1584285417130-12d00386b4fa?auto=format&fit=crop&w=1600&q=90',
+    'https://images.pexels.com/photos/6255712/pexels-photo-6255712.jpeg?auto=compress&cs=tinysrgb&w=1200',
 
   'mohenjo-daro':
-    'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?auto=format&fit=crop&w=1600&q=90',
+    'https://images.pexels.com/photos/25548851/pexels-photo-25548851.jpeg?auto=compress&cs=tinysrgb&w=1200',
 
   gwadar:
-    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=90',
+    'https://images.pexels.com/photos/12180798/pexels-photo-12180798.jpeg?auto=compress&cs=tinysrgb&w=1200',
+
+  islamabad:
+    'https://images.pexels.com/photos/27698081/pexels-photo-27698081.jpeg?auto=compress&cs=tinysrgb&w=1200',
+
+  murree:
+    'https://images.pexels.com/photos/30368208/pexels-photo-30368208.jpeg?auto=compress&cs=tinysrgb&w=1200',
 };
 
 const getDestinationImage = (name) => {
@@ -580,6 +586,7 @@ const DestinationExploreScreen = () => {
                           src={image}
                           alt={getPackageName(pkg)}
                           className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                          loading="lazy"
                           onError={(event) => {
                             event.currentTarget.src =
                               getDestinationImage(

@@ -9,23 +9,24 @@ class User {
     this.password_hash = data.password_hash;
     this.phone = data.phone;
     this.role = data.role;
+    this.avatar_url = data.avatar_url;
     this.created_at = data.created_at;
     this.updated_at = data.updated_at;
   }
 
   static async findAll() {
-    const result = await query('SELECT id, name, email, phone, role, created_at FROM users ORDER BY created_at DESC');
+    const result = await query('SELECT id, name, email, phone, role, avatar_url, created_at FROM users ORDER BY created_at DESC');
     return result.rows.map(row => new User(row));
   }
 
   static async findById(id) {
-    const result = await query('SELECT id, name, email, password_hash, phone, role, created_at, updated_at FROM users WHERE id = $1', [id]);
+    const result = await query('SELECT id, name, email, password_hash, phone, role, avatar_url, created_at, updated_at FROM users WHERE id = $1', [id]);
     if (result.rows.length === 0) return null;
     return new User(result.rows[0]);
   }
 
   static async findByEmail(email) {
-    const result = await query('SELECT id, name, email, password_hash, phone, role, created_at, updated_at FROM users WHERE email = $1', [email]);
+    const result = await query('SELECT id, name, email, password_hash, phone, role, avatar_url, created_at, updated_at FROM users WHERE email = $1', [email]);
     if (result.rows.length === 0) return null;
     return new User(result.rows[0]);
   }

@@ -20,9 +20,10 @@ import {
 } from 'lucide-react';
 
 import ReportDialog from './ReportDialog';
+import { useAuth } from '../context/AuthContext';
 
 const FALLBACK_IMAGE =
-  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1600&q=85';
+  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&q=80';
 
 const GUIDE_FALLBACK_IMAGE =
   'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=700&q=80';
@@ -48,6 +49,12 @@ const PackageDetailScreen = () => {
   const [chatLoading, setChatLoading] = useState(false);
 
   const [reportTarget, setReportTarget] = useState(null);
+
+  const { getAuthHeader } = useAuth();
+
+  const [guidePreference, setGuidePreference] = useState('');
+  const [guideRecommendation, setGuideRecommendation] = useState(null);
+  const [recommending, setRecommending] = useState(false);
 
   /*
   |--------------------------------------------------------------------------
@@ -155,7 +162,7 @@ const PackageDetailScreen = () => {
 
   useEffect(() => {
     const fetchTourGuides = async () => {
-      if (!packageData?.host_id) {
+      if (!id) {
         setGuidesLoading(false);
         return;
       }
@@ -165,7 +172,7 @@ const PackageDetailScreen = () => {
         setGuidesError('');
 
         const response = await fetch(
-          `/api/tour-guides/host/${packageData.host_id}`
+          `/api/packages/${id}/guides`
         );
 
         if (!response.ok) {
@@ -176,7 +183,7 @@ const PackageDetailScreen = () => {
 
         const data = await response.json();
 
-        setTourGuides(data?.data || []);
+        setTourGuides(data?.data?.guides || []);
       } catch (err) {
         console.error('Error fetching tour guides:', err);
         setGuidesError(err.message || 'Unable to load tour guides.');
@@ -187,7 +194,44 @@ const PackageDetailScreen = () => {
     };
 
     fetchTourGuides();
-  }, [packageData?.host_id]);
+  }, [id]);
+
+  const handleGetRecommendation = async () => {
+    if (!guidePreference.trim() || tourGuides.length === 0) return;
+
+    try {
+      setRecommending(true);
+      setGuideRecommendation(null);
+
+      const response = await fetch('/api/tour-guides/recommend', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader()
+        },
+        body: JSON.stringify({
+          guides: tourGuides,
+          preference: guidePreference
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.message || 'Could not get a recommendation.'
+        );
+      }
+
+      setGuideRecommendation(data?.data || null);
+    } catch (err) {
+      setGuideRecommendation({
+        error: err.message || 'Could not get a recommendation right now.'
+      });
+    } finally {
+      setRecommending(false);
+    }
+  };
 
   /*
   |--------------------------------------------------------------------------
@@ -945,6 +989,74 @@ const PackageDetailScreen = () => {
 
                     </div>
 
+                    {!guidesLoading &&
+                      !guidesError &&
+                      tourGuides.length > 1 && (
+                        <div className="bg-gradient-to-br from-[color:var(--surface-primary)] to-[color:var(--surface-secondary)] border border-[color:var(--border-light)] rounded-3xl p-6 mb-6">
+
+                          <div className="flex items-start gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-xl bg-[color:var(--brand-primary)]/10 flex items-center justify-center">
+                              <span className="text-lg">✨</span>
+                            </div>
+
+                            <div>
+                              <h2 className="text-lg">
+                                Find the Right Guide with AI
+                              </h2>
+
+                              <p className="text-sm text-[color:var(--text-secondary)] mt-1">
+                                Tell us what kind of guide you need and AI will recommend the best match.
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row gap-3">
+                            <input
+                              aria-label="Share your tour guide preference"
+                              type="text"
+                              value={guidePreference}
+                              onChange={(e) =>
+                                setGuidePreference(e.target.value)
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleGetRecommendation();
+                                }
+                              }}
+                              placeholder="e.g. Urdu-speaking guide for a family trip"
+                              className="flex-1 px-4 py-3 rounded-xl border border-[color:var(--border-light)] bg-[color:var(--surface-primary)] outline-none focus:ring-2 focus:ring-[color:var(--brand-primary)]"
+                            />
+
+                            <button
+                              onClick={handleGetRecommendation}
+                              disabled={recommending || !guidePreference.trim()}
+                              className="px-5 py-3 rounded-xl bg-[color:var(--brand-primary)] text-[color:var(--text-inverse)] font-bold disabled:opacity-50"
+                            >
+                              {recommending ? 'Finding...' : 'Ask AI'}
+                            </button>
+                          </div>
+
+                          {guideRecommendation &&
+                            !guideRecommendation.error && (
+                              <div className="mt-4 p-4 rounded-2xl bg-[color:var(--surface-primary)] border border-[color:var(--border-light)]">
+                                <p className="font-bold text-[color:var(--brand-primary)]">
+                                  {guideRecommendation.recommendedGuideName}
+                                </p>
+
+                                <p className="text-sm text-[color:var(--text-secondary)] mt-1 leading-6">
+                                  {guideRecommendation.reason}
+                                </p>
+                              </div>
+                            )}
+
+                          {guideRecommendation?.error && (
+                            <p className="text-sm text-[color:var(--danger)] mt-3">
+                              {guideRecommendation.error}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
                     {guidesLoading ? (
                       <div className="grid sm:grid-cols-2 gap-5">
 
@@ -1019,6 +1131,7 @@ const PackageDetailScreen = () => {
                                   }
                                   alt={guide.name}
                                   className="w-full h-full object-cover"
+                                  loading="lazy"
                                   onError={(event) => {
                                     event.currentTarget.src =
                                       GUIDE_FALLBACK_IMAGE;

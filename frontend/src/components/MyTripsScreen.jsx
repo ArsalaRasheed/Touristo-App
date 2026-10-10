@@ -1,6 +1,26 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import {
+  saveTripVault,
+  removeTripVault,
+  listTripVaults,
+  getTripVault
+} from '../utils/offlineTrips';
+import {
+  startTracking,
+  stopTracking,
+  getTrackMeta,
+  getRoutePoints,
+  getRouteDistanceKm,
+  isTrackingLocally,
+  clearRoute
+} from '../utils/tripTracker';
+import {
+  saveWeatherSnapshot,
+  getWeatherSnapshot,
+  isSnapshotStale
+} from '../utils/weatherCache';
 
 const MyTripsScreen = () => {
   const [trips, setTrips] = useState([]);
@@ -12,6 +32,19 @@ const MyTripsScreen = () => {
   const [, setLocation] = useState(null);
   const [sosActive, setSosActive] = useState(false);
   const [emergencyContacts, setEmergencyContacts] = useState(null);
+
+  const [online, setOnline] = useState(
+    typeof navigator !== ''
+      ? navigator.onLine !== false
+      : true
+  );
+  const [usingOfflineData, setUsingOfflineData] = useState(false);
+  const [vaults, setVaults] = useState({});
+  const [vaultUpdating, setVaultUpdating] = useState({});
+  const [trackMeta, setTrackMeta] = useState({});
+  const [trackInfo, setTrackInfo] = useState({});
+  const [trackError, setTrackError] = useState({});
+  const [vaultLoaded, setVaultLoaded] = useState(false);
 
   const { user, getAuthHeader } = useAuth();
 
@@ -62,6 +95,50 @@ const MyTripsScreen = () => {
         defaultPos.lng
       );
     }
+  }, []);
+
+  useEffect(() => {
+    const handleOnline = () => setOnline(true);
+    const handleOffline = () => setOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadVaults = async () => {
+      try {
+        const records = await listTripVaults();
+        const map = {};
+
+        records.forEach(record => {
+          map[record.tripId] = record;
+        });
+
+        if (!cancelled) {
+          setVaults(map);
+        }
+      } catch {
+        // Offline cache unavailable - trips still load online.
+      }
+
+      if (!cancelled) {
+        setVaultLoaded(true);
+      }
+    };
+
+    loadVaults();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const getEmergencyContactsForLocation = async () => {
@@ -118,11 +195,37 @@ const MyTripsScreen = () => {
         setTrips(
           data?.data?.bookings || []
         );
+
+        setUsingOfflineData(false);
+        setError(null);
       } catch (err) {
         console.error(
           'Error fetching bookings:',
           err
         );
+
+        const isOffline =
+          typeof navigator !== '' &&
+          navigator.onLine === false;
+
+        if (isOffline) {
+          try {
+            const records = await listTripVaults();
+
+            if (records.length > 0) {
+              setTrips(
+                records
+                  .map(record => record.booking)
+                  .filter(Boolean)
+              );
+              setUsingOfflineData(true);
+              setError(null);
+              return;
+            }
+          } catch {
+            // Fall through to the error below.
+          }
+        }
 
         setError(err.message);
       } finally {
@@ -234,10 +337,18 @@ const MyTripsScreen = () => {
         );
       }
 
+      const fetchedAt =
+        data?.data?.fetchedAt ||
+        new Date().toISOString();
+
+      const roadStatus =
+        data?.data?.roadStatus || 'Unknown';
+
       const weather = {
         ...(data?.data?.weather || {}),
-        roadStatus:
-          data?.data?.roadStatus || 'Unknown'
+        roadStatus,
+        fetchedAt,
+        cached: false
       };
 
       setWeatherData(prev => ({
@@ -245,12 +356,34 @@ const MyTripsScreen = () => {
         [tripKey]: weather
       }));
 
+      saveWeatherSnapshot(trip.id, {
+        weather,
+        roadStatus,
+        fetchedAt
+      });
+
       return weather;
     } catch (err) {
       console.error(
         'Error fetching live weather:',
         err
       );
+
+      const snapshot =
+        await getWeatherSnapshot(trip.id);
+
+      if (snapshot?.weather) {
+        setWeatherData(prev => ({
+          ...prev,
+          [tripKey]: {
+            ...snapshot.weather,
+            fetchedAt: snapshot.fetchedAt,
+            cached: true
+          }
+        }));
+
+        return snapshot.weather;
+      }
 
       setWeatherData(prev => ({
         ...prev,
@@ -278,6 +411,168 @@ const MyTripsScreen = () => {
     }, 10000);
   };
 
+  const refreshTrack = async (tripId) => {
+    try {
+      const meta = await getTrackMeta(tripId);
+      const points = await getRoutePoints(tripId);
+      const distanceKm = await getRouteDistanceKm(tripId);
+
+      if (meta) {
+        setTrackMeta(prev => ({
+          ...prev,
+          [tripId]: meta
+        }));
+      }
+
+      setTrackInfo(prev => ({
+        ...prev,
+        [tripId]: {
+          points: points.length,
+          distanceKm
+        }
+      }));
+
+      setTrackError(prev => {
+        const next = { ...prev };
+        delete next[tripId];
+        return next;
+      });
+    } catch {
+      // Tracking UI is best-effort.
+    }
+  };
+
+  useEffect(() => {
+    if (!trips.length) {
+      return;
+    }
+
+    const activeIds = trips
+      .filter(trip => trackMeta[trip.id]?.status === 'tracking')
+      .map(trip => trip.id);
+
+    if (activeIds.length === 0) {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      activeIds.forEach(id => refreshTrack(id));
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [trips, trackMeta]);
+
+  const handleStartTracking = async (tripId) => {
+    setTrackError(prev => {
+      const next = { ...prev };
+      delete next[tripId];
+      return next;
+    });
+
+    try {
+      await startTracking(tripId);
+      await refreshTrack(tripId);
+    } catch (err) {
+      setTrackError(prev => ({
+        ...prev,
+        [tripId]:
+          err?.message || 'Unable to start tracking.'
+      }));
+    }
+  };
+
+  const handleStopTracking = async (tripId) => {
+    try {
+      await stopTracking(tripId);
+      await refreshTrack(tripId);
+    } catch {
+      // Ignore.
+    }
+  };
+
+  const handleClearRoute = async (tripId) => {
+    try {
+      await clearRoute(tripId);
+      await refreshTrack(tripId);
+    } catch {
+      // Ignore.
+    }
+  };
+
+  const handleDownloadTrip = async (trip) => {
+    setVaultUpdating(prev => ({
+      ...prev,
+      [trip.id]: true
+    }));
+
+    try {
+      let itinerary = itineraries[trip.id] || [];
+
+      if (itinerary.length === 0) {
+        try {
+          const response = await fetch(
+            `/api/itineraries/trip/${trip.id}`,
+            {
+              headers: {
+                ...getAuthHeader()
+              }
+            }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            itinerary = data?.data?.itinerary || [];
+          }
+        } catch {
+          // Keep the itinerary empty when it cannot be fetched.
+        }
+      }
+
+      setItineraries(prev => ({
+        ...prev,
+        [trip.id]: itinerary
+      }));
+
+      const weather = await getWeather(trip);
+
+      const record = await saveTripVault({
+        tripId: trip.id,
+        booking: trip,
+        itinerary,
+        weather: weather
+          ? {
+              weather,
+              roadStatus: weather.roadStatus,
+              fetchedAt: weather.fetchedAt
+            }
+          : null
+      });
+
+      setVaults(prev => ({
+        ...prev,
+        [trip.id]: record
+      }));
+    } catch (err) {
+      console.error('Error saving trip offline:', err);
+    } finally {
+      setVaultUpdating(prev => {
+        const next = { ...prev };
+        delete next[trip.id];
+        return next;
+      });
+    }
+  };
+
+  const handleRemoveVault = async (tripId) => {
+    await removeTripVault(tripId);
+
+    setVaults(prev => {
+      const next = { ...prev };
+      delete next[tripId];
+      return next;
+    });
+  };
+
   const getTripStatus = (startDate) => {
     if (!startDate) {
       return 'upcoming';
@@ -291,6 +586,29 @@ const MyTripsScreen = () => {
     }
 
     return 'upcoming';
+  };
+
+  const formatAge = (iso) => {
+    const then = new Date(iso).getTime();
+
+    if (Number.isNaN(then)) {
+      return '';
+    }
+
+    const diffMin = Math.max(
+      0,
+      Math.round((Date.now() - then) / 60000)
+    );
+
+    if (diffMin < 1) {
+      return 'just now';
+    }
+
+    if (diffMin < 60) {
+      return `${diffMin} min ago`;
+    }
+
+    return `${Math.round(diffMin / 60)} hr ago`;
   };
 
   if (loading) {
@@ -430,6 +748,33 @@ const MyTripsScreen = () => {
           </div>
         )}
 
+        {/* Offline banner */}
+        {!online && (
+          <div className="mb-6 p-4 bg-[color:var(--warning-soft)] border border-[color:var(--warning)]/40 rounded-xl">
+            <p className="font-semibold text-[color:var(--warning)]">
+              You're offline
+            </p>
+
+            <p className="text-sm text-[color:var(--text-secondary)] mt-1">
+              Showing saved Trip Vault contents. GPS tracking keeps
+              recording locally, and emergency alerts are queued until
+              you reconnect.
+            </p>
+          </div>
+        )}
+
+        {usingOfflineData && (
+          <div className="mb-6 p-4 bg-[color:var(--surface-secondary)] border border-[color:var(--border-light)] rounded-xl">
+            <p className="text-sm text-[color:var(--text-secondary)]">
+              Trips below were loaded from your offline vault.{' '}
+              <span className="font-semibold text-[color:var(--text-primary)]">
+                Reconnect
+              </span>{' '}
+              to sync the latest bookings.
+            </p>
+          </div>
+        )}
+
         {/* Trips */}
         {trips.length === 0 ? (
           <div className="bg-[color:var(--surface-primary)] rounded-2xl p-8 text-center border border-[color:var(--border-light)]">
@@ -480,7 +825,7 @@ const MyTripsScreen = () => {
                       </p>
                     </div>
 
-                    <div className="mt-2 md:mt-0">
+                    <div className="mt-2 md:mt-0 flex flex-wrap items-center gap-2">
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-semibold ${
                           getTripStatus(
@@ -496,6 +841,12 @@ const MyTripsScreen = () => {
                           ? 'Upcoming'
                           : 'Completed'}
                       </span>
+
+                      {vaults[trip.id] && (
+                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[color:var(--surface-secondary)] border border-[color:var(--border-primary)] text-[color:var(--text-primary)]">
+                          ✓ Offline
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -632,9 +983,25 @@ const MyTripsScreen = () => {
                                   }
                                 </p>
 
-                                {weather.updatedAt && (
+                                {(weather.fetchedAt || weather.updatedAt) && (
                                   <p className="text-xs text-[color:var(--text-secondary)] mt-1">
-                                    Live data
+                                    {weather.cached ? 'Cached data' : 'Live data'}
+                                    {(weather.fetchedAt || weather.updatedAt) && (
+                                      <span className="ml-1 opacity-80">
+                                        • {formatAge(weather.fetchedAt || weather.updatedAt)}
+                                      </span>
+                                    )}
+                                    {weather.cached && (
+                                      <span className="ml-2 inline-flex px-2 py-0.5 rounded-full bg-[color:var(--warning-soft)] text-[color:var(--warning)]">
+                                        {isSnapshotStale(
+                                          weather.fetchedAt
+                                            ? new Date(weather.fetchedAt).getTime()
+                                            : weather.savedAt
+                                        )
+                                          ? 'Outdated - reconnect to refresh'
+                                          : 'Offline copy'}
+                                      </span>
+                                    )}
                                   </p>
                                 )}
                               </div>
@@ -670,6 +1037,153 @@ const MyTripsScreen = () => {
                             </div>
                           </div>
                         )}
+                    </div>
+                  </div>
+
+                  {/* Offline Trip Vault */}
+                  <div className="mb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                      <h4 className="text-[color:var(--text-primary)]">
+                        Offline Trip Vault
+                      </h4>
+
+                      <div className="flex flex-wrap gap-2 text-sm font-medium">
+                        <button
+                          onClick={() => handleDownloadTrip(trip)}
+                          disabled={vaultUpdating[trip.id]}
+                          className="px-3 py-1.5 rounded-lg bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary-hover)] text-white disabled:opacity-60"
+                        >
+                          {vaultUpdating[trip.id]
+                            ? 'Updating...'
+                            : vaults[trip.id]
+                              ? 'Update Vault'
+                              : 'Download for Offline'}
+                        </button>
+
+                        {vaults[trip.id] && (
+                          <button
+                            onClick={() => handleRemoveVault(trip.id)}
+                            className="px-3 py-1.5 rounded-lg bg-[color:var(--surface-secondary)] border border-[color:var(--border-primary)] hover:bg-[color:var(--border-light)] text-[color:var(--text-primary)]"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="bg-[color:var(--surface-secondary)] p-4 rounded-xl space-y-2">
+                      <p className="text-sm text-[color:var(--text-secondary)]">
+                        Save booking details, itinerary and a weather
+                        snapshot on this device. Emergency contacts and
+                        basic tips are included.
+                      </p>
+
+                      {vaults[trip.id] && (
+                        <div className="text-xs text-[color:var(--text-secondary)]">
+                          <p>
+                            Last updated: {formatAge(vaults[trip.id].updatedAt)}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Offline GPS Tracking */}
+                  <div className="mb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                      <h4 className="text-[color:var(--text-primary)]">
+                        Offline GPS &amp; Trip Tracking
+                      </h4>
+
+                      <div className="flex flex-wrap gap-2 text-sm font-medium">
+                        {isTrackingLocally(trip.id) ? (
+                          <>
+                            <button
+                              onClick={() => handleStopTracking(trip.id)}
+                              className="px-3 py-1.5 rounded-lg bg-[color:var(--warning)] hover:bg-[color:var(--warning)]/90 text-white"
+                            >
+                              Stop Tracking
+                            </button>
+
+                            <button
+                              onClick={() => handleClearRoute(trip.id)}
+                              className="px-3 py-1.5 rounded-lg bg-[color:var(--surface-secondary)] border border-[color:var(--border-primary)] hover:bg-[color:var(--border-light)] text-[color:var(--text-primary)]"
+                            >
+                              Clear Route
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => handleStartTracking(trip.id)}
+                            className="px-3 py-1.5 rounded-lg bg-[color:var(--success)] hover:bg-[color:var(--success)]/90 text-white"
+                          >
+                            Start Tracking Offline
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="bg-[color:var(--surface-secondary)] p-4 rounded-xl space-y-2">
+                      {trackError[trip.id] && (
+                        <p className="text-sm text-[color:var(--danger)]">
+                          {trackError[trip.id]}
+                        </p>
+                      )}
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                        <div>
+                          <p className="text-[color:var(--text-secondary)]">
+                            Status
+                          </p>
+
+                          <p className="font-semibold">
+                            {trackMeta[trip.id]?.status === 'tracking'
+                              ? 'Recording locally'
+                              : trackMeta[trip.id]?.status === 'stopped'
+                                ? 'Stopped'
+                                : 'Not started'}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-[color:var(--text-secondary)]">
+                            Points recorded
+                          </p>
+
+                          <p className="font-semibold">
+                            {trackInfo[trip.id]?.points ??
+                              trackMeta[trip.id]?.points ??
+                              0}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-[color:var(--text-secondary)]">
+                            Distance approx.
+                          </p>
+
+                          <p className="font-semibold">
+                            {(
+                              trackInfo[trip.id]?.distanceKm ??
+                              0
+                            ).toFixed(2)}{' '}
+                            km
+                          </p>
+                        </div>
+                      </div>
+
+                      {trackMeta[trip.id]?.lastPoint && (
+                        <p className="text-xs text-[color:var(--text-secondary)]">
+                          Last known: {trackMeta[trip.id].lastPoint.lat.toFixed(5)},{' '}
+                          {trackMeta[trip.id].lastPoint.lng.toFixed(5)}
+                        </p>
+                      )}
+
+                      <p className="text-xs text-[color:var(--text-secondary)]">
+                        GPS only captures coordinates - it never
+                        transmits. Emergency alerts will still queue and
+                        send only when triggered in Emergency Mode.
+                      </p>
                     </div>
                   </div>
 

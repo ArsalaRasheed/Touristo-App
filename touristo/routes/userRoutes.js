@@ -18,6 +18,9 @@ router.get('/:id', authenticateToken, syncRole, userController.getUserById);
 // Update user (self or admin)
 router.put('/:id', authenticateToken, syncRole, userController.updateUser);
 
+// Upload/replace the user's profile photo (self or admin)
+router.post('/:id/avatar', authenticateToken, syncRole, userController.uploadAvatar);
+
 // Delete user (self or admin)
 router.delete('/:id', authenticateToken, syncRole, userController.deleteUser);
 

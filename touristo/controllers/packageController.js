@@ -1,6 +1,9 @@
 const Package =
   require('../models/Package');
 
+const TourGuide =
+  require('../models/TourGuide');
+
 const {
   query
 } =
@@ -737,6 +740,59 @@ async function userOwnsPackage(
 
 /*
 |--------------------------------------------------------------------------
+| Guide assignment validation
+|--------------------------------------------------------------------------
+| Every guide id passed for a package must belong to that package's host.
+| Returns the normalized id array, or null when any guide is not owned.
+*/
+
+async function resolveOwnedGuideIds(
+  hostId,
+  guideIds
+) {
+
+  if (
+    !Array.isArray(guideIds)
+  ) {
+    return null;
+  }
+
+  const normalized =
+    guideIds
+      .map(id => Number(id))
+      .filter(id =>
+        Number.isInteger(id)
+      );
+
+  if (normalized.length === 0) {
+    return [];
+  }
+
+  const ownedGuides =
+    await TourGuide.findByHostId(hostId);
+
+  const ownedIds =
+    new Set(
+      ownedGuides.map(
+        guide => guide.id
+      )
+    );
+
+  const unknownIds =
+    normalized.filter(
+      id => !ownedIds.has(id)
+    );
+
+  if (unknownIds.length > 0) {
+    return null;
+  }
+
+  return normalized;
+}
+
+
+/*
+|--------------------------------------------------------------------------
 | Controller
 |--------------------------------------------------------------------------
 */
@@ -960,6 +1016,99 @@ const packageController = {
 
   /*
   |--------------------------------------------------------------------------
+  | GET PACKAGE TOUR GUIDES
+  |--------------------------------------------------------------------------
+  | Returns the guides assigned to the package. If no guides have been
+  | assigned yet, falls back to all of the host's guides so existing
+  | behavior keeps working until a host assigns guides.
+  */
+
+  async getPackageGuides(
+    req,
+    res
+  ) {
+
+    try {
+
+      const id =
+        Number(
+          req.params.id
+        );
+
+      if (
+        !Number.isInteger(id)
+      ) {
+
+        return res.status(400).json({
+          status: 'fail',
+          message:
+            'Invalid package id'
+        });
+      }
+
+      const pkg =
+        await Package.findById(
+          id
+        );
+
+      if (!pkg) {
+
+        return res.status(404).json({
+          status: 'fail',
+          message:
+            'Package not found'
+        });
+      }
+
+      const {
+        guides,
+        assignedGuideIds
+      } =
+        await Package.findGuidesByPackageId(
+          id
+        );
+
+      if (guides.length === 0) {
+
+        const hostGuides =
+          await TourGuide.findByHostId(
+            pkg.host_id
+          );
+
+        return res.status(200).json({
+          status: 'success',
+          data: {
+            guides: hostGuides,
+            assignedGuideIds: []
+          }
+        });
+      }
+
+      return res.status(200).json({
+        status: 'success',
+        data: {
+          guides,
+          assignedGuideIds
+        }
+      });
+    } catch (err) {
+
+      console.error(
+        'Error in getPackageGuides:',
+        err
+      );
+
+      return res.status(500).json({
+        status: 'error',
+        message:
+          'Failed to load package tour guides'
+      });
+    }
+  },
+
+
+  /*
+  |--------------------------------------------------------------------------
   | GET PACKAGES BY HOST
   |--------------------------------------------------------------------------
   */
@@ -1153,7 +1302,8 @@ const packageController = {
         safety_notes,
         seo_description,
         availability_start,
-        availability_end
+        availability_end,
+        guide_ids
       } =
         req.body;
 
@@ -1504,6 +1654,30 @@ const packageController = {
         });
 
 
+      if (guide_ids !== undefined) {
+
+        const guideIds =
+          await resolveOwnedGuideIds(
+            parsedHostId,
+            guide_ids
+          );
+
+        if (guideIds === null) {
+
+          return res.status(400).json({
+            status: 'fail',
+            message:
+              'One or more selected tour guides do not belong to your company'
+          });
+        }
+
+        await Package.setGuides(
+          newPackage.id,
+          guideIds
+        );
+      }
+
+
       return res.status(201).json({
         status: 'success',
 
@@ -1650,7 +1824,8 @@ const packageController = {
         safety_notes,
         seo_description,
         availability_start,
-        availability_end
+        availability_end,
+        guide_ids
       } =
         req.body;
 
@@ -2028,6 +2203,30 @@ const packageController = {
           message:
             'Package not found'
         });
+      }
+
+
+      if (guide_ids !== undefined) {
+
+        const guideIds =
+          await resolveOwnedGuideIds(
+            existingPackage.host_id,
+            guide_ids
+          );
+
+        if (guideIds === null) {
+
+          return res.status(400).json({
+            status: 'fail',
+            message:
+              'One or more selected tour guides do not belong to your company'
+          });
+        }
+
+        await Package.setGuides(
+          updatedPackage.id,
+          guideIds
+        );
       }
 
 

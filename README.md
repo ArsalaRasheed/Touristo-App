@@ -405,7 +405,7 @@ Fallback data may be used if the external weather service is unavailable.
 
 # 🚨 Emergency SOS
 
-Touristo provides an Emergency SOS interface designed to support traveler safety.
+Touristo provides an Emergency SOS interface designed to support traveler safety. It is a first-class entry in the **traveler bottom navigation** (labelled **SOS**, route `/sos`); **My Trips** remains available from the Profile screen.
 
 Current functionality includes:
 
@@ -564,6 +564,7 @@ Touristo-App/
 ├── scripts/
 │   ├── ai-package-builder-tests.js
 │   ├── ai-provider-tests.js
+│   ├── cleanup-probe-data.js
 │   ├── e2e-smoke.js
 │   ├── package-image-probes.js
 │   ├── package-probes.js
@@ -823,6 +824,8 @@ The repository ships several runnable check scripts (run from the repo root). Al
 | `node scripts/ai-provider-tests.js` | AI service unit tests: retry, fallback, timeouts, structured-output parsing | 15 tests |
 | `npm run test:e2e` | `scripts/e2e-smoke.js` — real-login smoke (requires `.env` `E2E_*` credentials; admin checks run only when admin creds are set) | 6 checks |
 
+> **Probe data cleanup:** the probe suites above create throwaway accounts, hosts and packages (emails on the reserved `@touristo.test` domain, host names like `Phase1 Probes …` / `Image Probes …`). Those rows are not test data and should not appear in the app. Run `node scripts/cleanup-probe-data.js` to transactionally remove all probe packages, hosts and users (and their related messages/bookings/reviews) from the database.
+
 ---
 
 # ⚙️ Environment Variables
@@ -986,16 +989,20 @@ Future safety improvements may include:
 
 ---
 
-## 🗺️ 8. Advanced Navigation
+## 🗺️ 8. Advanced Maps & Navigation
 
 Future map functionality may include:
 
-* Route planning
-* Turn-by-turn navigation
-* Live route tracking
+* Interactive destination clustering
+* Heatmaps (popular areas, review density)
+* Route planning with waypoints
+* Points-of-interest layer (food, fuel, hospitals, hotels)
+* Terrain/satellite layer options
+* Live route tracking during active trips
 * Travel distance/time estimation
 * Road-condition integration
-* Offline travel maps
+* Turn-by-turn navigation
+* Offline-aware map rendering
 
 ---
 
@@ -1058,6 +1065,83 @@ Future AI capabilities may include:
 
 ---
 
+## 👨‍💼 13. AI Admin Assistant
+
+Future admin AI capabilities may include:
+
+* AI-assisted moderation of packages, reviews and reports
+* Automated scam/fraud pattern detection
+* Anomaly alerts (booking spikes, unusual cancellations, review brigading)
+* AI-generated marketplace health reports
+* Suggested actions for report resolution
+* Automated audit-log summarization
+* Host verification pre-screening assistance
+* Natural-language admin queries over platform data
+
+---
+
+## 🧭 14. AI Host Copilot
+
+Future AI capabilities for tour companies/hosts may include:
+
+* AI-assisted package writing and improvement suggestions
+* Smart pricing suggestions based on comparable packages
+* Demand forecasting for destinations/seasons
+* Suggested replies to traveler inquiries
+* Response-quality and engagement coaching
+* AI-generated itinerary drafts for packages
+* Review-response drafting
+* Photo/caption suggestions for package listings
+* Performance insights and growth recommendations
+
+---
+
+## 🌦️ 15. AI Weather Intelligence
+
+Future AI-powered weather capabilities may include:
+
+* AI-interpreted weather impact summaries for trips
+* Route-specific weather risk assessment
+* Best-time-to-travel suggestions powered by historical weather patterns
+* Proactive weather alerts for active/upcoming trips
+* Mountain pass and road-condition predictions
+* Personalized packing and preparation suggestions
+* Weather-based destination recommendations
+* Seasonal travel planning intelligence
+
+---
+
+## 💎 16. Hidden Local Destinations
+
+Future destination-discovery capabilities may include:
+
+* Curated discovery of off-the-beaten-path Pakistani destinations
+* AI-recommended hidden local gems based on traveler preferences
+* Lesser-known valley, lake, fort and cultural-site listings
+* Community/local-expert contributed destination suggestions
+* AI-generated destination guides for emerging locations
+* Preference-based matching to secret/hidden spots
+* Off-season and crowd-avoidance recommendations
+* Location-based "near me" hidden destination radar
+
+---
+
+## 📴 17. Offline Maps & Offline Features
+
+Future offline capabilities may include:
+
+* Offline map downloads for destinations and routes
+* Cached package and trip information without connectivity
+* Offline-accessible itinerary and booking details
+* Offline emergency information access
+* Background location logging with sync-on-reconnect
+* Offline draft messages that send when back online
+* Offline SOS with deferred delivery
+* Cached weather data for offline viewing
+* Reduced-data mode for low-bandwidth areas
+
+---
+
 # 🛡️ Security & Reliability
 
 The backend currently includes security-related measures such as:
@@ -1086,7 +1170,7 @@ Touristo follows a **mobile-first responsive design approach** while supporting 
 The UI includes:
 
 * Responsive navigation
-* Bottom navigation for travelers
+* Bottom navigation for travelers (Home, Search, AI Planner, **SOS**, Profile)
 * Role-specific navigation
 * Responsive package grids
 * Destination cards
@@ -1134,6 +1218,11 @@ The long-term vision is to provide:
 * Reliable traveler-host communication
 * Personalized recommendations
 * AI-powered trip planning
+* AI admin assistant and AI host copilot
+* AI weather intelligence
+* Hidden local destination discovery
+* Offline maps and offline-first travel features
+* Advanced maps and navigation
 * Destination discovery
 * Tour guide discovery
 * Travel safety tools

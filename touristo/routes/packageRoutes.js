@@ -16,6 +16,9 @@ const detailLimiter = rateLimit({
 
 router.get('/:id', detailLimiter, packageController.getPackageById);
 
+// Get tour guides assigned to a package
+router.get('/:id/guides', packageController.getPackageGuides);
+
 // Get all packages
 router.get('/', packageController.getAllPackages);
 

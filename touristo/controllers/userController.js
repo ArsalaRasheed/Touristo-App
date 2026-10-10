@@ -3,6 +3,11 @@ const { query } = require('../config/database');
 const bcrypt = require('bcrypt');
 const { generateToken } = require('../utils/jwtUtils');
 const { sanitizeUser } = require('../middleware/accessControl');
+const {
+  uploadUserAvatar,
+  PackageImageValidationError,
+  PackageImageStorageError
+} = require('../utils/packageStorage');
 
 // Regular expression for email validation
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -124,6 +129,7 @@ const userController = {
         name: user.name,
         email: user.email,
         role: user.role,
+        avatar_url: user.avatar_url,
         created_at: user.created_at
       };
       
@@ -219,6 +225,7 @@ const userController = {
           email: newUser.email,
           phone: newUser.phone,
           role: newUser.role,
+          avatar_url: newUser.avatar_url,
           created_at: newUser.created_at
         };
         const token = generateToken({
@@ -297,6 +304,78 @@ const userController = {
       });
     } catch (err) {
       console.error('Error in updateUser:', err);
+      res.status(500).json({
+        status: 'error',
+        message: 'Something went wrong. Please try again.',
+      });
+    }
+  },
+
+  // Upload or replace the user's profile photo (self or admin only)
+  async uploadAvatar(req, res) {
+    try {
+      const { id } = req.params;
+
+      const isSelf = Number(req.user.id) === Number(id);
+      const isAdmin = req.user.role === 'admin';
+
+      if (!isSelf && !isAdmin) {
+        return res.status(403).json({
+          status: 'fail',
+          message: 'You are not authorized to update this profile',
+        });
+      }
+
+      const existing = await User.findById(id);
+
+      if (!existing) {
+        return res.status(404).json({
+          status: 'fail',
+          message: 'User not found',
+        });
+      }
+
+      const { image_data, image_name, image_type } = req.body || {};
+
+      const uploaded = await uploadUserAvatar({
+        imageData: image_data,
+        imageName: image_name,
+        imageType: image_type,
+      });
+
+      const result = await query(
+        'UPDATE users SET avatar_url = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
+        [uploaded.url, id]
+      );
+
+      res.status(200).json({
+        status: 'success',
+        data: {
+          user: sanitizeUser(new User(result.rows[0])),
+          image_url: uploaded.url,
+        },
+      });
+    } catch (err) {
+      if (err instanceof PackageImageValidationError) {
+        return res.status(400).json({
+          status: 'fail',
+          message: err.message,
+        });
+      }
+
+      if (err instanceof PackageImageStorageError) {
+        console.error(
+          'User avatar storage error:',
+          err.message
+        );
+        return res.status(502).json({
+          status: 'error',
+          message:
+            'Could not store the image right now. Please try again.',
+        });
+      }
+
+      console.error('Error in uploadAvatar:', err);
       res.status(500).json({
         status: 'error',
         message: 'Something went wrong. Please try again.',

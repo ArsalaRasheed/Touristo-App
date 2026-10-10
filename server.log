@@ -1,4 +1,4 @@
-◇ injected env (19) from .env // tip: ⌘ suppress logs { quiet: true }
+◇ injected env (19) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
 Server running on port 3000
 Ensuring database schema exists...
 Connected to PostgreSQL database
@@ -12,11 +12,12 @@ Executed query {
     '        password_hash TEXT NOT NULL, -- This will now work as the table is empty\n' +
     '        phone VARCHAR(20) NOT NULL, -- Made phone required\n' +
     "        role VARCHAR(50) DEFAULT 'traveler',\n" +
+    '        avatar_url TEXT, -- User account profile photo (public URL)\n' +
     '        created_at TIMESTAMP DEFAULT NOW(),\n' +
     '        updated_at TIMESTAMP DEFAULT NOW()\n' +
     '      );\n' +
     '    ',
-  duration: 1822,
+  duration: 2601,
   rows: null
 }
 Executing command: 
@@ -33,6 +34,8 @@ Executing command:
         verified BOOLEAN DEFAULT FALSE, -- Adding the missing column
         rating_score DECIMAL(3,2) DEFAULT 0.00, -- Adding the missing rating_score column
         rating DECIMAL(3,2) DEFAULT 0.00,
+        logo_url TEXT, -- Company logo (public Supabase Storage URL)
+        cover_image_url TEXT, -- Company cover/banner image (public URL)
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
@@ -52,11 +55,13 @@ Executed query {
     '        verified BOOLEAN DEFAULT FALSE, -- Adding the missing column\n' +
     '        rating_score DECIMAL(3,2) DEFAULT 0.00, -- Adding the missing rating_score column\n' +
     '        rating DECIMAL(3,2) DEFAULT 0.00,\n' +
+    '        logo_url TEXT, -- Company logo (public Supabase Storage URL)\n' +
+    '        cover_image_url TEXT, -- Company cover/banner image (public URL)\n' +
     '        created_at TIMESTAMP DEFAULT NOW(),\n' +
     '        updated_at TIMESTAMP DEFAULT NOW()\n' +
     '      );\n' +
     '    ',
-  duration: 181,
+  duration: 203,
   rows: null
 }
 Executing command: 
@@ -90,7 +95,7 @@ Executed query {
     '        updated_at TIMESTAMP DEFAULT NOW()\n' +
     '      );\n' +
     '    ',
-  duration: 199,
+  duration: 204,
   rows: null
 }
 Executing command: 
@@ -152,42 +157,42 @@ Executed query {
     '        updated_at TIMESTAMP DEFAULT NOW()\n' +
     '      );\n' +
     '    ',
-  duration: 179,
+  duration: 202,
   rows: null
 }
 Executed query {
   text: "ALTER TABLE packages ADD COLUMN IF NOT EXISTS highlights TEXT[] DEFAULT '{}'::text[]",
-  duration: 229,
-  rows: null
-}
-Executed query {
-  text: "ALTER TABLE packages ADD COLUMN IF NOT EXISTS activities TEXT[] DEFAULT '{}'::text[]",
-  duration: 204,
-  rows: null
-}
-Executed query {
-  text: "ALTER TABLE packages ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}'::text[]",
-  duration: 204,
-  rows: null
-}
-Executed query {
-  text: 'ALTER TABLE packages ADD COLUMN IF NOT EXISTS target_traveler_type VARCHAR(80)',
   duration: 205,
   rows: null
 }
 Executed query {
+  text: "ALTER TABLE packages ADD COLUMN IF NOT EXISTS activities TEXT[] DEFAULT '{}'::text[]",
+  duration: 173,
+  rows: null
+}
+Executed query {
+  text: "ALTER TABLE packages ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}'::text[]",
+  duration: 236,
+  rows: null
+}
+Executed query {
+  text: 'ALTER TABLE packages ADD COLUMN IF NOT EXISTS target_traveler_type VARCHAR(80)',
+  duration: 201,
+  rows: null
+}
+Executed query {
   text: 'ALTER TABLE packages ADD COLUMN IF NOT EXISTS best_season VARCHAR(80)',
-  duration: 178,
+  duration: 203,
   rows: null
 }
 Executed query {
   text: "ALTER TABLE packages ADD COLUMN IF NOT EXISTS safety_notes TEXT[] DEFAULT '{}'::text[]",
-  duration: 229,
+  duration: 169,
   rows: null
 }
 Executed query {
   text: 'ALTER TABLE packages ADD COLUMN IF NOT EXISTS seo_description VARCHAR(300)',
-  duration: 203,
+  duration: 178,
   rows: null
 }
 Executed query {
@@ -208,7 +213,7 @@ Executed query {
     '        updated_at TIMESTAMP DEFAULT NOW()\n' +
     '      );\n' +
     '    ',
-  duration: 203,
+  duration: 264,
   rows: null
 }
 Executed query {
@@ -222,7 +227,7 @@ Executed query {
     '        created_at TIMESTAMP DEFAULT NOW()\n' +
     '      );\n' +
     '    ',
-  duration: 205,
+  duration: 168,
   rows: null
 }
 Executed query {
@@ -235,7 +240,7 @@ Executed query {
     '        updated_at TIMESTAMP DEFAULT NOW()\n' +
     '      );\n' +
     '    ',
-  duration: 181,
+  duration: 204,
   rows: null
 }
 Executed query {
@@ -251,7 +256,38 @@ Executed query {
     '        updated_at TIMESTAMP DEFAULT NOW()\n' +
     '      );\n' +
     '    ',
-  duration: 193,
+  duration: 235,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      CREATE TABLE IF NOT EXISTS package_guides (\n' +
+    '        package_id INTEGER NOT NULL REFERENCES packages(id) ON DELETE CASCADE,\n' +
+    '        tour_guide_id INTEGER NOT NULL REFERENCES tour_guides(id) ON DELETE CASCADE,\n' +
+    '        created_at TIMESTAMP DEFAULT NOW(),\n' +
+    '        PRIMARY KEY (package_id, tour_guide_id)\n' +
+    '      );\n' +
+    '    ',
+  duration: 197,
+  rows: null
+}
+Executed query {
+  text: '\n' +
+    '      CREATE TABLE IF NOT EXISTS sos_alerts (\n' +
+    '        id SERIAL PRIMARY KEY,\n' +
+    '        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n' +
+    '        trip_id INTEGER REFERENCES bookings(id) ON DELETE SET NULL,\n' +
+    '        lat DOUBLE PRECISION NOT NULL,\n' +
+    '        lng DOUBLE PRECISION NOT NULL,\n' +
+    '        accuracy DOUBLE PRECISION,\n' +
+    '        message TEXT,\n' +
+    "        status VARCHAR(20) NOT NULL DEFAULT 'Pending',\n" +
+    '        created_at TIMESTAMP DEFAULT NOW(),\n' +
+    '        updated_at TIMESTAMP DEFAULT NOW(),\n' +
+    '        acknowledged_at TIMESTAMP\n' +
+    '      );\n' +
+    '    ',
+  duration: 206,
   rows: null
 }
 Executed query {
@@ -276,7 +312,7 @@ Executed query {
     '        created_at TIMESTAMP DEFAULT NOW()\n' +
     '      );\n' +
     '    ',
-  duration: 235,
+  duration: 203,
   rows: null
 }
 Executed query {
@@ -297,7 +333,7 @@ Executed query {
     '        created_at TIMESTAMP DEFAULT NOW()\n' +
     '      );\n' +
     '    ',
-  duration: 204,
+  duration: 200,
   rows: null
 }
 Executed query {
@@ -305,7 +341,7 @@ Executed query {
     '      ALTER TABLE messages\n' +
     '      ADD COLUMN IF NOT EXISTS conversation_id VARCHAR(255);\n' +
     '    ',
-  duration: 204,
+  duration: 168,
   rows: null
 }
 Executed query {
@@ -315,7 +351,7 @@ Executed query {
     '      REFERENCES packages(id)\n' +
     '      ON DELETE SET NULL;\n' +
     '    ',
-  duration: 204,
+  duration: 235,
   rows: null
 }
 Executed query {
@@ -323,7 +359,7 @@ Executed query {
     '      ALTER TABLE messages\n' +
     '      ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT FALSE;\n' +
     '    ',
-  duration: 203,
+  duration: 206,
   rows: null
 }
 Executed query {
@@ -331,7 +367,7 @@ Executed query {
     '      ALTER TABLE messages\n' +
     '      ADD COLUMN IF NOT EXISTS message_text TEXT;\n' +
     '    ',
-  duration: 206,
+  duration: 204,
   rows: null
 }
 Executed query {
@@ -340,7 +376,7 @@ Executed query {
     '      SET message_text = content\n' +
     '      WHERE message_text IS NULL;\n' +
     '    ',
-  duration: 306,
+  duration: 204,
   rows: 0
 }
 Executed query {
@@ -364,7 +400,7 @@ Executed query {
     "          CHECK (status IN ('open', 'resolved', 'dismissed'))\n" +
     '      );\n' +
     '    ',
-  duration: 203,
+  duration: 170,
   rows: null
 }
 Executed query {
@@ -372,7 +408,7 @@ Executed query {
     '      CREATE INDEX IF NOT EXISTS idx_reports_reporter_id\n' +
     '      ON reports(reporter_id);\n' +
     '    ',
-  duration: 181,
+  duration: 177,
   rows: null
 }
 Executed query {
@@ -380,7 +416,7 @@ Executed query {
     '      CREATE INDEX IF NOT EXISTS idx_reports_resolved_by\n' +
     '      ON reports(resolved_by);\n' +
     '    ',
-  duration: 227,
+  duration: 188,
   rows: null
 }
 Executed query {
@@ -388,7 +424,7 @@ Executed query {
     '      CREATE INDEX IF NOT EXISTS idx_reports_target\n' +
     '      ON reports(target_type, target_id);\n' +
     '    ',
-  duration: 204,
+  duration: 169,
   rows: null
 }
 Executed query {
@@ -396,7 +432,7 @@ Executed query {
     '      CREATE INDEX IF NOT EXISTS idx_reports_status_created\n' +
     '      ON reports(status, created_at DESC);\n' +
     '    ',
-  duration: 205,
+  duration: 213,
   rows: null
 }
 Executed query {
@@ -405,7 +441,7 @@ Executed query {
     '      ON reports(created_at DESC)\n' +
     "      WHERE status = 'open';\n" +
     '    ',
-  duration: 202,
+  duration: 205,
   rows: null
 }
 Executed query {
@@ -414,7 +450,7 @@ Executed query {
     '      ON reports(reporter_id, target_type, target_id)\n' +
     "      WHERE status = 'open';\n" +
     '    ',
-  duration: 178,
+  duration: 196,
   rows: null
 }
 Executed query {
@@ -430,7 +466,7 @@ Executed query {
     '        created_at TIMESTAMP DEFAULT NOW()\n' +
     '      );\n' +
     '    ',
-  duration: 178,
+  duration: 167,
   rows: null
 }
 Executed query {
@@ -438,7 +474,7 @@ Executed query {
     '      CREATE INDEX IF NOT EXISTS idx_admin_audit_log_created\n' +
     '      ON admin_audit_log(created_at DESC);\n' +
     '    ',
-  duration: 254,
+  duration: 184,
   rows: null
 }
 Executed query {
@@ -446,7 +482,7 @@ Executed query {
     '      CREATE INDEX IF NOT EXISTS idx_admin_audit_log_actor\n' +
     '      ON admin_audit_log(actor_id, created_at DESC);\n' +
     '    ',
-  duration: 237,
+  duration: 260,
   rows: null
 }
 Executed query {
@@ -455,7 +491,7 @@ Executed query {
     '      ON hosts(verification_status)\n' +
     "      WHERE verification_status = 'pending';\n" +
     '    ',
-  duration: 313,
+  duration: 217,
   rows: null
 }
 Executed query {
@@ -463,7 +499,7 @@ Executed query {
     '      CREATE INDEX IF NOT EXISTS idx_marketplace_chats_traveler\n' +
     '      ON marketplace_chats(traveler_id);\n' +
     '    ',
-  duration: 262,
+  duration: 295,
   rows: null
 }
 Executed query {
@@ -471,7 +507,7 @@ Executed query {
     '      CREATE INDEX IF NOT EXISTS idx_marketplace_chats_host\n' +
     '      ON marketplace_chats(host_id);\n' +
     '    ',
-  duration: 280,
+  duration: 222,
   rows: null
 }
 Executed query {
@@ -479,7 +515,7 @@ Executed query {
     '      CREATE INDEX IF NOT EXISTS idx_marketplace_chats_updated\n' +
     '      ON marketplace_chats(updated_at DESC);\n' +
     '    ',
-  duration: 230,
+  duration: 203,
   rows: null
 }
 Executed query {
@@ -487,7 +523,7 @@ Executed query {
     '      CREATE INDEX IF NOT EXISTS idx_messages_conversation\n' +
     '      ON messages(conversation_id, created_at);\n' +
     '    ',
-  duration: 305,
+  duration: 170,
   rows: null
 }
 Executed query {
@@ -495,7 +531,7 @@ Executed query {
     '      CREATE INDEX IF NOT EXISTS idx_messages_unread\n' +
     '      ON messages(receiver_id, is_read);\n' +
     '    ',
-  duration: 274,
+  duration: 175,
   rows: null
 }
 Executed query {
@@ -503,82 +539,107 @@ Executed query {
     '      CREATE INDEX IF NOT EXISTS idx_messages_package\n' +
     '      ON messages(associated_package_id);\n' +
     '    ',
-  duration: 236,
+  duration: 191,
   rows: null
 }
 Executed query {
   text: 'CREATE INDEX IF NOT EXISTS idx_packages_host_id ON packages(host_id);',
-  duration: 306,
+  duration: 216,
   rows: null
 }
 Executed query {
   text: 'CREATE INDEX IF NOT EXISTS idx_packages_destination_id ON packages(destination_id);',
-  duration: 236,
+  duration: 177,
   rows: null
 }
 Executed query {
   text: 'CREATE INDEX IF NOT EXISTS idx_bookings_user_id ON bookings(user_id);',
-  duration: 323,
+  duration: 172,
   rows: null
 }
 Executed query {
   text: 'CREATE INDEX IF NOT EXISTS idx_bookings_package_id ON bookings(package_id);',
-  duration: 177,
+  duration: 167,
   rows: null
 }
 Executed query {
   text: 'CREATE INDEX IF NOT EXISTS idx_reviews_user_id ON reviews(user_id);',
-  duration: 210,
+  duration: 168,
   rows: null
 }
 Executed query {
   text: 'CREATE INDEX IF NOT EXISTS idx_reviews_package_id ON reviews(package_id);',
-  duration: 227,
+  duration: 168,
   rows: null
 }
 Executed query {
   text: 'CREATE INDEX IF NOT EXISTS idx_destinations_category ON destinations(category);',
-  duration: 208,
+  duration: 167,
   rows: null
 }
 Executed query {
   text: 'CREATE INDEX IF NOT EXISTS idx_tour_guides_host_id ON tour_guides(host_id);',
-  duration: 177,
+  duration: 168,
+  rows: null
+}
+Executed query {
+  text: 'CREATE INDEX IF NOT EXISTS idx_package_guides_tour_guide_id ON package_guides(tour_guide_id);',
+  duration: 170,
+  rows: null
+}
+Executed query {
+  text: 'CREATE INDEX IF NOT EXISTS idx_sos_alerts_user_id ON sos_alerts(user_id);',
+  duration: 167,
   rows: null
 }
 Executed query {
   text: 'CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON messages(sender_id);',
-  duration: 177,
+  duration: 169,
   rows: null
 }
 Executed query {
   text: 'CREATE INDEX IF NOT EXISTS idx_messages_receiver_id ON messages(receiver_id);',
-  duration: 178,
+  duration: 167,
   rows: null
 }
 Executed query {
   text: 'CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);',
-  duration: 178,
+  duration: 173,
+  rows: null
+}
+Executed query {
+  text: 'ALTER TABLE hosts ADD COLUMN IF NOT EXISTS logo_url TEXT;',
+  duration: 172,
+  rows: null
+}
+Executed query {
+  text: 'ALTER TABLE hosts ADD COLUMN IF NOT EXISTS cover_image_url TEXT;',
+  duration: 170,
+  rows: null
+}
+Executed query {
+  text: 'ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;',
+  duration: 167,
   rows: null
 }
 Executed query {
   text: 'CREATE INDEX IF NOT EXISTS idx_hosts_user_id ON hosts(user_id);',
-  duration: 178,
+  duration: 167,
   rows: null
 }
 Executed query {
   text: 'CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(status);',
-  duration: 179,
+  duration: 277,
   rows: null
 }
 Executed query {
   text: 'CREATE INDEX IF NOT EXISTS idx_packages_created_at ON packages(created_at DESC);',
-  duration: 179,
+  duration: 205,
   rows: null
 }
 Executed query {
   text: 'CREATE INDEX IF NOT EXISTS idx_review_summaries_package_id ON review_summaries(package_id);',
-  duration: 234,
+  duration: 197,
   rows: null
 }
 Executed query {
@@ -589,7 +650,7 @@ Executed query {
     '        AND r.user_id = r2.user_id\n' +
     '        AND r.package_id = r2.package_id;\n' +
     '    ',
-  duration: 306,
+  duration: 308,
   rows: 0
 }
 Executed query {
@@ -597,7 +658,7 @@ Executed query {
     '      CREATE UNIQUE INDEX IF NOT EXISTS uq_reviews_user_package\n' +
     '      ON reviews(user_id, package_id);\n' +
     '    ',
-  duration: 204,
+  duration: 202,
   rows: null
 }
 Database schema setup completed successfully.

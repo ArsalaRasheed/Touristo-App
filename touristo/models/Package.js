@@ -1,78 +1,8 @@
-const { query } = require('../config/database');
+const { query, withTransaction } = require('../config/database');
 
+const TourGuide = require('./TourGuide');
 
-/*
-|--------------------------------------------------------------------------
-| Legacy image corrections
-|--------------------------------------------------------------------------
-|
-| Only fixes the old seeded duplicate images.
-|
-| If a package already has a real uploaded/custom image,
-| that image is always preserved.
-|--------------------------------------------------------------------------
-*/
-
-const LEGACY_IMAGE_FIXES = {
-
-  4:
-    'https://images.unsplash.com/photo-1708658377336-f3bfce89ed8d?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=85&w=1600',
-
-  8:
-    'https://images.unsplash.com/photo-1608717310359-3a1e90a53504?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=85&w=1600',
-
-  9:
-    'https://images.unsplash.com/photo-1722599504918-a7e94343184a?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=85&w=1600'
-};
-
-
-/*
-|--------------------------------------------------------------------------
-| Old seeded URLs that should be replaced
-|--------------------------------------------------------------------------
-*/
-
-const LEGACY_DUPLICATE_IMAGES = new Set([
-
-  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80',
-
-  'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80',
-
-  'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80'
-]);
-
-
-function resolvePackageImage(
-  id,
-  storedImage
-) {
-
-  /*
-   * User-uploaded / custom images ALWAYS win.
-   */
-  if (
-    storedImage &&
-    !LEGACY_DUPLICATE_IMAGES.has(
-      storedImage
-    )
-  ) {
-    return storedImage;
-  }
-
-
-  /*
-   * Correct the known old duplicate
-   * package images.
-   */
-  if (
-    LEGACY_IMAGE_FIXES[id]
-  ) {
-    return LEGACY_IMAGE_FIXES[id];
-  }
-
-
-  return storedImage || null;
-}
+const { resolveSeededPackageImage } = require('../utils/packageImages');
 
 
 class Package {
@@ -104,8 +34,8 @@ class Package {
       data.location;
 
     this.image =
-      resolvePackageImage(
-        data.id,
+      resolveSeededPackageImage(
+        data.title,
         data.image
       );
 
@@ -653,6 +583,101 @@ class Package {
     return (
       result.rows.length > 0
     );
+  }
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | Package tour-guide assignment (package_guides junction table)
+  |--------------------------------------------------------------------------
+  */
+
+  /**
+   * Replaces the guides assigned to a package with the given set.
+   * guideIds must already be validated to belong to the package's host.
+   */
+  static async setGuides(packageId, guideIds) {
+
+    const ids =
+      guideIds
+        .map(id => Number(id))
+        .filter(id =>
+          Number.isInteger(id)
+        );
+
+    await withTransaction(async client => {
+
+      await client.query(
+        `
+          DELETE FROM package_guides
+          WHERE package_id = $1
+        `,
+        [packageId]
+      );
+
+      if (ids.length === 0) {
+        return;
+      }
+
+      await client.query(
+        `
+          INSERT INTO package_guides (package_id, tour_guide_id)
+          SELECT $1, g.id
+          FROM unnest($2::int[]) AS g(id)
+          ON CONFLICT DO NOTHING
+        `,
+        [packageId, ids]
+      );
+    });
+  }
+
+
+  /**
+   * Returns the guides assigned to a package together with the raw id list.
+   *
+   *   { guides: TourGuide[], assignedGuideIds: number[] }
+   */
+  static async findGuidesByPackageId(packageId) {
+
+    const assignedResult =
+      await query(
+        `
+          SELECT
+            tg.id,
+            tg.host_id,
+            tg.name,
+            tg.photo,
+            tg.specialty,
+            tg.rating,
+            tg.created_at,
+            tg.updated_at
+          FROM package_guides pg
+          JOIN tour_guides tg
+            ON tg.id = pg.tour_guide_id
+          WHERE pg.package_id = $1
+          ORDER BY tg.rating DESC
+        `,
+        [packageId]
+      );
+
+    const idResult =
+      await query(
+        `
+          SELECT tour_guide_id
+          FROM package_guides
+          WHERE package_id = $1
+        `,
+        [packageId]
+      );
+
+    return {
+      guides: assignedResult.rows.map(
+        row => new TourGuide(row)
+      ),
+      assignedGuideIds: idResult.rows.map(
+        row => Number(row.tour_guide_id)
+      )
+    };
   }
 }
 

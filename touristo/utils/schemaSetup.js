@@ -25,6 +25,7 @@ async function setupSchema() {
         password_hash TEXT NOT NULL, -- This will now work as the table is empty
         phone VARCHAR(20) NOT NULL, -- Made phone required
         role VARCHAR(50) DEFAULT 'traveler',
+        avatar_url TEXT, -- User account profile photo (public URL)
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
@@ -44,6 +45,8 @@ async function setupSchema() {
         verified BOOLEAN DEFAULT FALSE, -- Adding the missing column
         rating_score DECIMAL(3,2) DEFAULT 0.00, -- Adding the missing rating_score column
         rating DECIMAL(3,2) DEFAULT 0.00,
+        logo_url TEXT, -- Company logo (public Supabase Storage URL)
+        cover_image_url TEXT, -- Company cover/banner image (public URL)
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
@@ -164,6 +167,37 @@ async function setupSchema() {
         rating DECIMAL(3,2) DEFAULT 0.00,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // Create the package_guides table
+    // Assigns which of a host's tour guides are attached to a package.
+    await query(`
+      CREATE TABLE IF NOT EXISTS package_guides (
+        package_id INTEGER NOT NULL REFERENCES packages(id) ON DELETE CASCADE,
+        tour_guide_id INTEGER NOT NULL REFERENCES tour_guides(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT NOW(),
+        PRIMARY KEY (package_id, tour_guide_id)
+      );
+    `);
+
+    // Create the sos_alerts table
+    // Stores emergency alerts with honest delivery status transitions:
+    // Pending (queued locally) -> Sent (server received) -> Delivered
+    // (recipient confirmed) or Failed (could not transmit).
+    await query(`
+      CREATE TABLE IF NOT EXISTS sos_alerts (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        trip_id INTEGER REFERENCES bookings(id) ON DELETE SET NULL,
+        lat DOUBLE PRECISION NOT NULL,
+        lng DOUBLE PRECISION NOT NULL,
+        accuracy DOUBLE PRECISION,
+        message TEXT,
+        status VARCHAR(20) NOT NULL DEFAULT 'Pending',
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW(),
+        acknowledged_at TIMESTAMP
       );
     `);
 
@@ -376,9 +410,18 @@ async function setupSchema() {
     await query('CREATE INDEX IF NOT EXISTS idx_reviews_package_id ON reviews(package_id);');
     await query('CREATE INDEX IF NOT EXISTS idx_destinations_category ON destinations(category);');
     await query('CREATE INDEX IF NOT EXISTS idx_tour_guides_host_id ON tour_guides(host_id);');
+    await query('CREATE INDEX IF NOT EXISTS idx_package_guides_tour_guide_id ON package_guides(tour_guide_id);');
+    await query('CREATE INDEX IF NOT EXISTS idx_sos_alerts_user_id ON sos_alerts(user_id);');
     await query('CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON messages(sender_id);');
     await query('CREATE INDEX IF NOT EXISTS idx_messages_receiver_id ON messages(receiver_id);');
     await query('CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);');
+
+    // Branding columns for existing databases created before they existed.
+    await query('ALTER TABLE hosts ADD COLUMN IF NOT EXISTS logo_url TEXT;');
+    await query('ALTER TABLE hosts ADD COLUMN IF NOT EXISTS cover_image_url TEXT;');
+
+    // User profile photo for existing databases created before it existed.
+    await query('ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;');
 
     // Additional performance indexes used by dashboard/admin/booking flows.
     await query('CREATE INDEX IF NOT EXISTS idx_hosts_user_id ON hosts(user_id);');

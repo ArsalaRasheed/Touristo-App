@@ -714,6 +714,7 @@ const TravelTrendRadar = () => {
                                 featured.topVideo.title
                               }
                               className="w-full h-full object-cover"
+                              loading="lazy"
                             />
 
                           </div>
@@ -841,6 +842,7 @@ const TravelTrendRadar = () => {
                         }
                         alt={item.destination}
                         className="w-full h-full object-cover"
+                        loading="lazy"
                       />
                     ) : (
                       <div className="w-full h-full bg-[color:var(--brand-primary-soft)]" />
@@ -1237,6 +1239,7 @@ const TravelTrendRadar = () => {
                         src={video.thumbnail}
                         alt={video.title}
                         className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
+                        loading="lazy"
                       />
                     )}
 

@@ -62,7 +62,15 @@ const weatherController = {
 
         data: {
           weather,
-          roadStatus
+          roadStatus,
+
+          /*
+           * When this snapshot was fetched from the provider. The
+           * frontend uses it to label cached data as stale after a
+           * reasonable TTL instead of pretending it is live.
+           */
+          fetchedAt:
+            new Date().toISOString()
         }
       });
     } catch (error) {

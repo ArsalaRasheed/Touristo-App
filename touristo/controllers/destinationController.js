@@ -1,5 +1,13 @@
 const { query } = require('../config/database');
 
+const { resolveSeededPackageImage } = require('../utils/packageImages');
+
+const withResolvedImages = (rows) =>
+  rows.map((row) => ({
+    ...row,
+    image: resolveSeededPackageImage(row.title, row.image)
+  }));
+
 const destinationController = {
   // Get all destinations
   async getAllDestinations(req, res) {
@@ -57,7 +65,7 @@ const destinationController = {
         status: 'success',
         data: { 
           destination: destination,
-          packages: packagesResult.rows 
+          packages: withResolvedImages(packagesResult.rows)
         },
       });
     } catch (err) {
@@ -102,7 +110,7 @@ const destinationController = {
         status: 'success',
         data: { 
           destination: destination,
-          packages: packagesResult.rows 
+          packages: withResolvedImages(packagesResult.rows)
         },
       });
     } catch (err) {

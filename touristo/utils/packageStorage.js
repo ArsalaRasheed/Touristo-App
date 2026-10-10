@@ -222,10 +222,11 @@ async function ensureBucket() {
 |--------------------------------------------------------------------------
 */
 
-async function uploadPackageImage({
+async function uploadImage({
   imageData,
   imageName,
-  imageType
+  imageType,
+  folder = 'packages'
 }) {
 
   validateStorageConfig();
@@ -375,7 +376,7 @@ async function uploadPackageImage({
 
 
   const storagePath =
-    `packages/${uniqueName}`;
+    `${folder}/${uniqueName}`;
 
 
   /*
@@ -440,6 +441,74 @@ async function uploadPackageImage({
 
 /*
 |--------------------------------------------------------------------------
+| Upload Package Image (packages/ prefix)
+|--------------------------------------------------------------------------
+*/
+
+async function uploadPackageImage({
+  imageData,
+  imageName,
+  imageType
+}) {
+  return uploadImage({
+    imageData,
+    imageName,
+    imageType,
+    folder: 'packages'
+  });
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Upload Host Branding Image
+|--------------------------------------------------------------------------
+|
+| `kind` is either "logo" or "cover"; it only shapes the storage path so
+| the bucket stays organised.
+|--------------------------------------------------------------------------
+*/
+
+async function uploadHostImage({
+  imageData,
+  imageName,
+  imageType,
+  kind = 'logo'
+}) {
+  const safeKind =
+    kind === 'cover' ? 'cover' : 'logo';
+
+  return uploadImage({
+    imageData,
+    imageName,
+    imageType,
+    folder: `hosts/${safeKind}`
+  });
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Upload User Avatar
+|--------------------------------------------------------------------------
+*/
+
+async function uploadUserAvatar({
+  imageData,
+  imageName,
+  imageType
+}) {
+  return uploadImage({
+    imageData,
+    imageName,
+    imageType,
+    folder: 'users/avatars'
+  });
+}
+
+
+/*
+|--------------------------------------------------------------------------
 | Delete Uploaded Object
 |--------------------------------------------------------------------------
 |
@@ -447,7 +516,7 @@ async function uploadPackageImage({
 |--------------------------------------------------------------------------
 */
 
-async function deletePackageImage(
+async function deleteImage(
   storagePath
 ) {
 
@@ -487,9 +556,25 @@ async function deletePackageImage(
 }
 
 
+/*
+|--------------------------------------------------------------------------
+| Delete Package Image (backwards-compatible alias)
+|--------------------------------------------------------------------------
+*/
+
+async function deletePackageImage(
+  storagePath
+) {
+  return deleteImage(storagePath);
+}
+
+
 module.exports = {
   uploadPackageImage,
+  uploadHostImage,
+  uploadUserAvatar,
   deletePackageImage,
+  deleteImage,
   MAX_IMAGE_SIZE,
   STORAGE_BUCKET,
   PackageImageValidationError,

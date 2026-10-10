@@ -18,6 +18,9 @@ router.post('/', authenticateToken, syncRole, hostController.createHost);
 // Update host
 router.put('/:id', authenticateToken, syncRole, hostController.updateHost);
 
+// Upload/replace a branding image (logo or cover) - owner/admin only
+router.post('/:id/images', authenticateToken, syncRole, hostController.uploadHostBrandingImage);
+
 // Delete host
 router.delete('/:id', authenticateToken, syncRole, hostController.deleteHost);
 
