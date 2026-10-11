@@ -16,6 +16,8 @@ import {
   Sparkles,
 } from 'lucide-react';
 
+import MapView from './MapView';
+
 const FALLBACK_IMAGE =
   'https://images.pexels.com/photos/27468879/pexels-photo-27468879.jpeg?auto=compress&cs=tinysrgb&w=1200';
 
@@ -495,6 +497,34 @@ const DestinationExploreScreen = () => {
               </p>
             )}
           </InfoCard>
+
+        </section>
+
+        {/* =====================================================
+            LOCATION MAP
+        ====================================================== */}
+
+        <section className="mb-12">
+
+          <div className="flex items-center gap-2 mb-2">
+            <MapPin className="w-4.5 h-4.5 text-[color:var(--brand-gold-ink)]" />
+
+            <span className="text-xs sm:text-sm font-bold uppercase tracking-[0.14em] text-[color:var(--brand-gold-ink)]">
+              Location
+            </span>
+          </div>
+
+          <h2 className="text-2xl sm:text-3xl tracking-tight mb-4">
+            Where is {destinationName}?
+          </h2>
+
+          <MapView
+            latitude={destinationData.latitude}
+            longitude={destinationData.longitude}
+            label={destinationName}
+            zoom={11}
+            height={380}
+          />
 
         </section>
 

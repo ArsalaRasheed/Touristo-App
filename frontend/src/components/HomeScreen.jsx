@@ -678,12 +678,13 @@ const HomeScreen = () => {
 
             {popularDestinations.map((destination, index) => {
 
-              const packageId = destination.packages?.[0]?.id;
+              const destinationId =
+                destination.packages?.[0]?.destination_id;
 
               return (
                 <Link
-                  key={destination.id || index}
-                  to={packageId ? `/package/${packageId}` : '/destinations'}
+                  key={destinationId || destination.name || index}
+                  to={destinationId ? `/destination/${destinationId}` : '/destinations'}
                   className="group"
                 >
 

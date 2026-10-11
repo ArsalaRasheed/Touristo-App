@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 
 import ReportDialog from './ReportDialog';
+import MapView from './MapView';
 import { useAuth } from '../context/AuthContext';
 
 const FALLBACK_IMAGE =
@@ -831,6 +832,22 @@ const PackageDetailScreen = () => {
                         </p>
                       </div>
 
+                    </div>
+
+                    {/* Location map (trip context) */}
+                    <div className="mt-7">
+                      <h3 className="mb-4">Destination Map</h3>
+
+                      <MapView
+                        latitude={packageData.latitude}
+                        longitude={packageData.longitude}
+                        label={
+                          packageData.destination ||
+                          packageData.title
+                        }
+                        zoom={11}
+                        height={320}
+                      />
                     </div>
 
                     {/* Host */}
